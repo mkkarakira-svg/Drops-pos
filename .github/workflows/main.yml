@@ -1,4 +1,4 @@
-name: Build Drops POS Android APK
+name: Build Drops POS Android APK v1
 
 on:
   workflow_dispatch:
