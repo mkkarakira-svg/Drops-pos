@@ -1,4 +1,4 @@
-name: Build Drops POS V1
+name: Build Drops POS v1.1.0
 on:
   push:
     branches: [ develop-pos-v1 ]
@@ -17,7 +17,9 @@ jobs:
           gradle-version: '8.10.2'
       - name: Build APK
         run: gradle assembleDebug
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk DropsPOS-v1.1.0.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: DropsPOS-V1
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: DropsPOS-v1.1.0-NEW
+          path: DropsPOS-v1.1.0.apk
