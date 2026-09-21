@@ -2,7 +2,7 @@ package com.drops.pos;
 import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.graphics.*;import android.graphics.Typeface;import android.view.*;import android.widget.*;import java.util.*;
 
 public class MainActivity extends Activity{
- DB db; LinearLayout root,body; final int NAVY=0xff081A2F,BG=0xffF5F7FB,BLUE=0xff0B74E5,GREEN=0xff16A36A,RED=0xffDC2626; LinkedHashMap<Long,Integer> cart=new LinkedHashMap<>();
+ DB db; LinearLayout root,body; final int NAVY=0xff071426,BG=0xfff5f8fc,BLUE=0xff1769ff,GREEN=0xff10b95b,ORANGE=0xffff7900,PURPLE=0xff6236e8,RED=0xffdc2626; LinkedHashMap<Long,Integer> cart=new LinkedHashMap<>();
  int dp(float x){return(int)(x*getResources().getDisplayMetrics().density+.5f);}
  TextView t(String s,int z,int c,boolean b){TextView v=new TextView(this);v.setText(s);v.setTextSize(z);v.setTextColor(c);v.setPadding(dp(14),dp(10),dp(14),dp(10));if(b)v.setTypeface(null,Typeface.BOLD);return v;}
  public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(NAVY);getWindow().setNavigationBarColor(NAVY);if(Build.VERSION.SDK_INT>=23)getWindow().getDecorView().setSystemUiVisibility(0);if(Build.VERSION.SDK_INT>=21){getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);}if(Build.VERSION.SDK_INT>=35)getWindow().setStatusBarContrastEnforced(false);db=new DB(this);home();}
