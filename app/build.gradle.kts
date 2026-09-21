@@ -6,8 +6,8 @@ android {
         applicationId = "com.drops.pos.v1"
         minSdk = 23
         targetSdk = 35
-        versionCode = 12
-        versionName = "3.1.0"
+        versionCode = 13
+        versionName = "3.2.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
