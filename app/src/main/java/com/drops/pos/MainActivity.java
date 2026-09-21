@@ -13,7 +13,7 @@ import java.util.*;
 
 public class MainActivity extends Activity {
   DB db; LinearLayout root, body; TextView title;
-  int green=Color.rgb(7,96,55), pale=Color.rgb(239,248,243), ink=Color.rgb(22,36,30);
+  int green=Color.rgb(7,96,55), pale=Color.rgb(239,248,243), ink=Color.rgb(22,36,30), navy=Color.rgb(18,40,72);
   @Override public void onCreate(Bundle b){super.onCreate(b);db=new DB(this); dashboard();}
 
   TextView tv(String s,int sp,boolean bold){ TextView v=new TextView(this); v.setText(s);v.setTextSize(sp);v.setTextColor(Color.rgb(30,40,35));v.setPadding(18,14,18,14); if(bold)v.setTypeface(null,1); return v;}
@@ -27,11 +27,17 @@ public class MainActivity extends Activity {
     ScrollView sv=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(14,6,14,20);sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));setContentView(root);
   }
   void dashboard(){
-    shell("DROPS POS  •  4.1"); ((ViewGroup)title.getParent()).getChildAt(0).setVisibility(View.INVISIBLE);
-    TextView brand=tv("DROPS DETERGENTS",22,true);brand.setTextColor(green);brand.setGravity(Gravity.CENTER);body.addView(brand);TextView sub=tv("نقطة البيع وإدارة المصنع",14,false);sub.setGravity(Gravity.CENTER);body.addView(sub);
+    shell("DROPS POS FINAL 4.1"); ((ViewGroup)title.getParent()).getChildAt(0).setVisibility(View.INVISIBLE);
+    ((ViewGroup)title.getParent()).setBackgroundColor(navy); title.setTextColor(Color.WHITE); title.setGravity(Gravity.CENTER);
+    TextView brand=tv("DROPS DETERGENTS",22,true);brand.setTextColor(navy);brand.setGravity(Gravity.CENTER);body.addView(brand);
+    TextView sub=tv("نقطة البيع وإدارة المصنع",14,false);sub.setGravity(Gravity.CENTER);body.addView(sub);
+    LinearLayout stats=new LinearLayout(this);stats.setOrientation(LinearLayout.HORIZONTAL);stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+    TextView sales=tv("مبيعات اليوم\n$"+money(db.one("SELECT COALESCE(SUM(total),0) FROM sales WHERE created>=?",startDay())),16,true);sales.setGravity(Gravity.CENTER);
+    TextView inv=tv("الفواتير\n"+(int)db.one("SELECT COUNT(*) FROM invoices WHERE created>=?",startDay()),16,true);inv.setGravity(Gravity.CENTER);
+    stats.addView(sales,new LinearLayout.LayoutParams(0,110,1));stats.addView(inv,new LinearLayout.LayoutParams(0,110,1));body.addView(stats);
     String[] a={"بيع","إنتاج","مشتريات","مخزون","فواتير","تقارير","مواد خام","وصفات"};
-    GridLayout grid=new GridLayout(this);grid.setColumnCount(2);grid.setUseDefaultMargins(true);for(String s:a){Button b=btn(s);b.setOnClickListener(v->open(((Button)v).getText().toString()));GridLayout.LayoutParams p=new GridLayout.LayoutParams();p.width=0;p.height=150;p.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);p.setMargins(8,8,8,8);grid.addView(b,p);}body.addView(grid);
-    refreshStats();
+    GridLayout grid=new GridLayout(this);grid.setColumnCount(2);grid.setUseDefaultMargins(true);
+    for(String z:a){Button b=btn(z);b.setOnClickListener(v->open(((Button)v).getText().toString()));GridLayout.LayoutParams p=new GridLayout.LayoutParams();p.width=0;p.height=145;p.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);p.setMargins(8,8,8,8);grid.addView(b,p);}body.addView(grid);
   }
   void refreshStats(){
     LinearLayout c=box(); c.addView(tv("اليوم",17,true));
