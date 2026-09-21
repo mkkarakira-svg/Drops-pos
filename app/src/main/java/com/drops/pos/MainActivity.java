@@ -5,7 +5,7 @@ import android.os.*;
 import android.content.*;
 import android.database.*;
 import android.database.sqlite.*;
-import android.graphics.Color;
+import android.graphics.Color;\nimport android.graphics.Typeface;\nimport android.graphics.drawable.GradientDrawable;
 import android.view.*;
 import android.widget.*;
 import java.text.*;
@@ -13,24 +13,24 @@ import java.util.*;
 
 public class MainActivity extends Activity {
   DB db; LinearLayout root, body; TextView title;
-  int green=Color.rgb(7,96,55), pale=Color.rgb(239,248,243);
+  int green=Color.rgb(7,96,55), pale=Color.rgb(239,248,243), ink=Color.rgb(22,36,30);
   @Override public void onCreate(Bundle b){super.onCreate(b);db=new DB(this); dashboard();}
 
   TextView tv(String s,int sp,boolean bold){ TextView v=new TextView(this); v.setText(s);v.setTextSize(sp);v.setTextColor(Color.rgb(30,40,35));v.setPadding(18,14,18,14); if(bold)v.setTypeface(null,1); return v;}
-  Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(15);b.setAllCaps(false);return b;}
+  Button btn(String s){Button b=new Button(this);b.setText(s);b.setTextSize(16);b.setTextColor(ink);b.setAllCaps(false);b.setGravity(Gravity.CENTER);b.setMinHeight(64);b.setPadding(16,12,16,12);GradientDrawable g=new GradientDrawable();g.setColor(Color.WHITE);g.setCornerRadius(22);g.setStroke(1,Color.rgb(220,228,224));b.setBackground(g);return b;}
   LinearLayout box(){LinearLayout x=new LinearLayout(this);x.setOrientation(LinearLayout.VERTICAL);x.setPadding(14,12,14,12);x.setBackgroundColor(Color.WHITE);return x;}
   void shell(String t){
-    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(246,248,247));
-    LinearLayout head=new LinearLayout(this);head.setGravity(Gravity.CENTER_VERTICAL);head.setPadding(12,18,12,8);
+    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);root.setBackgroundColor(Color.rgb(246,248,247));
+    LinearLayout head=new LinearLayout(this);head.setGravity(Gravity.CENTER_VERTICAL);head.setPadding(12,8,12,8);
     Button back=btn("‹");back.setOnClickListener(v->dashboard());head.addView(back,new LinearLayout.LayoutParams(70,60));
-    title=tv(t,21,true);head.addView(title,new LinearLayout.LayoutParams(0,70,1));root.addView(head);
+    title=tv(t,21,true);title.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT);head.addView(title,new LinearLayout.LayoutParams(0,64,1));root.addView(head);
     ScrollView sv=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(14,6,14,20);sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));setContentView(root);
   }
   void dashboard(){
     shell("DROPS POS  •  4.1"); ((ViewGroup)title.getParent()).getChildAt(0).setVisibility(View.INVISIBLE);
-    body.addView(tv("Drops Detergents",18,true)); body.addView(tv("إدارة المبيعات والمصنع",14,false));
+    TextView brand=tv("DROPS DETERGENTS",22,true);brand.setTextColor(green);brand.setGravity(Gravity.CENTER);body.addView(brand);TextView sub=tv("نقطة البيع وإدارة المصنع",14,false);sub.setGravity(Gravity.CENTER);body.addView(sub);
     String[] a={"بيع","إنتاج","مشتريات","مخزون","فواتير","تقارير","مواد خام","وصفات"};
-    for(String s:a){Button b=btn(s);b.setOnClickListener(v->open(((Button)v).getText().toString()));body.addView(b,new LinearLayout.LayoutParams(-1,72));}
+    GridLayout grid=new GridLayout(this);grid.setColumnCount(2);grid.setUseDefaultMargins(true);for(String s:a){Button b=btn(s);b.setOnClickListener(v->open(((Button)v).getText().toString()));GridLayout.LayoutParams p=new GridLayout.LayoutParams();p.width=0;p.height=150;p.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);p.setMargins(8,8,8,8);grid.addView(b,p);}body.addView(grid);
     refreshStats();
   }
   void refreshStats(){
