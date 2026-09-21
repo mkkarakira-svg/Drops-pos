@@ -1,42 +1,23 @@
 name: Build Drops POS Android APK
-
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Unzip Android project
-        run: |
-          mkdir android-project
-          unzip DropsPOS_Android_v0.1_Source.zip -d android-project
-          find android-project -maxdepth 3 -type f
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.6.0'
-
-      - name: Build APK
-        working-directory: android-project/DropsPOS_Android_v0.1
+          gradle-version: '8.9'
+      - name: Build Drops POS 4.1
         run: gradle assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: DropsPOS-Android
-          path: android-project/DropsPOS_Android_v0.1/app/build/outputs/apk/debug/app-debug.apk
+          name: DropsPOS-v4.1.0-build19
+          path: app/build/outputs/apk/debug/app-debug.apk
