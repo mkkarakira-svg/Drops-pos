@@ -18,6 +18,31 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      # Keep the same debug signing key between GitHub Actions builds.
+      # Without this, Android rejects updates with "App not installed"
+      # because each fresh runner can create a different signing certificate.
+      - name: Restore stable Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: drops-pos-stable-debug-signing-v1
+
+      - name: Ensure debug signing key exists
+        shell: bash
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Drops POS,C=LB"
+          fi
+
       - name: Read app version
         id: version
         shell: bash
