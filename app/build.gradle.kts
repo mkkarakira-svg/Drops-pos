@@ -3,11 +3,11 @@ android {
     namespace = "com.drops.pos"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.drops.pos.v1"
+        applicationId = "com.drops.pos.clean"
         minSdk = 23
         targetSdk = 35
-        versionCode = 17
-        versionName = "4.0.0"
+        versionCode = 18
+        versionName = "4.0.1"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
