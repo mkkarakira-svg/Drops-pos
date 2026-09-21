@@ -30,6 +30,14 @@ jobs:
       - name: Build APK
         run: gradle clean assembleDebug
 
+      - name: Verify APK is signed and installable
+        shell: bash
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose --print-certs "$APK"
+          $ANDROID_HOME/build-tools/35.0.0/aapt dump badging "$APK" | head -n 5
+
       - name: Create uniquely named APK
         shell: bash
         run: |
