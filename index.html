@@ -369,6 +369,13 @@ if(!db._bulk5LProducts1){
  db._bulk5LProducts1=true;save();
 }
 
+if(!db._ensure5LStockProducts2){
+ ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
+   if(!db.products.some(p=>String(p.name).toLowerCase()===(base+' 5L').toLowerCase()))
+     db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
+ });
+ db._ensure5LStockProducts2=true;save();
+}
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
