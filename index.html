@@ -603,4 +603,7 @@ history.replaceState({dropsView:'home'},'',location.href);
 
 /* POS CLEAN EMPTY DUPES v74 */
 (function(){if(db._posCleanEmptyDupes74)return;let d1=db.products.find(p=>String(p.name||'').trim().toLowerCase()==='dishwashing 1l'&&+(p.size||0)===5);if(d1){let d5=db.products.find(p=>String(p.name||'').trim().toLowerCase()==='dishwashing 5l'&&p!==d1);if(d5){d5.qty=(+d5.qty||0)+(+d1.qty||0);if(!d5.price&&d1.price)d5.price=d1.price;if(!d5.cost&&d1.cost)d5.cost=d1.cost;db.stockMoves.forEach(m=>{if(String(m.productId)===String(d1.id))m.productId=d5.id});db.products=db.products.filter(p=>p!==d1)}else d1.name='Dishwashing 5L'}db._posCleanEmptyDupes74=true;save()})();
+
+/* POS DUPLICATE CLEANUP v74 */
+(function(){if(db._posDuplicateCleanup74)return;const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();let groups={};db.products.filter(p=>[1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster).forEach(p=>{let k=baseOf(p.name).toLowerCase()+'|'+(+p.size||0);(groups[k]||(groups[k]=[])).push(p)});Object.values(groups).forEach(g=>{if(g.length<2)return;g.sort((a,b)=>(+b.qty||0)-(+a.qty||0));let keep=g[0];g.slice(1).forEach(drop=>{keep.qty=(+keep.qty||0)+(+drop.qty||0);if(!keep.price&&drop.price)keep.price=drop.price;if(!keep.cost&&drop.cost)keep.cost=drop.cost;[db.stockMoves,db.packings].forEach(arr=>arr.forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=keep.id}));db.products=db.products.filter(x=>x!==drop)});keep.name=baseOf(keep.name)+' '+(+keep.size)+'L'});db._posDuplicateCleanup74=true;save()})();
 </script></body></html>
