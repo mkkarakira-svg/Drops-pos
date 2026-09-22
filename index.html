@@ -64,6 +64,9 @@
 
 /* exact bottom nav sizing v52 */
 nav.nav{height:86px!important;min-height:86px!important;padding:8px 6px 12px!important;align-items:center!important}nav.nav button{font-size:16px!important;font-weight:800!important;line-height:1.45!important;min-height:64px!important;padding:4px 2px!important}nav.nav button::first-line{font-size:25px!important}
+
+/* recipe viewer/editor v53 */
+.recipe-editor{margin-top:14px;border-top:1px solid #e5e7eb;padding-top:12px}.recipe-list-title{font-weight:900;font-size:16px;margin-bottom:8px}.recipe-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 55px;gap:7px;align-items:center;padding:8px 0;border-bottom:1px solid #edf0f4}.recipe-row input{width:78px!important;height:40px!important;padding:5px!important;text-align:center}.recipe-row span{font-size:12px}.recipe-row button{min-height:40px!important;padding:5px!important;font-size:12px!important;background:#fff1f2!important;color:#be123c!important;border:1px solid #fecdd3!important}.recipe-empty{padding:12px;text-align:center;color:#64748b;background:#f8fafc;border-radius:12px}@media(max-width:520px){.recipe-row{grid-template-columns:minmax(0,1fr) 105px 50px}.recipe-row b{font-size:13px}.recipe-row input{width:66px!important}}
 </style><style>
 @media(max-width:520px){
   .top{padding:10px 14px 18px!important;border-radius:0 0 20px 20px!important}
@@ -225,11 +228,11 @@ function production(){
   <div class="panel prod-card">
    <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>تعريف وصفة لكل 1 لتر</b><div class="muted">حدد المنتج والمادة والكمية بالغرام لكل لتر</div></div></div>
    <div class="recipe-grid">
-    <select id="rp">${recipeOpts}</select>
+    <select id="rp" onchange="renderRecipeEditor()">${recipeOpts}</select>
     <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
     <input id="rqpl" type="number" step=".001" placeholder="غرام لكل L">
    </div>
-   <button class="recipe-save" onclick="recipeAdd()">حفظ المادة</button>
+   <button class="recipe-save" onclick="recipeAdd()">حفظ المادة</button><div id="recipeEditor" class="recipe-editor"></div>
   </div>
   <div class="panel prod-card">
    <div class="prod-card-head"><div class="prod-icon">⚙️</div><div><b>تنفيذ طبخة</b><div class="muted">اختر الخلطة والكمية وحجم التعبئة</div></div></div>
@@ -242,7 +245,11 @@ function production(){
   </div>
   <div class="panel prod-card"><div class="prod-card-head"><div class="prod-icon">📋</div><div><b>آخر الطبخات</b><div class="muted">آخر عمليات الإنتاج المسجلة</div></div></div>${batches||'<div class="muted">لا توجد طبخات بعد</div>'}</div>
  </div>`;
-}function recipeAdd(){let p=$('#rp').value,r=$('#rr').value,g=+$('#rqpl').value,q=g/1000;p=db.products.find(x=>String(x.id)===String(p))?.id;r=db.raw.find(x=>String(x.id)===String(r))?.id;if(q<=0)return;db.recipes=db.recipes.filter(x=>!(x.productId===p&&x.rawId===r));db.recipes.push({productId:p,rawId:r,qtyPerLiter:q});save();alert('تم حفظ المادة بالوصفة')}
+ setTimeout(renderRecipeEditor,0);
+}function renderRecipeEditor(){let el=$('#recipeEditor'),pid=$('#rp')?.value;if(!el||!pid)return;let rec=db.recipes.filter(x=>String(x.productId)===String(pid));el.innerHTML=rec.length?`<div class="recipe-list-title">مكونات الخلطة الحالية</div>${rec.map(x=>{let r=db.raw.find(a=>String(a.id)===String(x.rawId));return `<div class="recipe-row"><b>${r?.name||'مادة'}</b><div><input type="number" step=".001" value="${((+x.qtyPerLiter||0)*1000).toFixed(3).replace(/\\.?0+$/,'')}" onchange="recipeQtyEdit('${pid}','${x.rawId}',this.value)"><span> g/L</span></div><button onclick="recipeDelete('${pid}','${x.rawId}')">حذف</button></div>`}).join('')}`:'<div class="recipe-empty">لا توجد مواد محفوظة لهذه الخلطة بعد</div>'}
+function recipeQtyEdit(pid,rid,v){let x=db.recipes.find(a=>String(a.productId)===String(pid)&&String(a.rawId)===String(rid)),g=+v;if(!x||g<=0)return;x.qtyPerLiter=g/1000;save();renderRecipeEditor()}
+function recipeDelete(pid,rid){db.recipes=db.recipes.filter(a=>!(String(a.productId)===String(pid)&&String(a.rawId)===String(rid)));save();renderRecipeEditor()}
+function recipeAdd(){let p=$('#rp').value,r=$('#rr').value,g=+$('#rqpl').value,q=g/1000;p=db.products.find(x=>String(x.id)===String(p))?.id;r=db.raw.find(x=>String(x.id)===String(r))?.id;if(q<=0)return;db.recipes=db.recipes.filter(x=>!(x.productId===p&&x.rawId===r));db.recipes.push({productId:p,rawId:r,qtyPerLiter:q});save();renderRecipeEditor();alert('تم حفظ المادة بالوصفة')}
 function produce(){let pid=$('#bp').value,L=+$('#bl').value,p=db.products.find(x=>String(x.id)===String(pid));if(p)pid=p.id;let rec=db.recipes.filter(x=>String(x.productId)===String(pid));if(!p||L<=0||!rec.length)return alert('الوصفة ناقصة');for(let x of rec){let r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;if(!r||r.qty<need)return alert('المادة غير كافية: '+(r?r.name:'')+'\nالمطلوب '+need.toFixed(3)+' kg\nالمتوفر '+(r?r.qty.toFixed(3):0)+' kg')}let cost=0,bid=id(),ts=new Date().toISOString();rec.forEach(x=>{let r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});db.batches.unshift({id:bid,date:today(),time:ts,productId:p.id,product:p.name,liters:L,remainingLiters:L,cost,status:'open'});save();alert('تم حفظ الطبخة وخصم المواد الخام\nالكلفة '+money(cost)+'\nالمتبقي للتعبئة '+L+' L');production()}
 
 function produceAndPack(){
