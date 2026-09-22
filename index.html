@@ -560,4 +560,7 @@ history.replaceState({dropsView:'home'},'',location.href);
 
 /* FINISHED STOCK MASTER v61 */
 (function(){if(db._finishedStockMaster61)return;["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"].forEach(n=>[1,4,5].forEach(sz=>ensureFinishedProduct(n,sz)));db._finishedStockMaster61=true;save()})();
+
+/* TRIAL RAW STOCK 50KG v63 */
+(function(){if(db._trialRaw50kg63)return;const packaging=/^(gallon 5l|gallon 4l|bottle 1l|label sticker)$/i;db.raw.forEach(r=>{if(!packaging.test(String(r.name||'').trim()))r.qty=Math.max(+r.qty||0,50)});let color=db.raw.find(r=>/^(color|colour|colour200|prepared color)$/i.test(String(r.name||'').trim()));if(!color){color={id:id(),name:'Color',cost:0,qty:50,unit:'kg'};db.raw.push(color)}else color.qty=Math.max(+color.qty||0,50);db._trialRaw50kg63=true;save()})();
 </script></body></html>
