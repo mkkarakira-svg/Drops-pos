@@ -401,6 +401,18 @@ if(!db._rebuildFinishedBalances1){
  db.products.forEach(p=>{if(Object.prototype.hasOwnProperty.call(sums,String(p.id)))p.qty=Math.max(+p.qty||0,sums[String(p.id)]);});
  db._rebuildFinishedBalances1=true;save();
 }
+if(!db._allRawDemoStock1){
+ db.raw.forEach(x=>{
+   const isPiece=String(x.unit||'').toLowerCase()==='piece'||String(x.category||'').toLowerCase()==='packaging';
+   const target=isPiece?1000:500;
+   const old=+x.qty||0;
+   if(old<target){
+     x.qty=target;
+     db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'test_stock_in',rawId:x.id,name:x.name,qty:target-old,balance:target,cost:+x.cost||0});
+   }
+ });
+ db._allRawDemoStock1=true;save();
+}
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
