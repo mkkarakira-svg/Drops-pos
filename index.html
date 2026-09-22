@@ -173,7 +173,7 @@ function renderCart(){let total=0,h=Object.entries(cart).map(([i,q])=>{let p=db.
 function checkout(){let entries=Object.entries(cart);if(!entries.length)return alert('السلة فارغة');for(let[i,q]of entries){let p=db.products.find(x=>x.id==i);if(!p||p.qty<q)return alert('المخزون غير كافٍ: '+(p?p.name:''))}let items=[],total=0;entries.forEach(([i,q])=>{let p=db.products.find(x=>x.id==i);p.qty-=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'sale',productId:p.id,name:p.name,qty:-q,balance:p.qty});items.push({productId:p.id,name:p.name,qty:+q,price:p.price,cost:p.cost});total+=p.price*q});let inv={id:id(),date:today(),time:new Date().toLocaleTimeString(),items,total,paid:+$('#paid').value||total};db.invoices.unshift(inv);cart={};save();invoiceView(inv.id)}
 function invoiceView(i){let v=db.invoices.find(x=>x.id===i);$('#app').innerHTML=`<div class="panel"><h2>DROPS DETERGENTS</h2><div>فاتورة #${v.id}</div><div class="muted">${v.date} ${v.time}</div>${v.items.map(x=>`<div class="item">${x.name} × ${x.qty}<span style="float:left">${money(x.price*x.qty)}</span></div>`).join('')}<h2>المجموع ${money(v.total)}</h2><button class="noPrint" onclick="print()">🖨 طباعة</button></div>`}
 function invoices(){$('#app').innerHTML=`<div class="title">الفواتير</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(${v.id})"><b>#${v.id}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'لا يوجد فواتير'}</div>`}
-function raw(){$('#app').innerHTML=`<div class="title">المواد الخام</div><div class="panel"><div class="row"><input id="rn" placeholder="اسم المادة"><input id="rc" type="number" step=".001" placeholder="كلفة / kg"><input id="rq" type="number" step=".001" placeholder="كمية kg"><button onclick="addRaw()">إضافة</button></div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${r.qty.toFixed(3)} kg</span><div class="muted">${money(r.cost)}/kg <button onclick="editRaw('${r.id}')">✏️ Edit</button></div></div>`).join('')||'لا يوجد مواد خام'}</div>`}
+function raw(){$('#app').innerHTML=`<div class="title">المواد الخام</div><div class="panel"><div class="row"><input id="rn" placeholder="اسم المادة"><input id="rc" type="number" step=".001" placeholder="كلفة / kg"><input id="rq" type="number" step=".001" placeholder="كمية kg"><button onclick="addRaw()">إضافة</button></div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${r.qty.toFixed(3)} kg</span><div class="muted">${money(r.cost)}/kg <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 تعديل السعر</button></div></div>`).join('')||'لا يوجد مواد خام'}</div>`}
 function addRaw(){let n=$('#rn').value.trim(),c=+$('#rc').value,q=+$('#rq').value;if(!n)return;db.raw.push({id:id(),name:n,cost:c,qty:q});save();raw()}
 function purchases(){$('#app').innerHTML=`<div class="title">مشتريات مواد خام</div><div class="panel"><div class="row"><select id="pr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`)}</select><input id="pq" type="number" step=".001" placeholder="kg"><input id="pc" type="number" step=".001" placeholder="$/kg"><button onclick="buyRaw()">تسجيل شراء</button></div></div><div class="panel">${db.purchases.map(x=>`<div class="item">${x.name} — ${x.qty} kg × ${money(x.cost)}<span style="float:left">${x.date}</span></div>`).join('')}</div>`}
 function buyRaw(){let r=db.raw.find(x=>x.id==$('#pr').value),q=+$('#pq').value,c=+$('#pc').value;if(!r||q<=0)return;let old=r.qty*r.cost;r.cost=(old+q*c)/(r.qty+q);r.qty+=q;db.purchases.unshift({id:id(),rawId:r.id,name:r.name,qty:q,cost:c,date:today()});save();purchases()}
@@ -270,6 +270,16 @@ function addRawMaterial(returnTo='raw'){
  db.raw.push(r);
  if(r.qty)db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'stock_in',rawId:r.id,name:r.name,qty:r.qty,balance:r.qty,cost:r.cost});
  save(); if(returnTo==='production')production(); else raw();
+}
+
+
+function editRawPrice(rid){
+ const r=db.raw.find(x=>String(x.id)===String(rid));if(!r)return;
+ const v=prompt('السعر الجديد للكيلو / الوحدة ($)',(+r.cost||0).toFixed(3));
+ if(v===null)return;const n=+v;if(n<0||!Number.isFinite(n))return alert('السعر غير صحيح');
+ const old=+r.cost||0;r.cost=n;
+ db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'price_edit',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:n,oldCost:old});
+ save();raw();
 }
 
 function editRaw(rid){
