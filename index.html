@@ -376,6 +376,11 @@ if(!db._ensure5LStockProducts2){
  });
  db._ensure5LStockProducts2=true;save();
 }
+if(!db._price5LTest1){
+ const prices={'Dishwashing 5L':3.20,'Laundry Gel 5L':3.61,'Hand Soap 5L':3.89,'Floor Cleaner 5L':2.78};
+ Object.entries(prices).forEach(([n,v])=>{const p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(p&&!(+p.price>0))p.price=v;});
+ db._price5LTest1=true;save();
+}
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
