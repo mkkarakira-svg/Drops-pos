@@ -200,14 +200,17 @@ function packBatch(bid){
  if(liters>remain+0.0001)return alert('الكمية أكبر من الليترات المتبقية: '+remain.toFixed(2)+' L');
  let packName=size===5?'Gallon 5L':size===4?'Gallon 4L':size===1?'Bottle 1L':'';
  let pack=packName?db.raw.find(r=>String(r.name).toLowerCase()===packName.toLowerCase()):null;
+ let label=db.raw.find(r=>String(r.name).toLowerCase()==='label sticker');
  if(pack && pack.qty<q)return alert('العبوات الفارغة غير كافية: '+packName+'\nالمطلوب '+q+'\nالمتوفر '+pack.qty);
+ if(label && label.qty<q)return alert('الستيكرات غير كافية\nالمطلوب '+q+'\nالمتوفر '+label.qty);
  if(pack){pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});}
+ if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost});}
  p.qty+=q;b.remainingLiters=remain-liters;if(b.remainingLiters<0.0001){b.remainingLiters=0;b.status='closed'}
- let liquidUnitCost=b.liters?b.cost*(liters/b.liters)/q:0,unitCost=liquidUnitCost+(pack?pack.cost:0);
+ let liquidUnitCost=b.liters?b.cost*(liters/b.liters)/q:0,unitCost=liquidUnitCost+(pack?pack.cost:0)+(label?label.cost:0);
  p.cost=unitCost;
  let mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,liters,balance:p.qty,unitCost};
  db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
- save();alert('تمت التعبئة: '+q+' × '+size+'L\nدخلت على مخزون البضاعة الجاهزة\nوتم خصم '+q+' عبوة فارغة');packing();
+ save();alert('تمت التعبئة: '+q+' × '+size+'L\nدخلت على مخزون البضاعة الجاهزة\nوتم خصم '+q+' عبوة فارغة + '+q+' ستيكر');packing();
 }
 function historyReport(){
  let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
@@ -314,6 +317,12 @@ if(!db._packagingSeed1){
    if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'piece',category:'packaging'});
  });
  db._packagingSeed1=true;save();
+}
+
+
+if(!db._labelSeed1){
+ if(!db.raw.some(r=>String(r.name).toLowerCase()==='label sticker'))db.raw.push({id:id(),name:'Label Sticker',qty:0,cost:0.10,unit:'piece',category:'packaging'});
+ db._labelSeed1=true;save();
 }
 
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
