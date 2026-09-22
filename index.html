@@ -261,6 +261,18 @@ if(!db._laundryTestStock1){
  db._laundryTestStock1=true;save();
 }
 
+
+if(!db._laundryRecipeUpdate2){
+ const lp=db.products.find(p=>/laundry/i.test(p.name));
+ if(lp){
+   const sf=db.raw.find(r=>String(r.name).toLowerCase()==='selfonic');
+   const n70=db.raw.find(r=>String(r.name).toLowerCase()==='n70');
+   if(sf){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===sf.id);if(x)x.qtyPerLiter=.050;else db.recipes.push({id:id(),productId:lp.id,rawId:sf.id,qtyPerLiter:.050});}
+   if(n70){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===n70.id);if(x)x.qtyPerLiter=.020;else db.recipes.push({id:id(),productId:lp.id,rawId:n70.id,qtyPerLiter:.020});}
+ }
+ db._laundryRecipeUpdate2=true;save();
+}
+
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
