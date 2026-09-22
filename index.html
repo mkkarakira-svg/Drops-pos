@@ -521,7 +521,7 @@ history.replaceState({dropsView:'home'},'',location.href);
  "Laundry Gel":[["tayloz",2],["Selfonic",40],["Soda",7],["N70",40],["semasol",10],["anti foam",1.5],["parmatol",1],["Fragrance",4],["kapsul",2],["Colour200",1],["Salt",25],["Water 10l",1]],
  "Comfort":[["candel wax",20],["balsam water",15],["parmatol",1],["Fragrance",5],["color",.2],["Water 10l",1]],
  "Floor Cleaner":[["Selfonic",5],["Soda",1],["N70",10],["ipa",10],["parmatol",5],["Fragrance",5],["Colour200",1],["semasol",2.5],["Water 10l",1]],
- "Pine Oil":[["pine oil",45],["Colour200",1],["Water 10l",1]],
+ "Pine Oil":[["RW",45],["Colour200",1],["Water 10l",1]],
  "Javel":[["clore",1],["fragrance",1],["Water 10l",3]],
  "Flash":[["acid",1],["phesforic acid",10],["semasol",5],["fragrance",1],["antra",2],["Water 10l",2.3]],
  "Easy":[["N70",1],["ipa",10],["amoniac",2.5],["parmatol",1],["Fragrance",1],["Colour200",1],["Water 10l",1]],
@@ -550,4 +550,7 @@ history.replaceState({dropsView:'home'},'',location.href);
  db._excelRecipes2025v1=true;save();
 })();
 
+
+/* PINE OIL RW FIX v59 */
+(function(){if(db._pineOilRwFix59)return;const n=x=>String(x||'').trim().toLowerCase();let p=db.products.find(x=>n(x.name).replace(/\s+(1|4|5)l$/,'')==='pine oil');let rw=db.raw.find(x=>n(x.name)==='rw');if(p&&rw){let old=db.recipes.find(x=>String(x.productId)===String(p.id)&&n(db.raw.find(r=>String(r.id)===String(x.rawId))?.name)==='pine oil');let existing=db.recipes.find(x=>String(x.productId)===String(p.id)&&String(x.rawId)===String(rw.id));if(old){if(existing)existing.qtyPerLiter=old.qtyPerLiter;else db.recipes.push({id:id(),productId:p.id,rawId:rw.id,qtyPerLiter:old.qtyPerLiter});db.recipes=db.recipes.filter(x=>x!==old)}}db._pineOilRwFix59=true;save()})();
 </script></body></html>
