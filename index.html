@@ -42,7 +42,16 @@
   h2{font-size:16px!important;margin:11px 3px 7px!important}
   .bottom{height:52px!important;font-size:11px!important}
 }
-</style></head><body>
+</style><style>
+@media(max-width:520px){
+ .top{min-height:0!important;height:auto!important;padding:9px 14px 12px!important;border-radius:0 0 18px 18px!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:2px 10px!important}
+ .top b{font-size:15px!important;line-height:1.1!important;margin:0!important}
+ .top div{font-size:13px!important;line-height:1.1!important;margin:0!important}
+ .top small{grid-column:1/-1!important;font-size:9px!important;line-height:1.1!important;margin:4px 0 0!important}
+}
+.app-back{position:fixed;top:10px;left:10px;z-index:9999;border:0;border-radius:12px;background:#071426;color:#fff;padding:8px 12px;font:700 14px system-ui;box-shadow:0 2px 8px #0003;display:none}
+body:not(.home-view) .app-back{display:block}
+</style></head><body><button class="app-back" id="appBack" onclick="goHome()">← رجوع</button>
 <header class="top"><b>DROPS POS &nbsp;•&nbsp; FINAL 4.0</b><div style="font-weight:800;font-size:18px;margin-top:18px">لوحة التحكم</div><small>Drops Detergents &nbsp;•&nbsp; FINAL 4.0 &nbsp;•&nbsp; USD/LBP 90,000</small></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">الرئيسية</button><button onclick="go('sale')" id="n-sale">بيع</button><button onclick="go('products')" id="n-products">المنتجات</button><button onclick="go('reports')" id="n-reports">التقارير</button></nav>
 <script>
@@ -81,4 +90,24 @@ function settings(){$('#app').innerHTML=`<div class="title">الإعدادات �
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
 function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('ملف غير صالح')}};r.readAsText(f)}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');home();
+</script><script>
+(function(){
+ const oldRender=window.render;
+ if(typeof oldRender==='function'){
+   window.render=function(view){
+     document.body.classList.toggle('home-view', !view || view==='home');
+     return oldRender.apply(this,arguments);
+   };
+ }
+ window.goHome=function(){
+   document.body.classList.add('home-view');
+   if(typeof home==='function') home();
+   else if(typeof render==='function') render('home');
+ };
+ document.body.classList.add('home-view');
+ window.addEventListener('popstate',function(e){
+   if(!document.body.classList.contains('home-view')){ goHome(); history.pushState({drops:true},''); }
+ });
+ history.replaceState({drops:true},'');
+})();
 </script></body></html>
