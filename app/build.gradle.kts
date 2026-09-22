@@ -6,8 +6,8 @@ android {
         applicationId = "com.drops.pos.clean"
         minSdk = 23
         targetSdk = 35
-        versionCode = 19
-        versionName = "4.0.2"
+        versionCode = 20
+        versionName = "4.0.3"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
