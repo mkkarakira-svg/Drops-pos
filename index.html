@@ -577,4 +577,7 @@ history.replaceState({dropsView:'home'},'',location.href);
 
 /* TRIAL PACKAGING 1000PCS v64 */
 (function(){if(db._trialPackaging1000v64)return;["Gallon 5L","Gallon 4L","Bottle 1L","Label Sticker"].forEach(n=>{let r=db.raw.find(x=>String(x.name||'').trim().toLowerCase()===n.toLowerCase());if(r)r.qty=Math.max(+r.qty||0,1000);else db.raw.push({id:id(),name:n,cost:0,qty:1000,unit:'pcs'})});db._trialPackaging1000v64=true;save()})();
+
+/* FIX FINISHED PRODUCT NAMES v67 */
+(function(){if(db._fixFinishedNames67)return;db.products.forEach(p=>{let sz=+(p.size||0);if([1,4,5].includes(sz)){let base=String(p.name||'').replace(/\s+(1|4|5)L\s*$/i,'').trim();p.name=base+' '+sz+'L'}});db._fixFinishedNames67=true;save()})();
 </script></body></html>
