@@ -381,6 +381,10 @@ if(!db._price5LTest1){
  Object.entries(prices).forEach(([n,v])=>{const p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(p&&!(+p.price>0))p.price=v;});
  db._price5LTest1=true;save();
 }
+if(!db._price5LTrial2){
+ db.products.filter(p=>+(p.size||0)===5).forEach(p=>{p.price=5;});
+ db._price5LTrial2=true;save();
+}
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
