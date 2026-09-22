@@ -229,6 +229,21 @@ function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(n
 function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('ملف غير صالح')}};r.readAsText(f)}
 const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
 if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
+
+const LAUNDRY_RAW=[
+ ['soda',1.5],['parmatol',3],['fragrance laundry',18],['colour200',2.5],['water 10l',0.07]
+];
+if(!db._laundryRawSeed1){LAUNDRY_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._laundryRawSeed1=true;save();}
+function seedLaundryRecipe(){
+ if(db._laundryRecipeSeed1)return;
+ const spec=[['tayloz',2],['selfonic',40],['soda',7],['n70',40],['semasol',10],['anti foem',1.5],['parmatol',1],['fragrance laundry',4],['kapsul',2],['colour200',1],['salt',25],['water 10l',1]];
+ let p=db.products.find(x=>String(x.name).toLowerCase().includes('laundry'));
+ if(!p)return;
+ spec.forEach(([n,g])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r&&!db.recipes.some(z=>z.productId===p.id&&z.rawId===r.id))db.recipes.push({id:id(),productId:p.id,rawId:r.id,qtyPerLiter:g/1000});});
+ db._laundryRecipeSeed1=true;save();
+}
+seedLaundryRecipe();
+
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
