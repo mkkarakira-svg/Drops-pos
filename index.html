@@ -96,6 +96,10 @@ body{background:var(--bg);font-family:Arial,sans-serif}
 .top b{font-size:17px!important;white-space:nowrap!important}
 .top div{font-size:13px!important;white-space:nowrap!important}
 @media(max-width:520px){.top{margin:7px 10px 0!important;min-height:48px!important;padding:9px 12px!important}.top b{font-size:15px!important}.top div{font-size:12px!important}}
+</style><style id="back-v12">
+.app-back{position:fixed!important;top:10px!important;left:10px!important;z-index:10000!important;background:#fff!important;color:#071426!important;border:1px solid #dbe2ea!important;border-radius:12px!important;padding:8px 13px!important;font-size:14px!important;font-weight:800!important;box-shadow:0 3px 10px #0002!important}
+body.home-view .app-back{display:none!important}
+body:not(.home-view) .app-back{display:block!important}
 </style></head><body><button class="app-back" id="appBack" onclick="goHome()">← رجوع</button>
 <header class="top"><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
@@ -175,10 +179,11 @@ function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textConten
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
 window.goHome=function(){
- if(currentView!=='home'){
-   currentView='home';document.body.classList.add('home-view');nav('home');home();
-   history.pushState({dropsView:'home'},'',location.href);
- }
+  if(currentView==='home') return;
+  currentView='home';
+  document.body.classList.add('home-view');
+  home();
+  history.pushState({dropsView:'home'},'',location.href);
 };
 window.addEventListener('popstate',function(e){
  const v=e.state&&e.state.dropsView;
