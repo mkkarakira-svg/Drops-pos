@@ -191,7 +191,7 @@ function produceAndPack(){
  const bid=id(),ts=new Date().toISOString();let cost=0;
  rec.forEach(x=>{const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});
  const b={id:bid,date:today(),time:ts,productId:p0.id,product:p0.name,liters:L,remainingLiters:L,cost,status:'open'};db.batches.unshift(b);
- if(size){let fp=db.products.find(x=>/laundry|washing/i.test(x.name)&&+(x.size||0)===size);if(!fp){fp={id:id(),name:p0.name+' '+size+'L',price:0,cost:0,qty:0,size};db.products.push(fp)};pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost})};fp.qty+=q;b.remainingLiters=L-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'};fp.cost=(cost/L*size)+pack.cost+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
+ if(size){let baseName=String(p0.name).replace(/\s+(1|4|5)L\s*$/i,'').trim();let fp=db.products.find(x=>String(x.name).replace(/\s+(1|4|5)L\s*$/i,'').trim().toLowerCase()===baseName.toLowerCase()&&+(x.size||0)===size);if(!fp){fp={id:id(),name:baseName+' '+size+'L',price:0,cost:0,qty:0,size};db.products.push(fp)};pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost})};fp.qty+=q;b.remainingLiters=L-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'};fp.cost=(cost/L*size)+pack.cost+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
  save();alert(size?'تم الإنتاج والتعبئة: '+q+' × '+size+'L':'تم حفظ الطبخة وخصم المواد');production();
 }
 
@@ -384,6 +384,12 @@ if(!db._price5LTest1){
 if(!db._price5LTrial2){
  db.products.filter(p=>+(p.size||0)===5).forEach(p=>{p.price=5;});
  db._price5LTrial2=true;save();
+}
+if(!db._rebuildFinishedBalances1){
+ const sums={};
+ (db.stockMoves||[]).forEach(m=>{if(['production_pack','leftover_1l'].includes(m.type))sums[String(m.productId)]=(sums[String(m.productId)]||0)+(+m.qty||0);if(m.type==='sale')sums[String(m.productId)]=(sums[String(m.productId)]||0)-Math.abs(+m.qty||0);});
+ db.products.forEach(p=>{if(Object.prototype.hasOwnProperty.call(sums,String(p.id)))p.qty=Math.max(+p.qty||0,sums[String(p.id)]);});
+ db._rebuildFinishedBalances1=true;save();
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
