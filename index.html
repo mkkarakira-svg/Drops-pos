@@ -129,7 +129,7 @@ function home(){
  let d=db.invoices.filter(x=>x.date===today()),sales=d.reduce((a,x)=>a+x.total,0),
  exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
  profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
- stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),low=db.products.filter(p=>p.qty<=5).length,
+ stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
  buys=db.purchases.filter(x=>x.date===today()).reduce((a,x)=>a+x.qty*x.cost,0);
  $('#app').innerHTML=`
  <div class="kpi-grid">
@@ -138,7 +138,7 @@ function home(){
   <div class="kpi-card"><span class="ico">📦</span><b>المخزون</b><div class="kpi">${money(stock)}</div><span class="muted">${low} تنبيه</span></div>
   <div class="kpi-card"><span class="ico">🪙</span><b>صافي الربح</b><div class="kpi">${money(profit)}</div><span class="muted">تقديري</span></div>
  </div>
- <div class="section-title">العمليات الرئيسية</div>
+ <div class="quick-grid" style="margin-bottom:12px"><div class="kpi-card"><div class="muted">🧪 قيمة المواد الأولية</div><b>${money(rawStock)}</b></div><div class="kpi-card"><div class="muted">📦 قيمة البضاعة الجاهزة</div><b>${money(stock)}</b></div></div><div class="section-title">العمليات الرئيسية</div>
  <div class="main-grid">
   ${actionCard('🛒','بيع','sale','#2473f3')}${actionCard('🏭','إنتاج','production','#11b85b')}
   ${actionCard('🧾','مشتريات','purchases','#ff7900')}${actionCard('📦','مخزون','products','#6236e8')}
