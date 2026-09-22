@@ -233,7 +233,7 @@ function production(){
    <div class="recipe-grid">
     <select id="rp" onchange="renderRecipeEditor()">${recipeOpts}</select>
     <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
-    <input id="rqpl" type="number" step=".001" placeholder="غرام لكل L">
+    <input id="rqpl" type="number" step="1" placeholder="غرام لكل L">
    </div>
    <button class="recipe-save" onclick="recipeAdd()">حفظ المادة</button><div id="recipeEditor" class="recipe-editor"></div>
   </div>
