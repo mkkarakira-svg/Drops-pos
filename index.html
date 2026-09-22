@@ -200,7 +200,7 @@ function packBatch(bid){
  if(liters>remain+0.0001)return alert('الكمية أكبر من الليترات المتبقية: '+remain.toFixed(2)+' L');
  let packName=size===5?'Gallon 5L':size===4?'Gallon 4L':size===1?'Bottle 1L':'';
  let pack=packName?db.raw.find(r=>String(r.name).toLowerCase()===packName.toLowerCase()):null;
- let label=db.raw.find(r=>String(r.name).toLowerCase()==='label sticker');
+ let label=(size===4||size===5)?db.raw.find(r=>String(r.name).toLowerCase()==='label sticker'):null;
  if(pack && pack.qty<q)return alert('العبوات الفارغة غير كافية: '+packName+'\nالمطلوب '+q+'\nالمتوفر '+pack.qty);
  if(label && label.qty<q)return alert('الستيكرات غير كافية\nالمطلوب '+q+'\nالمتوفر '+label.qty);
  if(pack){pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});}
@@ -210,7 +210,7 @@ function packBatch(bid){
  p.cost=unitCost;
  let mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,liters,balance:p.qty,unitCost};
  db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
- save();alert('تمت التعبئة: '+q+' × '+size+'L\nدخلت على مخزون البضاعة الجاهزة\nوتم خصم '+q+' عبوة فارغة + '+q+' ستيكر');packing();
+ save();alert('تمت التعبئة: '+q+' × '+size+'L\nدخلت على مخزون البضاعة الجاهزة\nوتم خصم '+q+' عبوة فارغة'+(label?' + '+q+' ستيكر':'') );packing();
 }
 function historyReport(){
  let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
