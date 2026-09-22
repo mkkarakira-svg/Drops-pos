@@ -104,6 +104,12 @@ body:not(.home-view) .app-back{display:block!important}
 #headerBack{border:0;background:#fff;color:#071426;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;cursor:pointer;flex:0 0 auto}
 .top.has-back #headerBack{display:block!important}
 @media(max-width:520px){#headerBack{padding:6px 8px;font-size:12px}.top.has-back{gap:7px!important}.top.has-back b{font-size:13px!important}}
+</style><style id="inventory-value-colors-v22">
+.inventory-value-row .kpi-card{border:0!important;box-shadow:0 5px 14px #00000018!important}
+.inventory-value-row .raw-value{background:linear-gradient(135deg,#e8f7f1,#ccefe1)!important;border-right:5px solid #15966b!important}
+.inventory-value-row .finished-value{background:linear-gradient(135deg,#eaf2ff,#d7e6ff)!important;border-right:5px solid #2f6fd6!important}
+.inventory-value-row .kpi-card b{font-size:20px!important;color:#071426!important}
+.inventory-value-row .muted{color:#334155!important;font-weight:800!important}
 </style></head><body>
 <header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
@@ -138,7 +144,7 @@ function home(){
   <div class="kpi-card"><span class="ico">📦</span><b>المخزون</b><div class="kpi">${money(stock)}</div><span class="muted">${low} تنبيه</span></div>
   <div class="kpi-card"><span class="ico">🪙</span><b>صافي الربح</b><div class="kpi">${money(profit)}</div><span class="muted">تقديري</span></div>
  </div>
- <div class="quick-grid" style="margin-bottom:12px"><div class="kpi-card"><div class="muted">🧪 قيمة المواد الأولية</div><b>${money(rawStock)}</b></div><div class="kpi-card"><div class="muted">📦 قيمة البضاعة الجاهزة</div><b>${money(stock)}</b></div></div><div class="section-title">العمليات الرئيسية</div>
+ <div class="quick-grid inventory-value-row" style="margin-bottom:12px"><div class="kpi-card raw-value"><div class="muted">🧪 قيمة المواد الأولية</div><b>${money(rawStock)}</b></div><div class="kpi-card finished-value"><div class="muted">📦 قيمة البضاعة الجاهزة</div><b>${money(stock)}</b></div></div><div class="section-title">العمليات الرئيسية</div>
  <div class="main-grid">
   ${actionCard('🛒','بيع','sale','#2473f3')}${actionCard('🏭','إنتاج','production','#11b85b')}
   ${actionCard('🧾','مشتريات','purchases','#ff7900')}${actionCard('📦','مخزون','products','#6236e8')}
