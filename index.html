@@ -104,7 +104,7 @@ body:not(.home-view) .app-back{display:block!important}
 #headerBack{border:0;background:#fff;color:#071426;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;cursor:pointer;flex:0 0 auto}
 .top.has-back #headerBack{display:block!important}
 @media(max-width:520px){#headerBack{padding:6px 8px;font-size:12px}.top.has-back{gap:7px!important}.top.has-back b{font-size:13px!important}}
-</style></head><body><button class="app-back" id="appBack" onclick="goHome()">← رجوع</button>
+</style></head><body>
 <header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
 <script>
@@ -271,6 +271,16 @@ if(!db._laundryRecipeUpdate2){
    if(n70){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===n70.id);if(x)x.qtyPerLiter=.020;else db.recipes.push({id:id(),productId:lp.id,rawId:n70.id,qtyPerLiter:.020});}
  }
  db._laundryRecipeUpdate2=true;save();
+}
+
+
+if(!db._laundryRecipeFix3){
+ const spec=[['tayloz',.002],['selfonic',.050],['soda',.007],['n70',.020],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
+ db.products.filter(p=>/laundry|washing/i.test(p.name)).forEach(lp=>{
+   db.recipes=db.recipes.filter(z=>z.productId!==lp.id);
+   spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});
+ });
+ db._laundryRecipeFix3=true;save();
 }
 
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
