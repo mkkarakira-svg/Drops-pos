@@ -215,6 +215,18 @@ function historyReport(){
 }
 
 
+
+function addRawMaterial(returnTo='raw'){
+ const name=prompt('اسم المادة الجديدة'); if(!name||!name.trim())return;
+ if(db.raw.some(r=>String(r.name).trim().toLowerCase()===name.trim().toLowerCase()))return alert('المادة موجودة مسبقاً');
+ const cost=prompt('سعر الكيلو بالدولار','0'); if(cost===null)return;
+ const qty=prompt('الكمية الحالية بالكيلو','0'); if(qty===null)return;
+ const r={id:id(),name:name.trim(),cost:Math.max(0,+cost||0),qty:Math.max(0,+qty||0),unit:'kg'};
+ db.raw.push(r);
+ if(r.qty)db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'stock_in',rawId:r.id,name:r.name,qty:r.qty,balance:r.qty,cost:r.cost});
+ save(); if(returnTo==='production')production(); else raw();
+}
+
 function editRaw(rid){
  let r=db.raw.find(x=>String(x.id)===String(rid)); if(!r)return;
  let name=prompt('اسم المادة',r.name); if(name===null)return;
