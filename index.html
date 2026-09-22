@@ -94,7 +94,7 @@ function go(x,fromHistory=false){
  currentView=x;
  document.body.classList.toggle('home-view',x==='home');
  nav(x);
- if(!fromHistory) history.pushState({dropsView:x},'',location.pathname+location.search);
+ if(!fromHistory) history.pushState({dropsView:x},'',location.href);
  ({home,sale,products,reports,raw,production,purchases,expenses,invoices,people,settings}[x]||home)();
 }
 function home(){
@@ -157,10 +157,17 @@ function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(n
 function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('ملف غير صالح')}};r.readAsText(f)}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');home();
 </script><script>
-window.goHome=function(){ if(currentView!=='home') go('home'); };
+window.goHome=function(){
+ if(currentView!=='home'){
+   currentView='home';document.body.classList.add('home-view');nav('home');home();
+   history.pushState({dropsView:'home'},'',location.href);
+ }
+};
 window.addEventListener('popstate',function(e){
  const v=e.state&&e.state.dropsView;
- if(v){go(v,true)} else {history.pushState({dropsView:'home'},'',location.pathname+location.search);go('home',true)}
+ if(currentView!=='home'){ currentView='home';document.body.classList.add('home-view');nav('home');home();history.pushState({dropsView:'home'},'',location.href);return; }
+ if(v&&v!=='home') go(v,true);
+ else history.pushState({dropsView:'home'},'',location.href);
 });
-history.replaceState({dropsView:'home'},'',location.pathname+location.search);
+history.replaceState({dropsView:'home'},'',location.href);
 </script></body></html>
