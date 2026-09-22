@@ -91,8 +91,13 @@ body{background:var(--bg);font-family:Arial,sans-serif}
  .top div{font-size:13px!important;white-space:nowrap!important}
  .top small{font-size:9px!important;text-align:left!important;white-space:nowrap!important}
 }
+</style><style id="simple-topbar">
+.top{max-width:900px!important;margin:8px auto 0!important;min-height:52px!important;padding:10px 16px!important;border-radius:17px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+.top b{font-size:17px!important;white-space:nowrap!important}
+.top div{font-size:13px!important;white-space:nowrap!important}
+@media(max-width:520px){.top{margin:7px 10px 0!important;min-height:48px!important;padding:9px 12px!important}.top b{font-size:15px!important}.top div{font-size:12px!important}}
 </style></head><body><button class="app-back" id="appBack" onclick="goHome()">← رجوع</button>
-<header class="top"><b>DROPS POS &nbsp;•&nbsp; FINAL 4.0</b><div style="font-weight:800;font-size:18px;margin-top:18px">لوحة التحكم</div><small>Drops Detergents &nbsp;•&nbsp; FINAL 4.0 &nbsp;•&nbsp; USD/LBP 90,000</small></header><main class="wrap" id="app"></main>
+<header class="top"><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
 <script>
 const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=>new Date().toISOString().slice(0,10);
@@ -163,10 +168,11 @@ function addExp(){let n=$('#en').value.trim(),a=+$('#ea').value;if(!n||a<=0)retu
 function people(){$('#app').innerHTML=`<div class="title">العملاء والموردون</div><div class="panel"><div class="row"><input id="nn" placeholder="الاسم"><select id="nt"><option>عميل</option><option>مورد</option></select><input id="np" placeholder="الهاتف"><button onclick="addPerson()">إضافة</button></div></div><div class="panel">${db.people.map(p=>`<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div></div>`).join('')}</div>`}
 function addPerson(){let n=$('#nn').value.trim();if(!n)return;db.people.push({id:id(),name:n,type:$('#nt').value,phone:$('#np').value});save();people()}
 function reports(){nav('reports');let ts=db.invoices.filter(x=>x.date===today()).reduce((a,x)=>a+x.total,0),te=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),profit=db.invoices.filter(x=>x.date===today()).reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-te;$('#app').innerHTML=`<div class="title">التقارير</div><div class="grid"><div class="card"><span>مبيعات اليوم</span><div class="kpi">${money(ts)}</div></div><div class="card"><span>مصاريف اليوم</span><div class="kpi">${money(te)}</div></div><div class="card"><span>ربح تقديري</span><div class="kpi">${money(profit)}</div></div><div class="card"><span>قيمة المواد الخام</span><div class="kpi">${money(db.raw.reduce((a,r)=>a+r.qty*r.cost,0))}</div></div></div>`}
-function settings(){$('#app').innerHTML=`<div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
+function settings(){$('#app').innerHTML=`<div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
 function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('ملف غير صالح')}};r.readAsText(f)}
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');home();
+function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
 window.goHome=function(){
  if(currentView!=='home'){
