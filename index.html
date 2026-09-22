@@ -254,6 +254,13 @@ if(!db._laundryRecipeSeed1){
  db._laundryRecipeSeed1=true;save();
 }
 
+
+if(!db._laundryTestStock1){
+ const testStock={'tayloz':10,'selfonic':25,'soda':10,'n70':25,'semasol':10,'anti foem':5,'parmatol':5,'fragrance':10,'kapsul':10,'colour200':5,'salt':20};
+ Object.entries(testStock).forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r){r.qty=q;db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'test_stock_in',rawId:r.id,name:r.name,qty:q,balance:r.qty,cost:r.cost});}});
+ db._laundryTestStock1=true;save();
+}
+
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
