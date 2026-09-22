@@ -210,6 +210,8 @@ function historyReport(){
 
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
 function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('ملف غير صالح')}};r.readAsText(f)}
+const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
+if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
