@@ -229,15 +229,6 @@ function production(){
  <div class="production-page">
   <div class="title">الإنتاج والطبخات</div>
   <div class="panel prod-card">
-   <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>تعريف وصفة لكل 1 لتر</b><div class="muted">حدد المنتج والمادة والكمية بالغرام لكل لتر</div></div></div>
-   <div class="recipe-grid">
-    <select id="rp" onchange="renderRecipeEditor()">${recipeOpts}</select>
-    <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
-    <input id="rqpl" type="number" step="1" placeholder="غرام لكل L">
-   </div>
-   <button class="recipe-save" onclick="recipeAdd()">حفظ المادة</button><div id="recipeEditor" class="recipe-editor"></div>
-  </div>
-  <div class="panel prod-card">
    <div class="prod-card-head"><div class="prod-icon">⚙️</div><div><b>تنفيذ طبخة</b><div class="muted">اختر الخلطة والكمية وحجم التعبئة</div></div></div>
    <div class="batch-fields">
     <div class="batch-field"><label>نوع الخلطة</label><select id="bp">${recipeOpts}</select></div>
@@ -245,6 +236,15 @@ function production(){
     <div class="batch-field"><label>التعبئة</label><select id="packSize"><option value="">بدون تعبئة</option><option value="5">5 لتر</option><option value="4">4 لتر</option></select></div>
    </div>
    <button class="orange produce-wide" onclick="produceAndPack()">⚙️ إنتاج وتعبئة</button>
+  </div>
+  <div class="panel prod-card">
+   <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>تعريف وصفة لكل 1 لتر</b><div class="muted">حدد المنتج والمادة والكمية بالغرام لكل لتر</div></div></div>
+   <div class="recipe-grid">
+    <select id="rp" onchange="renderRecipeEditor()">${recipeOpts}</select>
+    <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
+    <input id="rqpl" type="number" step="1" placeholder="غرام لكل L">
+   </div>
+   <button class="recipe-save" onclick="recipeAdd()">حفظ المادة</button><div id="recipeEditor" class="recipe-editor"></div>
   </div>
   <div class="panel prod-card"><div class="prod-card-head"><div class="prod-icon">📋</div><div><b>آخر الطبخات</b><div class="muted">آخر عمليات الإنتاج المسجلة</div></div></div>${batches||'<div class="muted">لا توجد طبخات بعد</div>'}</div>
  </div>`;
