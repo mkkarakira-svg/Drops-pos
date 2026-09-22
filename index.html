@@ -340,6 +340,7 @@ if(!db._labelSeed1){
  db._labelSeed1=true;save();
 }
 
+if(!db._pkgDemo){[['Gallon 5L',100],['Gallon 4L',100],['Bottle 1L',100],['Label Sticker',200]].forEach(([n,q])=>{let x=db.raw.find(v=>String(v.name).toLowerCase()===n.toLowerCase());if(x)x.qty=Math.max(+x.qty||0,q)});db._pkgDemo=true;save();}
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
