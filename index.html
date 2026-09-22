@@ -301,6 +301,14 @@ if(!db._laundryRecipeFix3){
  db._laundryRecipeFix3=true;save();
 }
 
+
+if(!db._packagingSeed1){
+ [['Gallon 5L',0.34],['Gallon 4L',0.45],['Bottle 1L',0.15]].forEach(([name,cost])=>{
+   if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'piece',category:'packaging'});
+ });
+ db._packagingSeed1=true;save();
+}
+
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
