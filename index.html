@@ -244,6 +244,16 @@ function seedLaundryRecipe(){
 }
 seedLaundryRecipe();
 
+
+const LAUNDRY_RAW_SEED=[['soda',1.5],['parmatol',3],['fragrance',18],['colour200',2.5],['water 10l',0.07]];
+LAUNDRY_RAW_SEED.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});
+if(!db._laundryRecipeSeed1){
+ const lp=db.products.find(p=>/laundry/i.test(p.name));
+ const spec=[['tayloz',.002],['selfonic',.040],['soda',.007],['n70',.040],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
+ if(lp){db.recipes=db.recipes.filter(x=>x.productId!==lp.id);spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});}
+ db._laundryRecipeSeed1=true;save();
+}
+
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
 </script><script>
