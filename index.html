@@ -80,6 +80,17 @@ body{background:var(--bg);font-family:Arial,sans-serif}
  .section-title{font-size:18px;margin:17px 3px 9px}
  .action-card{min-height:82px;padding:10px 12px}.action-card b{font-size:16px}.action-card .ico{font-size:22px}
 }
+</style><style id="header-fix">
+.top{grid-template-columns:auto 1fr auto!important;grid-template-areas:"brand sub title"!important;overflow:hidden}
+.top b{grid-area:brand!important;text-align:left!important;direction:ltr!important}
+.top div{grid-area:title!important;text-align:right!important}
+.top small{grid-area:sub!important;text-align:center!important;direction:ltr!important;overflow:hidden!important;text-overflow:ellipsis!important}
+@media(max-width:520px){
+ .top{grid-template-columns:auto 1fr!important;grid-template-areas:"brand title" "sub sub"!important;row-gap:7px!important;padding:12px 14px!important}
+ .top b{font-size:15px!important;white-space:nowrap!important}
+ .top div{font-size:13px!important;white-space:nowrap!important}
+ .top small{font-size:9px!important;text-align:left!important;white-space:nowrap!important}
+}
 </style></head><body><button class="app-back" id="appBack" onclick="goHome()">← رجوع</button>
 <header class="top"><b>DROPS POS &nbsp;•&nbsp; FINAL 4.0</b><div style="font-weight:800;font-size:18px;margin-top:18px">لوحة التحكم</div><small>Drops Detergents &nbsp;•&nbsp; FINAL 4.0 &nbsp;•&nbsp; USD/LBP 90,000</small></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
