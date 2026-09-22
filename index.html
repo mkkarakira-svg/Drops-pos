@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Drops POS</title><meta name="theme-color" content="#071426"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon.svg"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f8fc;color:#071426}.top{background:#071426;color:#fff;padding:30px 24px 56px;border-radius:0 0 34px 34px;position:relative;z-index:5}.top b{font-size:25px;letter-spacing:.2px;display:block;text-align:left;direction:ltr}.top small{display:block;opacity:.76;margin-top:44px;text-align:left;direction:ltr;font-weight:700}.wrap{max-width:900px;margin:-28px auto 0;padding:0 16px 100px}.hero{display:none}.hero .n{font-size:34px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.card,.panel{background:#fff;border-radius:28px;padding:18px;box-shadow:0 3px 8px #07142625}.card{cursor:pointer;min-height:135px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.card b{font-size:20px;display:block;margin-top:8px}.ico{font-size:24px}.panel{margin-top:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}input,select,button{font:inherit;border-radius:12px;border:1px solid #dce3ee;padding:12px;min-width:0}button{background:#1769ff;color:#fff;border:0;font-weight:700;cursor:pointer}.danger{background:#dc2626}.green{background:#10b95b}.orange{background:#ff7900}.muted{color:#687386}.item{padding:12px 0;border-bottom:1px solid #edf0f5}.item:last-child{border:0}.pill{display:inline-block;background:#eef4ff;color:#1769ff;border-radius:999px;padding:5px 9px;font-size:12px}.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e6eaf0;display:flex;z-index:8}.nav button{background:#fff;color:#071426;border-radius:0;padding:13px 4px}.nav button.active{color:#1769ff}.hide{display:none}.title{font-size:22px;font-weight:800;margin:4px 0 12px}.kpi{font-size:25px;font-weight:800}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #edf0f5;text-align:right}@media(max-width:520px){
+  .top{padding:14px 16px 26px;border-radius:0 0 24px 24px}
+  .top b{font-size:17px}
+  .top div{font-size:15px!important;margin-top:8px!important}
+  .top small{font-size:10px;margin-top:14px;white-space:nowrap}
+  .wrap{margin:-16px auto 0;padding:0 10px 68px}
+  .grid{gap:10px}
+  .card,.panel{border-radius:20px;padding:10px}
+  .card{min-height:88px}
+  .card b{font-size:15px;margin-top:3px}
+  .ico{font-size:18px}
+  h2{font-size:18px;margin:16px 4px 10px}
+  .bottom{height:58px;font-size:12px}
+}
+@media(max-width:380px){
+  .top b{font-size:16px}
+  .top small{font-size:9px}
+  .card{min-height:82px}
+  .card b{font-size:14px}
+}
+  .top small{font-size:10.5px}
+  .card{min-height:98px}
+  .card b{font-size:16px}
+}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}@media print{.top,.nav,.noPrint{display:none!important}.wrap{padding:0}.panel{box-shadow:none}}
+
+/* Production page polish */
+.production-page{font-family:Arial,"Noto Sans Arabic",sans-serif}
+.production-page .title{font-size:30px;font-weight:900;letter-spacing:-.4px;margin:20px 4px 24px}
+.production-page .panel{border-radius:24px;padding:20px 16px;margin-bottom:16px}
+.production-page .panel>b,.production-page .section-title{font-size:20px;font-weight:800;display:block;margin-bottom:14px}
+.production-page label{font-size:14px;font-weight:800;color:#667085;display:block;margin:4px 0 6px}
+.production-page select,.production-page input{font-size:17px;font-weight:700;min-height:54px;border-radius:16px}
+.production-page button{font-size:17px;font-weight:900;border-radius:16px;min-height:54px}
+.production-page .recipe-row,.production-page .batch-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.production-page .recipe-row,.production-page .batch-row{grid-template-columns:1fr}.production-page .title{font-size:28px}}
+
+/* Production approved layout v47 */
+.production-page .panel{overflow:hidden}
+.production-page .batch-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.production-page .batch-field{background:#f7f9fc;border:1px solid #edf0f5;border-radius:18px;padding:10px}
+.production-page .batch-field label{color:#071a33;font-size:14px;margin-bottom:7px}
+.production-page .batch-field select,.production-page .batch-field input{width:100%;min-width:0;background:#fff}
+.production-page .produce-wide{width:100%;margin-top:12px;background:#ff7900;color:#fff}
+@media(max-width:520px){.production-page .batch-fields{grid-template-columns:1fr}.production-page .produce-wide{min-height:58px}}
+
+/* exact approved production execution layout v49 */
+.production-page .batch-fields{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important;direction:rtl}
+.production-page .batch-field{min-width:0!important;padding:8px!important;border-radius:16px!important;background:#f7f9fc!important}
+.production-page .batch-field label{font-size:12px!important;line-height:1.3!important;white-space:normal!important;text-align:right!important}
+.production-page .batch-field select,.production-page .batch-field input{width:100%!important;min-width:0!important;height:52px!important;font-size:14px!important;padding:6px!important}
+.production-page .produce-wide{display:block!important;width:100%!important;margin:12px 0 0!important;min-height:58px!important;font-size:18px!important}
+@media(max-width:520px){.production-page .batch-fields{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+
+/* production clean mobile layout v50 */
+.production-page{direction:rtl}.prod-card{padding:16px!important;overflow:hidden}.prod-card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-align:right}.prod-card-head b{font-size:18px}.prod-icon{width:42px;height:42px;display:grid;place-items:center;background:#f1f5f9;border-radius:13px;font-size:21px;flex:0 0 42px}.recipe-grid,.production-page .batch-fields{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}.recipe-grid select,.recipe-grid input,.production-page .batch-field select,.production-page .batch-field input{width:100%!important;min-width:0!important;height:52px!important;margin:0!important;padding:6px 8px!important;font-size:13px!important}.production-page .batch-field{min-width:0!important;padding:0!important;background:transparent!important}.production-page .batch-field label{display:block;font-size:12px;font-weight:700;margin:0 2px 5px;text-align:right;white-space:nowrap}.recipe-save{width:100%!important;margin-top:10px!important;min-height:50px!important}.production-page .produce-wide{width:100%!important;margin:12px 0 0!important;min-height:58px!important;font-size:18px!important}.prod-batch-item{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;border-top:1px solid #edf0f4}.prod-batch-item:first-of-type{border-top:0}@media(max-width:520px){.recipe-grid,.production-page .batch-fields{grid-template-columns:repeat(3,minmax(0,1fr))!important}.prod-card{padding:13px!important}.prod-card-head b{font-size:17px}.production-page .batch-field label{font-size:11px}.recipe-grid select,.recipe-grid input,.production-page .batch-field select,.production-page .batch-field input{font-size:12px!important}}
+
+/* larger bottom navigation v51 */
+.bottom-nav,.bottomnav,.bottom-bar,nav.bottom{min-height:76px!important;padding:8px 4px 10px!important}.bottom-nav button,.bottom-nav .nav-item,.bottomnav button,.bottomnav .nav-item,.bottom-bar button,.bottom-bar .nav-item,nav.bottom button,nav.bottom .nav-item{font-size:15px!important;line-height:1.2!important;min-height:58px!important}.bottom-nav button>span:first-child,.bottom-nav .nav-item>span:first-child,.bottomnav button>span:first-child,.bottomnav .nav-item>span:first-child,.bottom-bar button>span:first-child,.bottom-bar .nav-item>span:first-child,nav.bottom button>span:first-child,nav.bottom .nav-item>span:first-child{font-size:22px!important}
+
+/* exact bottom nav sizing v52 */
+nav.nav{height:86px!important;min-height:86px!important;padding:8px 6px 12px!important;align-items:center!important}nav.nav button{font-size:16px!important;font-weight:800!important;line-height:1.45!important;min-height:64px!important;padding:4px 2px!important}nav.nav button::first-line{font-size:25px!important}
+</style><style>
+@media(max-width:520px){
+  .top{padding:10px 14px 18px!important;border-radius:0 0 20px 20px!important}
+  .top b{font-size:15px!important}
+  .top div{font-size:13px!important;margin-top:5px!important}
+  .top small{font-size:8.5px!important;margin-top:8px!important}
+  .wrap{margin:-10px auto 0!important;padding:0 9px 60px!important}
+  .grid{gap:8px!important}
+  .card,.panel{border-radius:17px!important;padding:7px!important}
+  .card{min-height:68px!important}
+  .card b{font-size:13px!important;margin-top:2px!important}
+  .ico{font-size:16px!important}
+  h2{font-size:16px!important;margin:11px 3px 7px!important}
+  .bottom{height:52px!important;font-size:11px!important}
+}
+</style><style>
+@media(max-width:520px){
+ .top{min-height:0!important;height:auto!important;padding:9px 14px 12px!important;border-radius:0 0 18px 18px!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:2px 10px!important}
+ .top b{font-size:15px!important;line-height:1.1!important;margin:0!important}
+ .top div{font-size:13px!important;line-height:1.1!important;margin:0!important}
+ .top small{grid-column:1/-1!important;font-size:9px!important;line-height:1.1!important;margin:4px 0 0!important}
+}
+.app-back{position:fixed;top:10px;left:10px;z-index:9999;border:0;border-radius:12px;background:#071426;color:#fff;padding:8px 12px;font:700 14px system-ui;box-shadow:0 2px 8px #0003;display:none}
+body:not(.home-view) .app-back{display:block}
+</style><style id="approved-final-skin">
+:root{--navy:#071426;--blue:#2473f3;--bg:#f5f8fc}
+body{background:var(--bg);font-family:Arial,sans-serif}
+.top{max-width:900px;margin:10px auto 0;background:var(--navy);border-radius:22px;padding:14px 18px!important;display:grid!important;grid-template-columns:auto 1fr auto!important;grid-template-areas:"brand sub title"!important;align-items:center!important;gap:14px!important;min-height:82px!important}
+.top b{grid-area:brand;font-size:20px!important;line-height:1!important;margin:0!important;white-space:nowrap}
+.top div{grid-area:title;font-size:16px!important;margin:0!important;white-space:nowrap}
+.top small{grid-area:sub;font-size:11px!important;line-height:1.25!important;margin:0!important;opacity:.75!important;white-space:nowrap}
+.wrap{max-width:900px;margin:0 auto!important;padding:14px 14px 82px!important}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi-card{background:#fff;border-radius:20px;padding:12px 6px;text-align:center;box-shadow:0 4px 14px #07142612}
+.kpi-card .ico{font-size:20px}.kpi-card b{display:block;font-size:12px;margin:5px 0}.kpi-card .kpi{font-size:18px}.kpi-card .muted{font-size:10px}
+.section-title{font-size:20px;font-weight:800;margin:22px 4px 12px}
+.main-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.action-card{min-height:92px;border-radius:20px;padding:12px 16px;color:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px #07142618;cursor:pointer}
+.action-card .ico{font-size:25px}.action-card b{font-size:18px}.action-card .arrow{font-size:25px}
+.admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.admin-card{background:#fff;border-radius:18px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px #07142612;cursor:pointer}
+.admin-card .ico{font-size:22px}.admin-card b{font-size:13px;margin-top:7px}
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick-card{background:#fff;border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px #07142610;cursor:pointer;font-size:13px}
+.nav{height:62px;box-shadow:0 -3px 12px #07142610}.nav button{font-size:12px;padding:8px 2px}
+.app-back{top:12px!important;left:12px!important;padding:7px 11px!important}
+@media(max-width:520px){
+ .top{margin:8px 10px 0!important;border-radius:18px!important;padding:11px 12px!important;min-height:66px!important;gap:7px!important}
+ .top b{font-size:16px!important}.top div{font-size:13px!important}.top small{font-size:8px!important}
+ .wrap{padding:10px 10px 72px!important}
+ .section-title{font-size:18px;margin:17px 3px 9px}
+ .action-card{min-height:82px;padding:10px 12px}.action-card b{font-size:16px}.action-card .ico{font-size:22px}
+}
+</style><style id="header-fix">
+.top{grid-template-columns:auto 1fr auto!important;grid-template-areas:"brand sub title"!important;overflow:hidden}
+.top b{grid-area:brand!important;text-align:left!important;direction:ltr!important}
+.top div{grid-area:title!important;text-align:right!important}
+.top small{grid-area:sub!important;text-align:center!important;direction:ltr!important;overflow:hidden!important;text-overflow:ellipsis!important}
+@media(max-width:520px){
+ .top{grid-template-columns:auto 1fr!important;grid-template-areas:"brand title" "sub sub"!important;row-gap:7px!important;padding:12px 14px!important}
+ .top b{font-size:15px!important;white-space:nowrap!important}
+ .top div{font-size:13px!important;white-space:nowrap!important}
+ .top small{font-size:9px!important;text-align:left!important;white-space:nowrap!important}
+}
+</style><style id="simple-topbar">
+.top{max-width:900px!important;margin:8px auto 0!important;min-height:52px!important;padding:10px 16px!important;border-radius:17px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+.top b{font-size:17px!important;white-space:nowrap!important}
+.top div{font-size:13px!important;white-space:nowrap!important}
+@media(max-width:520px){.top{margin:7px 10px 0!important;min-height:48px!important;padding:9px 12px!important}.top b{font-size:15px!important}.top div{font-size:12px!important}}
+</style><style id="back-v12">
+.app-back{position:fixed!important;top:10px!important;left:10px!important;z-index:10000!important;background:#fff!important;color:#071426!important;border:1px solid #dbe2ea!important;border-radius:12px!important;padding:8px 13px!important;font-size:14px!important;font-weight:800!important;box-shadow:0 3px 10px #0002!important}
+body.home-view .app-back{display:none!important}
+body:not(.home-view) .app-back{display:block!important}
+</style><style id="header-back-v13">
+#headerBack{border:0;background:#fff;color:#071426;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;cursor:pointer;flex:0 0 auto}
+.top.has-back #headerBack{display:block!important}
+@media(max-width:520px){#headerBack{padding:6px 8px;font-size:12px}.top.has-back{gap:7px!important}.top.has-back b{font-size:13px!important}}
+</style><style id="inventory-value-colors-v22">
+.inventory-value-row .kpi-card{border:0!important;box-shadow:0 5px 14px #00000018!important}
+.inventory-value-row .raw-value{background:linear-gradient(135deg,#e8f7f1,#ccefe1)!important;border-right:5px solid #15966b!important}
+.inventory-value-row .finished-value{background:linear-gradient(135deg,#eaf2ff,#d7e6ff)!important;border-right:5px solid #2f6fd6!important}
+.inventory-value-row .kpi-card b{font-size:20px!important;color:#071426!important}
+.inventory-value-row .muted{color:#334155!important;font-weight:800!important}
+</style></head><body>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
+<nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
+<script>
+const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=>new Date().toISOString().slice(0,10);
+let db=JSON.parse(localStorage.getItem('dropsDB')||'null')||{products:[],raw:[],recipes:[],batches:[],invoices:[],expenses:[],purchases:[],people:[],settings:{usdLbp:90000}};
+db.products=db.products||[];db.raw=db.raw||[];db.recipes=db.recipes||[];db.batches=db.batches||[];db.invoices=db.invoices||[];db.expenses=db.expenses||[];db.purchases=db.purchases||[];db.people=db.people||[];db.settings=db.settings||{usdLbp:90000};
+db.rawMoves=db.rawMoves||[];db.stockMoves=db.stockMoves||[];db.packings=db.packings||[];db.adjustments=db.adjustments||[];
+let cart={}; const save=()=>localStorage.setItem('dropsDB',JSON.stringify(db)); const id=()=>Date.now()+Math.floor(Math.random()*999);
+function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laundry Gel 1L','Laundry Gel 4L','Hand Soap 1L','Hand Soap 4L','Floor Cleaner 4L'].forEach((n,i)=>db.products.push({id:id()+i,name:n,price:[2.56,2.56,2.89,2.89,3.11,3.11,2.22][i],qty:0,cost:0,size:+((n.match(/([0-9.]+)L/)||[,1])[1])}));save()}}seed();
+function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
+let currentView='home';
+function go(x,fromHistory=false){
+ currentView=x;
+ document.body.classList.toggle('home-view',x==='home');
+ const th=document.querySelector('.top'); if(th) th.classList.toggle('has-back',x!=='home');
+ nav(x);
+ if(!fromHistory) history.pushState({dropsView:x},'',location.href);
+ ({home,sale,products,reports,raw,production,purchases,expenses,invoices,people,settings}[x]||home)();
+}
+function home(){
+ currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
+ let d=db.invoices.filter(x=>x.date===today()),sales=d.reduce((a,x)=>a+x.total,0),
+ exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
+ profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
+ stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
+ buys=db.purchases.filter(x=>x.date===today()).reduce((a,x)=>a+x.qty*x.cost,0);
+ $('#app').innerHTML=`
+ <div class="kpi-grid">
+  <div class="kpi-card"><span class="ico">📈</span><b>مبيعات اليوم</b><div class="kpi">${money(sales)}</div><span class="muted">${d.length} فاتورة</span></div>
+  <div class="kpi-card"><span class="ico">🧾</span><b>مشتريات اليوم</b><div class="kpi">${money(buys)}</div><span class="muted">${db.purchases.filter(x=>x.date===today()).length} عملية</span></div>
+  <div class="kpi-card"><span class="ico">📦</span><b>المخزون</b><div class="kpi">${money(stock)}</div><span class="muted">${low} تنبيه</span></div>
+  <div class="kpi-card"><span class="ico">🪙</span><b>صافي الربح</b><div class="kpi">${money(profit)}</div><span class="muted">تقديري</span></div>
+ </div>
+ <div class="quick-grid inventory-value-row" style="margin-bottom:12px"><div class="kpi-card raw-value"><div class="muted">🧪 قيمة المواد الأولية</div><b>${money(rawStock)}</b></div><div class="kpi-card finished-value"><div class="muted">📦 قيمة البضاعة الجاهزة</div><b>${money(stock)}</b></div></div><div class="section-title">العمليات الرئيسية</div>
+ <div class="main-grid">
+  ${actionCard('🛒','بيع','sale','#2473f3')}${actionCard('🏭','إنتاج','production','#11b85b')}
+  ${actionCard('🧾','مشتريات','purchases','#ff7900')}${actionCard('📦','مخزون','products','#6236e8')}
+ </div>
+ <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 فضلات / 1L</div><div class="section-title">الإدارة</div>
+ <div class="admin-grid">
+  ${adminCard('👥','العملاء','people')}${adminCard('📊','التقارير','reports')}${adminCard('⚙️','الإعدادات','settings')}
+ </div>
+ <div class="section-title">معلومات سريعة</div>
+ <div class="quick-grid">
+  <div class="quick-card" onclick="go('products')"><span>🏷️ المنتجات<br><b>${db.products.length}</b></span><span>‹</span></div>
+  <div class="quick-card" onclick="go('products')"><span>🔔 تنبيهات المخزون<br><b>${low}</b></span><span>‹</span></div>
+ </div>`;
+}
+function actionCard(i,t,g,color){return `<div class="action-card" style="background:${color}" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="arrow">‹</span></div>`}
+function adminCard(i,t,g){return `<div class="admin-card" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b></div>`}
+function card(i,t,g){return `<div class="card" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="muted">فتح</span></div>`} function homeCard(i,t,g,color){return `<div class="card" style="background:${color};color:white" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b></div>`}
+function products(){nav('products');$('#app').innerHTML=`<div class="title">المنتجات والمخزون</div><div class="panel"><div class="row"><input id="pn" placeholder="اسم المنتج"><input id="pp" type="number" step=".01" placeholder="سعر البيع $"><input id="ps" type="number" step=".1" placeholder="الحجم L"><button onclick="addProduct()">إضافة</button></div></div><div class="panel" id="plist"></div>`;renderProducts()}
+function renderProducts(){let h=db.products.map(p=>`<div class="item"><b>${p.name}</b> <span class="pill">المخزون ${p.qty}</span><div class="muted">بيع ${money(p.price)} • كلفة ${money(p.cost)}</div><div class="row" style="margin-top:8px"><input id="q${p.id}" type="number" placeholder="+ كمية"><button class="green" onclick="stockIn(${p.id})">إدخال مخزون</button><button onclick="editP(${p.id})">تعديل</button></div></div>`).join('');$('#plist').innerHTML=h||'لا يوجد منتجات'}
+function addProduct(){let n=$('#pn').value.trim(),p=+$(' #pp'.trim()).value,s=+$(' #ps'.trim()).value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
+function stockIn(i){let p=db.products.find(x=>x.id===i),q=+$('#q'+i).value;if(q>0){p.qty+=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'adjustment_in',productId:p.id,name:p.name,qty:q,balance:p.qty});db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,note:'Manual stock in'});save();renderProducts()}}
+function editP(i){let p=db.products.find(x=>x.id===i),pr=prompt('سعر البيع',p.price),q=prompt('الكمية',p.qty);if(pr!==null)p.price=+pr;if(q!==null)p.qty=+q;save();renderProducts()}
+function sale(){nav('sale');$('#app').innerHTML=`<div class="title">نقطة البيع</div><div class="panel"><div class="row"><select id="sp">${db.products.map(p=>`<option value="${p.id}">${p.name} — ${money(p.price)} — مخزون ${p.qty}</option>`).join('')}</select><input id="sq" type="number" value="1" min="1"><button onclick="cartAdd()">إضافة للسلة</button></div></div><div class="panel" id="cart"></div>`;renderCart()}
+function cartAdd(){let i=+$('#sp').value,q=+$('#sq').value||1;cart[i]=(cart[i]||0)+q;renderCart()}
+function renderCart(){let total=0,h=Object.entries(cart).map(([i,q])=>{let p=db.products.find(x=>x.id==i);if(!p)return'';total+=p.price*q;return `<div class="item"><b>${p.name}</b> × ${q}<span style="float:left">${money(p.price*q)}</span><button class="danger" style="padding:5px 9px;margin-right:8px" onclick="delete cart[${i}];renderCart()">×</button></div>`}).join('');$('#cart').innerHTML=h+`<h2>المجموع: ${money(total)}</h2><div class="row"><input id="paid" type="number" step=".01" placeholder="المدفوع"><button class="green" onclick="checkout()">إتمام البيع</button></div>`}
+function checkout(){let entries=Object.entries(cart);if(!entries.length)return alert('السلة فارغة');for(let[i,q]of entries){let p=db.products.find(x=>x.id==i);if(!p||p.qty<q)return alert('المخزون غير كافٍ: '+(p?p.name:''))}let items=[],total=0;entries.forEach(([i,q])=>{let p=db.products.find(x=>x.id==i);p.qty-=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'sale',productId:p.id,name:p.name,qty:-q,balance:p.qty});items.push({productId:p.id,name:p.name,qty:+q,price:p.price,cost:p.cost});total+=p.price*q});let inv={id:id(),date:today(),time:new Date().toLocaleTimeString(),items,total,paid:+$('#paid').value||total};db.invoices.unshift(inv);cart={};save();invoiceView(inv.id)}
+function invoiceView(i){let v=db.invoices.find(x=>x.id===i);$('#app').innerHTML=`<div class="panel"><h2>DROPS DETERGENTS</h2><div>فاتورة #${v.id}</div><div class="muted">${v.date} ${v.time}</div>${v.items.map(x=>`<div class="item">${x.name} × ${x.qty}<span style="float:left">${money(x.price*x.qty)}</span></div>`).join('')}<h2>المجموع ${money(v.total)}</h2><button class="noPrint" onclick="print()">🖨 طباعة</button></div>`}
+function invoices(){$('#app').innerHTML=`<div class="title">الفواتير</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(${v.id})"><b>#${v.id}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'لا يوجد فواتير'}</div>`}
+function raw(){$('#app').innerHTML=`<div class="title">المواد الخام</div><div class="panel"><div class="row"><input id="rn" placeholder="اسم المادة"><input id="rc" type="number" step=".001" placeholder="كلفة / kg"><input id="rq" type="number" step=".001" placeholder="كمية kg"><button onclick="addRaw()">إضافة</button></div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${r.qty.toFixed(3)} kg</span><div class="muted">${money(r.cost)}/kg <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 تعديل السعر</button></div></div>`).join('')||'لا يوجد مواد خام'}</div>`}
+function addRaw(){let n=$('#rn').value.trim(),c=+$('#rc').value,q=+$('#rq').value;if(!n)return;db.raw.push({id:id(),name:n,cost:c,qty:q});save();raw()}
+function purchases(){$('#app').innerHTML=`<div class="title">مشتريات مواد خام</div><div class="panel"><div class="row"><select id="pr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`)}</select><input id="pq" type="number" step=".001" placeholder="kg"><input id="pc" type="number" step=".001" placeholder="$/kg"><button onclick="buyRaw()">تسجيل شراء</button></div></div><div class="panel">${db.purchases.map(x=>`<div class="item">${x.name} — ${x.qty} kg × ${money(x.cost)}<span style="float:left">${x.date}</span></div>`).join('')}</div>`}
+function buyRaw(){let r=db.raw.find(x=>x.id==$('#pr').value),q=+$('#pq').value,c=+$('#pc').value;if(!r||q<=0)return;let old=r.qty*r.cost;r.cost=(old+q*c)/(r.qty+q);r.qty+=q;db.purchases.unshift({id:id(),rawId:r.id,name:r.name,qty:q,cost:c,date:today()});save();purchases()}
+function production(){
+ let formulaNames=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
+ let recipeProducts=formulaNames.map(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(!p){p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true};db.products.push(p)}return p});
+ let recipeOpts=recipeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+ let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item"><div><b>${String(b.product).replace(/\\s+(1|4|5)L\\s*$/i,'')}</b><div class="muted">${b.liters} L</div></div><b>${money(b.cost)}</b></div>`).join('');
+ $('#app').innerHTML=`
+ <div class="production-page">
+  <div class="title">الإنتاج والطبخات</div>
+  <div class="panel prod-card">
+   <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>تعريف وصفة لكل 1 لتر</b><div class="muted">حدد المنتج والمادة والكمية بالغرام لكل لتر</div></div></div>
+   <div class="recipe-grid">
+    <select id="rp">${recipeOpts}</select>
+    <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
+    <input id="rqpl" type="number" step=".001" placeholder="غرام لكل L">
+   </div>
+   <button class="recipe-save" onclick="recipeAdd()">حفظ المادة</button>
+  </div>
+  <div class="panel prod-card">
+   <div class="prod-card-head"><div class="prod-icon">⚙️</div><div><b>تنفيذ طبخة</b><div class="muted">اختر الخلطة والكمية وحجم التعبئة</div></div></div>
+   <div class="batch-fields">
+    <div class="batch-field"><label>نوع الخلطة</label><select id="bp">${recipeOpts}</select></div>
+    <div class="batch-field"><label>كمية الطبخة</label><input id="bl" type="number" step=".1" placeholder="120 L"></div>
+    <div class="batch-field"><label>التعبئة</label><select id="packSize"><option value="">بدون تعبئة</option><option value="5">5 لتر</option><option value="4">4 لتر</option></select></div>
+   </div>
+   <button class="orange produce-wide" onclick="produceAndPack()">⚙️ إنتاج وتعبئة</button>
+  </div>
+  <div class="panel prod-card"><div class="prod-card-head"><div class="prod-icon">📋</div><div><b>آخر الطبخات</b><div class="muted">آخر عمليات الإنتاج المسجلة</div></div></div>${batches||'<div class="muted">لا توجد طبخات بعد</div>'}</div>
+ </div>`;
+}function recipeAdd(){let p=$('#rp').value,r=$('#rr').value,g=+$('#rqpl').value,q=g/1000;p=db.products.find(x=>String(x.id)===String(p))?.id;r=db.raw.find(x=>String(x.id)===String(r))?.id;if(q<=0)return;db.recipes=db.recipes.filter(x=>!(x.productId===p&&x.rawId===r));db.recipes.push({productId:p,rawId:r,qtyPerLiter:q});save();alert('تم حفظ المادة بالوصفة')}
+function produce(){let pid=$('#bp').value,L=+$('#bl').value,p=db.products.find(x=>String(x.id)===String(pid));if(p)pid=p.id;let rec=db.recipes.filter(x=>String(x.productId)===String(pid));if(!p||L<=0||!rec.length)return alert('الوصفة ناقصة');for(let x of rec){let r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;if(!r||r.qty<need)return alert('المادة غير كافية: '+(r?r.name:'')+'\nالمطلوب '+need.toFixed(3)+' kg\nالمتوفر '+(r?r.qty.toFixed(3):0)+' kg')}let cost=0,bid=id(),ts=new Date().toISOString();rec.forEach(x=>{let r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});db.batches.unshift({id:bid,date:today(),time:ts,productId:p.id,product:p.name,liters:L,remainingLiters:L,cost,status:'open'});save();alert('تم حفظ الطبخة وخصم المواد الخام\nالكلفة '+money(cost)+'\nالمتبقي للتعبئة '+L+' L');production()}
+
+function produceAndPack(){
+ const pid=document.getElementById('bp').value,L=+document.getElementById('bl').value,size=+document.getElementById('packSize').value;
+ const p0=db.products.find(x=>String(x.id)===String(pid)),rec=db.recipes.filter(x=>String(x.productId)===String(p0?.id));
+ if(!p0||L<=0||!rec.length)return alert('الوصفة ناقصة');
+ for(const x of rec){const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;if(!r||r.qty<need)return alert('المادة غير كافية: '+(r?r.name:'')+'\nالمطلوب '+need.toFixed(3)+' kg\nالمتوفر '+(r?r.qty.toFixed(3):0)+' kg')}
+ let pack=null,label=null,q=0;
+ if(size){q=Math.floor(L/size);const pn=size===5?'Gallon 5L':size===4?'Gallon 4L':'Bottle 1L';pack=db.raw.find(r=>String(r.name).toLowerCase()===pn.toLowerCase());label=(size===4||size===5)?db.raw.find(r=>String(r.name).toLowerCase()==='label sticker'):null;if(!pack||pack.qty<q)return alert('العبوات الفارغة غير كافية: '+pn);if(label&&label.qty<q)return alert('الستيكرات غير كافية');}
+ const bid=id(),ts=new Date().toISOString();let cost=0;
+ rec.forEach(x=>{const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});
+ const b={id:bid,date:today(),time:ts,productId:p0.id,product:p0.name,liters:L,remainingLiters:L,cost,status:'open'};db.batches.unshift(b);
+ if(size){let baseName=String(p0.name).replace(/\s+(1|4|5)L\s*$/i,'').trim();let fp=db.products.find(x=>String(x.name).replace(/\s+(1|4|5)L\s*$/i,'').trim().toLowerCase()===baseName.toLowerCase()&&+(x.size||0)===size);if(!fp){fp={id:id(),name:baseName+' '+size+'L',price:0,cost:0,qty:0,size};db.products.push(fp)};pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost})};fp.qty+=q;b.remainingLiters=L-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'};fp.cost=(cost/L*size)+pack.cost+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
+ save();alert(size?'تم الإنتاج والتعبئة: '+q+' × '+size+'L':'تم حفظ الطبخة وخصم المواد');production();
+}
+
+function expenses(){$('#app').innerHTML=`<div class="title">المصاريف</div><div class="panel"><div class="row"><input id="en" placeholder="البيان"><input id="ea" type="number" step=".01" placeholder="$"><button onclick="addExp()">إضافة</button></div></div><div class="panel">${db.expenses.map(e=>`<div class="item">${e.name}<span style="float:left">${money(e.amount)} — ${e.date}</span></div>`).join('')}</div>`}
+function addExp(){let n=$('#en').value.trim(),a=+$('#ea').value;if(!n||a<=0)return;db.expenses.unshift({id:id(),name:n,amount:a,date:today()});save();expenses()}
+function people(){$('#app').innerHTML=`<div class="title">العملاء والموردون</div><div class="panel"><div class="row"><input id="nn" placeholder="الاسم"><select id="nt"><option>عميل</option><option>مورد</option></select><input id="np" placeholder="الهاتف"><button onclick="addPerson()">إضافة</button></div></div><div class="panel">${db.people.map(p=>`<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div></div>`).join('')}</div>`}
+function addPerson(){let n=$('#nn').value.trim();if(!n)return;db.people.push({id:id(),name:n,type:$('#nt').value,phone:$('#np').value});save();people()}
+function reports(){nav('reports');let ts=db.invoices.filter(x=>x.date===today()).reduce((a,x)=>a+x.total,0),te=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),profit=db.invoices.filter(x=>x.date===today()).reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-te;$('#app').innerHTML=`<div class="title">التقارير</div><div class="grid"><div class="card"><span>مبيعات اليوم</span><div class="kpi">${money(ts)}</div></div><div class="card"><span>مصاريف اليوم</span><div class="kpi">${money(te)}</div></div><div class="card"><span>ربح تقديري</span><div class="kpi">${money(profit)}</div></div><div class="card"><span>قيمة المواد الخام</span><div class="kpi">${money(db.raw.reduce((a,r)=>a+r.qty*r.cost,0))}</div></div></div>`}
+function settings(){$('#app').innerHTML=`<div class="title">Back Office</div><div class="panel"><div class="row"><button onclick="packing()">📦 تعبئة الطبخات</button><button onclick="leftovers()">🧴 فضلات / 1 لتر</button><button onclick="historyReport()">🕘 سجل الحركات</button><button onclick="raw()">🧪 المواد الأولية</button><button onclick="production()">🏭 الطبخات والوصفات</button><button onclick="resetTrial()">🧹 تصفير التجربة</button></div></div><div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
+
+
+function leftovers(){
+ const open=db.batches.filter(x=>(x.remainingLiters??0)>=1);
+ $('#app').innerHTML='<div class="title">فضلات / تعبئة 1 لتر</div><div class="panel"><div class="muted">الليترات هون محسوبة أصلاً من الطبخة وموادها الأولية. هيدا الخيار بس بنقل المتبقي إلى مخزون البيع كقناني 1L.</div></div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b><div class="muted">طبخة '+b.liters+'L • المتبقي '+(b.remainingLiters??0).toFixed(2)+'L</div><div class="row" style="margin-top:8px"><input id="lf'+b.id+'" type="number" min="1" step="1" max="'+Math.floor(b.remainingLiters??0)+'" placeholder="عدد قناني 1L"><button onclick="packLeftover1L(\''+b.id+'\')">إضافة لمخزون البيع</button></div></div>').join('')||'لا يوجد متبقي قابل للتعبئة حالياً')+'</div>';
+}
+function packLeftover1L(bid){
+ const b=db.batches.find(x=>String(x.id)===String(bid));if(!b)return;
+ const q=+document.getElementById('lf'+b.id).value,remain=+(b.remainingLiters??0);
+ if(!Number.isInteger(q)||q<1||q>Math.floor(remain))return alert('الكمية غير صحيحة');
+ const bottle=db.raw.find(x=>String(x.name).toLowerCase()==='bottle 1l');
+ if(!bottle||bottle.qty<q)return alert('قناني 1L الفارغة غير كافية');
+ let p=db.products.find(x=>/laundry|washing/i.test(x.name)&&+(x.size||0)===1);
+ if(!p){const base=db.products.find(x=>String(x.id)===String(b.productId));p={id:id(),name:(base?base.name:b.product)+' 1L',price:0,cost:0,qty:0,size:1};db.products.push(p);}
+ bottle.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'packaging_use',rawId:bottle.id,name:bottle.name,qty:-q,balance:bottle.qty,cost:bottle.cost});
+ p.qty+=q;b.remainingLiters=remain-q;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'}
+ p.cost=(b.cost/b.liters)+bottle.cost;
+ const mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'leftover_1l',productId:p.id,name:p.name,qty:q,liters:q,balance:p.qty,unitCost:p.cost};
+ db.packings.unshift(mv);db.stockMoves.unshift(mv);save();alert('تمت إضافة '+q+' قناني 1L إلى مخزون البيع');leftovers();
+}
+
+function packing(){
+ let open=db.batches.filter(b=>(b.remainingLiters??b.liters)>0);
+ $('#app').innerHTML='<div class="title">تعبئة الطبخات</div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b> — طبخة '+b.liters+' L<br><span class="muted">المتبقي '+(b.remainingLiters??b.liters).toFixed(2)+' L • '+b.date+'</span><div class="row" style="margin-top:8px"><select id="pkp'+b.id+'">'+db.products.map(p=>'<option value="'+p.id+'">'+p.name+' ('+(p.size||1)+'L)</option>').join('')+'</select><input id="pkq'+b.id+'" type="number" min="1" placeholder="عدد العبوات"><button onclick="packBatch('+b.id+')">تعبئة</button></div></div>').join('')||'لا يوجد طبخات مفتوحة')+'</div>';
+}
+function packBatch(bid){
+ let b=db.batches.find(x=>String(x.id)===String(bid)),
+     p=db.products.find(x=>String(x.id)===String(document.getElementById('pkp'+bid).value)),
+     q=+document.getElementById('pkq'+bid).value;
+ if(!b||!p||q<=0)return;
+ let size=+(p.size||1),liters=q*size,remain=b.remainingLiters??b.liters;
+ if(liters>remain+0.0001)return alert('الكمية أكبر من الليترات المتبقية: '+remain.toFixed(2)+' L');
+ let packName=size===5?'Gallon 5L':size===4?'Gallon 4L':size===1?'Bottle 1L':'';
+ let pack=packName?db.raw.find(r=>String(r.name).toLowerCase()===packName.toLowerCase()):null;
+ let label=(size===4||size===5)?db.raw.find(r=>String(r.name).toLowerCase()==='label sticker'):null;
+ if(pack && pack.qty<q)return alert('العبوات الفارغة غير كافية: '+packName+'\nالمطلوب '+q+'\nالمتوفر '+pack.qty);
+ if(label && label.qty<q)return alert('الستيكرات غير كافية\nالمطلوب '+q+'\nالمتوفر '+label.qty);
+ if(pack){pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});}
+ if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost});}
+ p.qty+=q;b.remainingLiters=remain-liters;if(b.remainingLiters<0.0001){b.remainingLiters=0;b.status='closed'}
+ let liquidUnitCost=b.liters?b.cost*(liters/b.liters)/q:0,unitCost=liquidUnitCost+(pack?pack.cost:0)+(label?label.cost:0);
+ p.cost=unitCost;
+ let mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,liters,balance:p.qty,unitCost};
+ db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
+ save();alert('تمت التعبئة: '+q+' × '+size+'L\nدخلت على مخزون البضاعة الجاهزة\nوتم خصم '+q+' عبوة فارغة'+(label?' + '+q+' ستيكر':'') );packing();
+}
+function historyReport(){
+ let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
+ let all=[
+  ...db.rawMoves.map(x=>({...x,kind:'مواد أولية'})),
+  ...db.stockMoves.map(x=>({...x,kind:'مخزون جاهز'})),
+  ...db.purchases.map(x=>({...x,kind:'مشتريات',time:x.time||x.date})),
+  ...db.batches.map(x=>({...x,kind:'طبخة',time:x.time||x.date,qty:x.liters,name:x.product})),
+  ...db.expenses.map(x=>({...x,kind:'مصروف',time:x.time||x.date,qty:x.amount}))
+ ].filter(x=>x.date>=from&&x.date<=to).sort((a,b)=>String(b.time||b.date).localeCompare(String(a.time||a.date)));
+ $('#app').innerHTML='<div class="title">سجل الحركات والتاريخ</div><div class="panel"><div class="row"><input id="histFrom" type="date" value="'+from+'"><input id="histTo" type="date" value="'+to+'"><button onclick="historyReport()">عرض</button></div></div><div class="panel">'+(all.map(x=>'<div class="item"><b>'+x.kind+'</b> — '+(x.name||'')+'<span style="float:left">'+(x.qty!==undefined?x.qty:'')+'</span><div class="muted">'+x.date+' • '+(x.type||'')+'</div></div>').join('')||'لا يوجد حركات ضمن الفترة')+'</div>';
+}
+
+
+
+function addRawMaterial(returnTo='raw'){
+ const name=prompt('اسم المادة الجديدة'); if(!name||!name.trim())return;
+ if(db.raw.some(r=>String(r.name).trim().toLowerCase()===name.trim().toLowerCase()))return alert('المادة موجودة مسبقاً');
+ const cost=prompt('سعر الكيلو بالدولار','0'); if(cost===null)return;
+ const qty=prompt('الكمية الحالية بالكيلو','0'); if(qty===null)return;
+ const r={id:id(),name:name.trim(),cost:Math.max(0,+cost||0),qty:Math.max(0,+qty||0),unit:'kg'};
+ db.raw.push(r);
+ if(r.qty)db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'stock_in',rawId:r.id,name:r.name,qty:r.qty,balance:r.qty,cost:r.cost});
+ save(); if(returnTo==='production')production(); else raw();
+}
+
+
+function editRawPrice(rid){
+ const r=db.raw.find(x=>String(x.id)===String(rid));if(!r)return;
+ const v=prompt('السعر الجديد للكيلو / الوحدة ($)',(+r.cost||0).toFixed(3));
+ if(v===null)return;const n=+v;if(n<0||!Number.isFinite(n))return alert('السعر غير صحيح');
+ const old=+r.cost||0;r.cost=n;
+ db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'price_edit',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:n,oldCost:old});
+ save();raw();
+}
+
+function editRaw(rid){
+ let r=db.raw.find(x=>String(x.id)===String(rid)); if(!r)return;
+ let name=prompt('اسم المادة',r.name); if(name===null)return;
+ let cost=prompt('السعر',r.cost); if(cost===null)return;
+ let qty=prompt('الكمية الحالية',r.qty); if(qty===null)return;
+ r.name=name.trim()||r.name;r.cost=+cost||0;r.qty=+qty||0;
+ db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'edit',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:r.cost});
+ save();raw();
+}
+function resetTrial(){
+ if(!confirm('تصفير بيانات التجربة والبدء من جديد؟ المواد والأسعار تبقى محفوظة، والكميات والحركات والمبيعات والطبخات ترجع صفر.'))return;
+ db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);
+ db.recipes=[];db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.people=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];
+ save();alert('تم تصفير بيانات التجربة. المواد والأسعار بقيت محفوظة.');home();
+}
+
+function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
+function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('ملف غير صالح')}};r.readAsText(f)}
+const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
+if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
+
+const LAUNDRY_RAW=[
+ ['soda',1.5],['parmatol',3],['fragrance laundry',18],['colour200',2.5],['water 10l',0.07]
+];
+if(!db._laundryRawSeed1){LAUNDRY_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._laundryRawSeed1=true;save();}
+function seedLaundryRecipe(){
+ if(db._laundryRecipeSeed1)return;
+ const spec=[['tayloz',2],['selfonic',40],['soda',7],['n70',40],['semasol',10],['anti foem',1.5],['parmatol',1],['fragrance laundry',4],['kapsul',2],['colour200',1],['salt',25],['water 10l',1]];
+ let p=db.products.find(x=>String(x.name).toLowerCase().includes('laundry'));
+ if(!p)return;
+ spec.forEach(([n,g])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r&&!db.recipes.some(z=>z.productId===p.id&&z.rawId===r.id))db.recipes.push({id:id(),productId:p.id,rawId:r.id,qtyPerLiter:g/1000});});
+ db._laundryRecipeSeed1=true;save();
+}
+seedLaundryRecipe();
+
+
+const LAUNDRY_RAW_SEED=[['soda',1.5],['parmatol',3],['fragrance',18],['colour200',2.5],['water 10l',0.07]];
+LAUNDRY_RAW_SEED.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});
+if(!db._laundryRecipeSeed1){
+ const lp=db.products.find(p=>/laundry/i.test(p.name));
+ const spec=[['tayloz',.002],['selfonic',.040],['soda',.007],['n70',.040],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
+ if(lp){db.recipes=db.recipes.filter(x=>x.productId!==lp.id);spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});}
+ db._laundryRecipeSeed1=true;save();
+}
+
+
+if(!db._laundryTestStock1){
+ const testStock={'tayloz':10,'selfonic':25,'soda':10,'n70':25,'semasol':10,'anti foem':5,'parmatol':5,'fragrance':10,'kapsul':10,'colour200':5,'salt':20};
+ Object.entries(testStock).forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r){r.qty=q;db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'test_stock_in',rawId:r.id,name:r.name,qty:q,balance:r.qty,cost:r.cost});}});
+ db._laundryTestStock1=true;save();
+}
+
+
+if(!db._laundryRecipeUpdate2){
+ const lp=db.products.find(p=>/laundry/i.test(p.name));
+ if(lp){
+   const sf=db.raw.find(r=>String(r.name).toLowerCase()==='selfonic');
+   const n70=db.raw.find(r=>String(r.name).toLowerCase()==='n70');
+   if(sf){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===sf.id);if(x)x.qtyPerLiter=.050;else db.recipes.push({id:id(),productId:lp.id,rawId:sf.id,qtyPerLiter:.050});}
+   if(n70){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===n70.id);if(x)x.qtyPerLiter=.020;else db.recipes.push({id:id(),productId:lp.id,rawId:n70.id,qtyPerLiter:.020});}
+ }
+ db._laundryRecipeUpdate2=true;save();
+}
+
+
+if(!db._laundryRecipeFix3){
+ const spec=[['tayloz',.002],['selfonic',.050],['soda',.007],['n70',.020],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
+ db.products.filter(p=>/laundry|washing/i.test(p.name)).forEach(lp=>{
+   db.recipes=db.recipes.filter(z=>z.productId!==lp.id);
+   spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});
+ });
+ db._laundryRecipeFix3=true;save();
+}
+
+
+if(!db._packagingSeed1){
+ [['Gallon 5L',0.34],['Gallon 4L',0.45],['Bottle 1L',0.15]].forEach(([name,cost])=>{
+   if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'piece',category:'packaging'});
+ });
+ db._packagingSeed1=true;save();
+}
+
+
+if(!db._labelSeed1){
+ if(!db.raw.some(r=>String(r.name).toLowerCase()==='label sticker'))db.raw.push({id:id(),name:'Label Sticker',qty:0,cost:0.10,unit:'piece',category:'packaging'});
+ db._labelSeed1=true;save();
+}
+
+if(!db._pkgDemo){[['Gallon 5L',100],['Gallon 4L',100],['Bottle 1L',100],['Label Sticker',200]].forEach(([n,q])=>{let x=db.raw.find(v=>String(v.name).toLowerCase()===n.toLowerCase());if(x)x.qty=Math.max(+x.qty||0,q)});db._pkgDemo=true;save();}
+
+if(!db._bulk5LProducts1){
+ ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
+   if(!db.products.some(p=>String(p.name).toLowerCase()===((base+' 5L').toLowerCase())))db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
+ });
+ db._bulk5LProducts1=true;save();
+}
+
+if(!db._ensure5LStockProducts2){
+ ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
+   if(!db.products.some(p=>String(p.name).toLowerCase()===(base+' 5L').toLowerCase()))
+     db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
+ });
+ db._ensure5LStockProducts2=true;save();
+}
+if(!db._price5LTest1){
+ const prices={'Dishwashing 5L':3.20,'Laundry Gel 5L':3.61,'Hand Soap 5L':3.89,'Floor Cleaner 5L':2.78};
+ Object.entries(prices).forEach(([n,v])=>{const p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(p&&!(+p.price>0))p.price=v;});
+ db._price5LTest1=true;save();
+}
+if(!db._price5LTrial2){
+ db.products.filter(p=>+(p.size||0)===5).forEach(p=>{p.price=5;});
+ db._price5LTrial2=true;save();
+}
+if(!db._rebuildFinishedBalances1){
+ const sums={};
+ (db.stockMoves||[]).forEach(m=>{if(['production_pack','leftover_1l'].includes(m.type))sums[String(m.productId)]=(sums[String(m.productId)]||0)+(+m.qty||0);if(m.type==='sale')sums[String(m.productId)]=(sums[String(m.productId)]||0)-Math.abs(+m.qty||0);});
+ db.products.forEach(p=>{if(Object.prototype.hasOwnProperty.call(sums,String(p.id)))p.qty=Math.max(+p.qty||0,sums[String(p.id)]);});
+ db._rebuildFinishedBalances1=true;save();
+}
+if(!db._allRawDemoStock1){
+ db.raw.forEach(x=>{
+   const isPiece=String(x.unit||'').toLowerCase()==='piece'||String(x.category||'').toLowerCase()==='packaging';
+   const target=isPiece?1000:500;
+   const old=+x.qty||0;
+   if(old<target){
+     x.qty=target;
+     db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'test_stock_in',rawId:x.id,name:x.name,qty:target-old,balance:target,cost:+x.cost||0});
+   }
+ });
+ db._allRawDemoStock1=true;save();
+}
+if(!db._allFormulaMasters1){
+ const names=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
+ names.forEach(n=>{if(!db.products.some(p=>String(p.name).toLowerCase()===n.toLowerCase()))db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true});});
+ db._allFormulaMasters1=true;save();
+}
+function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
+</script><script>
+window.goHome=function(){
+  if(currentView==='home') return;
+  currentView='home';
+  document.body.classList.add('home-view');
+  home();
+  history.pushState({dropsView:'home'},'',location.href);
+};
+window.addEventListener('popstate',function(e){
+ const v=e.state&&e.state.dropsView;
+ if(currentView!=='home'){ currentView='home';document.body.classList.add('home-view');nav('home');home();history.pushState({dropsView:'home'},'',location.href);return; }
+ if(v&&v!=='home') go(v,true);
+ else history.pushState({dropsView:'home'},'',location.href);
+});
+history.replaceState({dropsView:'home'},'',location.href);
+</script></body></html>
