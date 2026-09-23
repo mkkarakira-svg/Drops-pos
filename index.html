@@ -410,9 +410,9 @@ function reports(){
  nav('reports');
  const inv=db.invoices||[], ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
- const defaultFrom=dates[0]||todayStr;
+ const defaultFrom=dates[0]||todayStr, defaultTo=dates[dates.length-1]||todayStr;
  $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 المصاريف</button></div></div>
- <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${todayStr}"><button onclick="renderDetailedReports()">عرض الفترة</button></div></div>
+ <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${defaultTo}"><button onclick="renderDetailedReports()">عرض الفترة</button></div></div>
  <div id="detailedReports"></div>`;
  renderDetailedReports();
 }
@@ -444,7 +444,7 @@ function renderDetailedReports(){
  </div>
  <div class="panel"><b>المبيعات حسب المنتج</b>${top.length?top.map(([n,v])=>`<div class="item"><b>${n}</b><div class="muted">الكمية ${v.qty} • المبيعات ${money(v.sales)} • الربح ${money(v.profit)}</div></div>`).join(''):'<div class="muted">لا توجد مبيعات ضمن الفترة</div>'}</div>
  <div class="panel"><b>تفاصيل الفواتير</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
- <div class="panel"><b>تفاصيل المصاريف</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">لا توجد مصاريف</div>'}</div>
+ <div class="panel" style="border-right:5px solid #ff7900"><div class="item"><b>💸 إجمالي المصاريف ضمن الفترة</b><span style="float:left"><b>${money(expensesTotal)}</b></span></div></div><div class="panel"><b>تفاصيل المصاريف</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">لا توجد مصاريف</div>'}</div>
  <div class="panel"><b>الإنتاج والتعبئة</b><div class="muted">طبخات: ${batches.length} • عمليات تعبئة: ${packs.length} • ليترات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • ليترات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
 }
 function profitLossReport(){
