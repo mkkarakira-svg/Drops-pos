@@ -248,7 +248,7 @@ function go(x,fromHistory=false){
 if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];
 function home(){
  currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
- let d=db.invoices.filter(x=>x.date===today()),sales=d.reduce((a,x)=>a+x.total,0),
+ let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
  exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
  profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
  stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
@@ -267,7 +267,7 @@ function home(){
  </div>
  <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 فضلات / 1L</div><div class="section-title">الإدارة</div>
  <div class="admin-grid">
-  ${adminCard('👥','العملاء','people')}${adminCard('🧑‍💼','الموظفين والموزعين','employees')}${adminCard('💸','المصاريف','expenses')}${adminCard('📊','التقارير','reports')}${adminCard('⚙️','الإعدادات','settings')}
+  ${adminCard('👥','العملاء','people')}${adminCard('🧑‍💼','الموظفين والموزعين','employees')}${adminCard('↩️','المرتجعات','returnsPage')}${adminCard('💳','الديون والتحصيل','receivablesPage')}${adminCard('💸','المصاريف','expenses')}${adminCard('📊','التقارير','reports')}${adminCard('⚙️','الإعدادات','settings')}
  </div>
  <div class="section-title">معلومات سريعة</div>
  <div class="quick-grid">
@@ -400,6 +400,10 @@ function produceAndPack(){
 
 function employees(){$('#app').innerHTML=`<div class="title">الموظفين والموزعين</div><div class="panel"><div class="row"><input id="empName" placeholder="الاسم"><select id="empRole"><option>موزع</option><option>موظف مبيعات</option><option>موظف</option></select><input id="empComm" type="number" min="0" step=".1" placeholder="Commission %"><button onclick="addEmployee()">إضافة</button></div></div><div class="panel">${(db.employees||[]).map(e=>`<div class="item"><b>${e.name}</b> <span class="pill">${e.role}</span><span style="float:left">${+e.commission||0}%</span><div class="muted">مبيعات: ${money((db.invoices||[]).filter(v=>!v.voided&&String(v.employeeId)===String(e.id)).reduce((a,v)=>a+(+v.total||0),0))} • عمولة: ${money((db.invoices||[]).filter(v=>!v.voided&&String(v.employeeId)===String(e.id)).reduce((a,v)=>a+(+v.commission||0),0))}</div></div>`).join('')||'لا يوجد موظفين أو موزعين'}</div>`}
 function addEmployee(){let n=$('#empName').value.trim();if(!n)return;db.employees.push({id:id(),name:n,role:$('#empRole').value,commission:Math.max(0,+$('#empComm').value||0),active:true});save();employees()}
+function returnsPage(){$('#app').innerHTML=`<div class="title">المرتجعات / إلغاء فاتورة</div><div class="panel">${(db.invoices||[]).slice(0,30).map(v=>`<div class="item"><b>#${v.id} — ${v.date}</b><span style="float:left">${money(v.total)}</span><div class="muted">${v.employeeName||''}</div>${v.voided?'<span class="pill">ملغاة</span>':`<button onclick="voidInvoice('${v.id}')">↩️ إلغاء وإرجاع للستوك</button>`}</div>`).join('')||'لا يوجد فواتير'}</div>`}
+function voidInvoice(i){let v=db.invoices.find(x=>String(x.id)===String(i));if(!v||v.voided)return;if(!confirm('إلغاء الفاتورة وإرجاع الكميات للمخزون؟'))return;(v.items||[]).forEach(it=>{let p=db.products.find(x=>String(x.id)===String(it.productId));if(p){p.qty=(+p.qty||0)+(+it.qty||0);db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'return',productId:p.id,name:p.name,qty:+it.qty||0,balance:p.qty})}});v.voided=true;v.voidDate=today();db.returns.unshift({id:id(),invoiceId:v.id,date:today(),amount:+v.total||0});save();returnsPage()}
+function receivablesPage(){$('#app').innerHTML=`<div class="title">الديون والتحصيل</div><div class="panel"><div class="muted">الفواتير غير المدفوعة بالكامل تظهر هون.</div>${(db.invoices||[]).filter(v=>!v.voided&&(+v.paid||0)<(+v.total||0)).map(v=>`<div class="item"><b>فاتورة #${v.id}</b><span style="float:left"><b>${money((+v.total||0)-(+v.paid||0))}</b></span><div class="muted">${v.date} • الإجمالي ${money(v.total)} • المدفوع ${money(v.paid||0)}</div><div class="row"><input id="debt_${v.id}" type="number" min="0" step=".01" placeholder="تحصيل $"><button onclick="collectInvoice('${v.id}')">تحصيل</button></div></div>`).join('')||'<div class="muted">لا توجد ديون مفتوحة</div>'}</div>`}
+function collectInvoice(i){let v=db.invoices.find(x=>String(x.id)===String(i)),a=+document.getElementById('debt_'+i)?.value;if(!v||a<=0)return;v.paid=Math.min(+v.total||0,(+v.paid||0)+a);save();receivablesPage()}
 function expenses(){
  const cats=['إيجار','كهرباء','رواتب موظفين','يد عاملة','نقل ومحروقات','صيانة','اتصالات وإنترنت','رسوم واشتراكات','مصاريف إدارية','مصاريف إضافية','أخرى'];
  $('#app').innerHTML=`<div class="title">مصاريف المعمل</div>
@@ -416,7 +420,7 @@ function people(){$('#app').innerHTML=`<div class="title">العملاء وال�
 function addPerson(){let n=$('#nn').value.trim();if(!n)return;db.people.push({id:id(),name:n,type:$('#nt').value,phone:$('#np').value});save();people()}
 function reports(){
  nav('reports');
- const inv=db.invoices||[], ex=db.expenses||[], todayStr=today();
+ const inv=(db.invoices||[]).filter(x=>!x.voided), ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
  const defaultFrom=dates[0]||todayStr, defaultTo=dates[dates.length-1]||todayStr;
  $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 المصاريف</button></div></div>
@@ -426,7 +430,7 @@ function reports(){
 }
 function renderDetailedReports(){
  const from=$('#repFrom')?.value||today(),to=$('#repTo')?.value||today(),
- inv=(db.invoices||[]).filter(x=>x.date>=from&&x.date<=to),
+ inv=(db.invoices||[]).filter(x=>!x.voided&&x.date>=from&&x.date<=to),
  ex=(db.expenses||[]).filter(x=>x.date>=from&&x.date<=to),
  batches=(db.batches||[]).filter(x=>x.date>=from&&x.date<=to),
  packs=(db.packings||[]).filter(x=>x.date>=from&&x.date<=to);
@@ -461,7 +465,7 @@ function profitLossReport(){
  renderProfitLoss();
 }
 function renderProfitLoss(){
- const m=$('#plMonth')?.value||'',inv=(db.invoices||[]).filter(x=>String(x.date||'').startsWith(m)),ex=(db.expenses||[]).filter(x=>String(x.date||'').startsWith(m));
+ const m=$('#plMonth')?.value||'',inv=(db.invoices||[]).filter(x=>!x.voided&&String(x.date||'').startsWith(m)),ex=(db.expenses||[]).filter(x=>String(x.date||'').startsWith(m));
  const sales=inv.reduce((a,x)=>a+(+x.total||0),0);
  const cogs=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+(+i.cost||0)*(+i.qty||0),0),0);
  const gross=sales-cogs,expenses=ex.reduce((a,x)=>a+(+x.amount||0),0),net=gross-expenses;
