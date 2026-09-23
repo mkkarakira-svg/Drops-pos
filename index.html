@@ -366,8 +366,14 @@ function purchasePriceMaster(){
  const grouped={};cats.forEach(c=>grouped[c]=[]);
  (db.raw||[]).forEach(r=>{let c=rawCategoryOf(r);if(!grouped[c])c='Raw Materials';grouped[c].push(r)});
  $('#app').innerHTML=`<div class="title">Purchase Price Master</div>
- <div class="panel"><div class="muted">Official purchase prices. Materials are separated by category and Purchases use these prices automatically.</div></div>
- ${cats.map(c=>`<div class="panel"><h3 style="margin-top:0">${c}</h3>${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}`;
+ <div class="panel"><div class="muted">Official purchase prices. Choose a box below to view and edit that category.</div></div>
+ <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
+  ${cats.map((c,i)=>`<button class="${i===0?'green':''}" id="ppmTab${i}" onclick="showPriceMasterCategory(${i})" style="min-height:76px;font-weight:800">${c}<br><small>${grouped[c].length} items</small></button>`).join('')}
+ </div>
+ ${cats.map((c,i)=>`<div id="ppmBox${i}" class="panel" style="display:${i===0?'block':'none'}"><h3 style="margin-top:0">${c}</h3>${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}`;
+}
+function showPriceMasterCategory(i){
+ [0,1,2].forEach(n=>{let b=document.getElementById('ppmBox'+n),t=document.getElementById('ppmTab'+n);if(b)b.style.display=n===i?'block':'none';if(t)t.classList.toggle('green',n===i)});
 }
 function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value;if(!r||v<0)return;r.cost=v;save();alert('Price updated for '+r.name)}
 function purchases(){
