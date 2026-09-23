@@ -345,14 +345,27 @@ function invoiceView(i){
  </div>`;
 }
 function invoices(){$('#app').innerHTML=`<div class="title">Invoices</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(${v.id})"><b>#${v.id}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'No invoices'}</div>`}
-function raw(){$('#app').innerHTML=`<div class="title">Raw Materials</div><div class="panel"><div class="row"><input id="rn" placeholder="Material Name"><input id="rc" type="number" step=".001" placeholder="Cost / kg"><input id="rq" type="number" step=".001" placeholder="Quantity kg"><button onclick="addRaw()">Add</button></div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${r.qty.toFixed(3)} kg</span><div class="muted">${money(r.cost)}/kg <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 Edit Price</button></div></div>`).join('')||'No raw materials'}</div>`}
-function addRaw(){let n=$('#rn').value.trim(),c=+$('#rc').value,q=+$('#rq').value;if(!n)return;db.raw.push({id:id(),name:n,cost:c,qty:q});save();raw()}
+function rawCategoryOf(r){
+ if(r.category)return r.category;
+ let n=String(r.name||'').toLowerCase();
+ if(/gallon|bottle|cap|label|spray|pump|jar|plastic/.test(n))return 'Plastic & Packaging';
+ if(/carton|box|bag|sack/.test(n))return 'Bags & Cartons';
+ return 'Raw Materials';
+}
+function raw(){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
+ $('#app').innerHTML=`<div class="title">Materials Inventory</div>
+ <div class="panel"><b>Add New Item</b><div class="row" style="margin-top:8px"><select id="rCat">${cats.map(c=>`<option>${c}</option>`).join('')}</select><input id="rn" placeholder="Item name"><select id="rUnit"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="rc" type="number" step=".001" min="0" placeholder="Unit Cost $"><input id="rq" type="number" step=".001" min="0" placeholder="Opening Qty"><button onclick="addRaw()">Add</button></div></div>
+ ${cats.map(c=>`<div class="panel"><div class="title" style="font-size:19px">${c}</div>${(db.raw||[]).filter(r=>rawCategoryOf(r)===c).map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${(+r.qty||0).toFixed(r.unit==='Piece'?0:3)} ${r.unit||'kg'}</span><div class="muted">${money(r.cost)}/${r.unit||'kg'} <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 Edit Price</button></div></div>`).join('')||'<div class="muted">No items yet</div>'}</div>`).join('')}`;
+}
+function addRaw(){let n=String($('#rn')?.value||'').trim(),c=+($('#rc')?.value||0),q=+($('#rq')?.value||0),category=$('#rCat')?.value||'Raw Materials',unit=$('#rUnit')?.value||'kg';if(!n)return alert('Enter item name');if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase()))return alert('Item already exists');db.raw.push({id:id(),name:n,cost:Math.max(0,c),qty:Math.max(0,q),category,unit});save();raw()}
+
 function purchasePriceMaster(){
  $('#app').innerHTML=`<div class="title">Purchase Price Master</div><div class="panel"><div class="muted">Official master prices for materials and packaging. Purchases use these prices automatically.</div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join('')}</div>`;
 }
 function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value;if(!r||v<0)return;r.cost=v;save();alert('Price updated for '+r.name)}
 function purchases(){
- const cats=['Raw Materials','Packaging','Bags & Cartons','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
  const suppliers=(db.people||[]).filter(p=>p.type==='Supplier');
  $('#app').innerHTML=`<div class="title">Purchases</div>
  <div class="panel">
@@ -366,7 +379,7 @@ function purchases(){
  purchaseCatChange();renderPurchaseList();
 }
 function purchaseCatChange(){
- const c=$('#puCat')?.value||'',stock=['Raw Materials','Packaging'].includes(c);
+ const c=$('#puCat')?.value||'',stock=['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(c);
  if($('#puRaw')){$('#puRaw').style.display=stock?'':'none';$('#puRaw').onchange=purchaseItemPrice}
  if($('#puPrice')){$('#puPrice').readOnly=stock;if(stock)purchaseItemPrice()}
 }
@@ -378,7 +391,7 @@ function addPurchase(){
  const cat=$('#puCat').value,rawId=$('#puRaw').value,desc=$('#puDesc').value.trim(),q=+$('#puQty').value,price=+$('#puPrice').value;
  if(!cat)return alert('Select Category');if(q<=0)return alert('Enter quantity');if(price<0)return alert('Invalid price');
  let raw=null,name=desc;
- if(['Raw Materials','Packaging'].includes(cat)&&rawId){raw=db.raw.find(r=>String(r.id)===String(rawId));if(raw)name=raw.name}
+ if(['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(cat)&&rawId){raw=db.raw.find(r=>String(r.id)===String(rawId));if(raw)name=raw.name}
  if(!name)return alert('Enter description or select material');
  const total=q*price,p={id:id(),date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
  db.purchases.unshift(p);
@@ -977,6 +990,9 @@ history.replaceState({dropsView:currentView||'home'},'',location.href);
  });
  db._removeBadDish1As5v121=true;save();
 })();
+
+/* MATERIAL CATEGORIES v122 */
+(function(){if(db._materialCategories122)return;(db.raw||[]).forEach(r=>{if(!r.category)r.category=rawCategoryOf(r);if(!r.unit)r.unit=r.category==='Raw Materials'?'kg':'Piece'});db._materialCategories122=true;save()})();
 
 /* TRIAL ALL FINISHED PRICE 5 v79 */
 (function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
