@@ -242,7 +242,7 @@ function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laun
 function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
 let currentView='home';
 function go(x,fromHistory=false){
- currentView=x;try{sessionStorage.setItem('dropsCurrentView',x)}catch(e){};if(location.hash!=='#'+x)history.replaceState({dropsView:x},'',location.pathname+location.search+'#'+x);document.body.classList.toggle('home-view',x==='home');
+ currentView=x;try{sessionStorage.setItem('dropsCurrentView',x)}catch(e){};document.body.classList.toggle('home-view',x==='home');
  const th=document.querySelector('.top');if(th)th.classList.toggle('has-back',x!=='home');
  nav(x);if(!fromHistory)history.pushState({dropsView:x},'',location.href);
  switch(x){
@@ -352,7 +352,7 @@ function rawCategoryOf(r){
  if(/carton|box|bag|sack/.test(n))return 'Bags & Cartons';
  return 'Raw Materials';
 }
-function raw(){currentView='materials';try{sessionStorage.setItem('dropsCurrentView','materials')}catch(e){};history.replaceState({dropsView:'materials'},'',location.pathname+location.search+'#materials');
+function raw(){currentView='materials';try{sessionStorage.setItem('dropsCurrentView','materials')}catch(e){};
  const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
  $('#app').innerHTML=`<div class="title">Materials Inventory</div>
  <div class="panel"><b>Add New Item</b><div class="row" style="margin-top:8px"><select id="rCat">${cats.map(c=>`<option>${c}</option>`).join('')}</select><input id="rn" placeholder="Item name"><select id="rUnit"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="rc" type="number" step=".001" min="0" placeholder="Unit Cost $"><input id="rq" type="number" step=".001" min="0" placeholder="Opening Qty"><button onclick="addRaw()">Add</button></div></div>
@@ -360,7 +360,7 @@ function raw(){currentView='materials';try{sessionStorage.setItem('dropsCurrentV
 }
 function addRaw(){let n=String($('#rn')?.value||'').trim(),c=+($('#rc')?.value||0),q=+($('#rq')?.value||0),category=$('#rCat')?.value||'Raw Materials',unit=$('#rUnit')?.value||'kg';if(!n)return alert('Enter item name');if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase()))return alert('Item already exists');db.raw.push({id:id(),name:n,cost:Math.max(0,c),qty:Math.max(0,q),category,unit});save();raw()}
 
-function purchasePriceMaster(){currentView='priceMaster';try{sessionStorage.setItem('dropsCurrentView','priceMaster')}catch(e){};history.replaceState({dropsView:'priceMaster'},'',location.pathname+location.search+'#priceMaster');
+function purchasePriceMaster(){currentView='priceMaster';try{sessionStorage.setItem('dropsCurrentView','priceMaster')}catch(e){};
  $('#app').innerHTML=`<div class="title">Purchase Price Master</div><div class="panel"><div class="muted">Official master prices for materials and packaging. Purchases use these prices automatically.</div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join('')}</div>`;
 }
 function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value;if(!r||v<0)return;r.cost=v;save();alert('Price updated for '+r.name)}
@@ -652,7 +652,7 @@ function settings(){
 }
 
 
-function leftovers(){currentView='leftovers';try{sessionStorage.setItem('dropsCurrentView','leftovers')}catch(e){};history.replaceState({dropsView:'leftovers'},'',location.pathname+location.search+'#leftovers');
+function leftovers(){currentView='leftovers';try{sessionStorage.setItem('dropsCurrentView','leftovers')}catch(e){};
  const masters=db.products.filter(p=>p.formulaMaster&&String(p.name||'').trim().toLowerCase()!=='car').sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  $('#app').innerHTML=`<div class="title">Leftovers / 1L Packing</div>
  <div class="panel"><div class="muted">Select the product and enter the number of 1L bottles packed from leftovers. They are added directly to finished stock without deducting raw materials again.</div></div>
@@ -671,7 +671,7 @@ function quickLeftover1L(pid){
 }
 function packLeftover1L(bid){const b=db.batches.find(x=>String(x.id)===String(bid));if(!b)return;const base=db.products.find(x=>String(x.id)===String(b.productId));if(!base||String(base.name).toLowerCase()==='car')return;const q=+document.getElementById('lf'+b.id)?.value;if(!q)return;quickLeftover1L(base.id)}
 
-function packing(){currentView='packing';try{sessionStorage.setItem('dropsCurrentView','packing')}catch(e){};history.replaceState({dropsView:'packing'},'',location.pathname+location.search+'#packing');
+function packing(){currentView='packing';try{sessionStorage.setItem('dropsCurrentView','packing')}catch(e){};
  let open=db.batches.filter(b=>(b.remainingLiters??b.liters)>0);
  $('#app').innerHTML='<div class="title">Batch Packing</div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b> — Batch '+b.liters+' L<br><span class="muted">Remaining '+(b.remainingLiters??b.liters).toFixed(2)+' L • '+b.date+'</span><div class="row" style="margin-top:8px"><select id="pkp'+b.id+'">'+db.products.map(p=>'<option value="'+p.id+'">'+p.name+' ('+(p.size||1)+'L)</option>').join('')+'</select><input id="pkq'+b.id+'" type="number" min="1" placeholder="Pack Count"><button onclick="packBatch('+b.id+')">Pack</button></div></div>').join('')||'No open batches')+'</div>';
 }
@@ -696,7 +696,7 @@ function packBatch(bid){
  db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
  save();alert('Packing completed: '+q+' × '+size+'L\nAdded to finished goods stock\nand deducted '+q+' empty container'+(label?' + '+q+' label':'') );packing();
 }
-function historyReport(){currentView='historyReport';try{sessionStorage.setItem('dropsCurrentView','historyReport')}catch(e){};history.replaceState({dropsView:'historyReport'},'',location.pathname+location.search+'#historyReport');
+function historyReport(){currentView='historyReport';try{sessionStorage.setItem('dropsCurrentView','historyReport')}catch(e){};
  let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
  let all=[
   ...db.rawMoves.map(x=>({...x,kind:'Raw Materials'})),
@@ -864,11 +864,14 @@ if(!db._allFormulaMasters1){
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
-let _restoreView=String(location.hash||'').replace(/^#/,'')||'home';try{if(_restoreView==='home')_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};const _validViews=['home','sale','products','reports','raw','materials','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage','packing','leftovers','historyReport','priceMaster'];if(!_validViews.includes(_restoreView))_restoreView='home';if(_restoreView!=='home')go(_restoreView,true);else home();
+let _restoreView='home';try{_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){}
+const _validViews=['home','sale','products','reports','raw','materials','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage','packing','leftovers','historyReport','priceMaster'];
+if(!_validViews.includes(_restoreView))_restoreView='home';
+try{if(_restoreView!=='home')go(_restoreView,true);else home()}catch(e){try{sessionStorage.setItem('dropsCurrentView','home')}catch(_e){};currentView='home';home()}
 </script><script>
 window.goHome=function(){
   if(currentView==='home') return;
-  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};history.replaceState({dropsView:'home'},'',location.pathname+location.search+'#home');
+  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};
   document.body.classList.add('home-view');
   home();
   history.pushState({dropsView:'home'},'',location.href);
