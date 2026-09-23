@@ -242,7 +242,7 @@ function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laun
 function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
 let currentView='home';
 function go(x,fromHistory=false){
- currentView=x;document.body.classList.toggle('home-view',x==='home');
+ currentView=x;try{sessionStorage.setItem('dropsCurrentView',x)}catch(e){};document.body.classList.toggle('home-view',x==='home');
  const th=document.querySelector('.top');if(th)th.classList.toggle('has-back',x!=='home');
  nav(x);if(!fromHistory)history.pushState({dropsView:x},'',location.href);
  switch(x){
@@ -850,11 +850,12 @@ if(!db._allFormulaMasters1){
  db._allFormulaMasters1=true;save();
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();home();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
+let _restoreView='home';try{_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};if(_restoreView!=='home')go(_restoreView,true);else home();
 </script><script>
 window.goHome=function(){
   if(currentView==='home') return;
-  currentView='home';
+  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};
   document.body.classList.add('home-view');
   home();
   history.pushState({dropsView:'home'},'',location.href);
@@ -865,7 +866,7 @@ window.addEventListener('popstate',function(e){
  if(v&&v!=='home') go(v,true);
  else history.pushState({dropsView:'home'},'',location.href);
 });
-history.replaceState({dropsView:'home'},'',location.href);
+history.replaceState({dropsView:currentView||'home'},'',location.href);
 
 /* EXCEL RECIPE IMPORT v54 */
 (function(){
