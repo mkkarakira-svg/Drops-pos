@@ -237,8 +237,42 @@ function invoiceView(i){let v=db.invoices.find(x=>x.id===i);$('#app').innerHTML=
 function invoices(){$('#app').innerHTML=`<div class="title">الفواتير</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(${v.id})"><b>#${v.id}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'لا يوجد فواتير'}</div>`}
 function raw(){$('#app').innerHTML=`<div class="title">المواد الخام</div><div class="panel"><div class="row"><input id="rn" placeholder="اسم المادة"><input id="rc" type="number" step=".001" placeholder="كلفة / kg"><input id="rq" type="number" step=".001" placeholder="كمية kg"><button onclick="addRaw()">إضافة</button></div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${r.qty.toFixed(3)} kg</span><div class="muted">${money(r.cost)}/kg <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 تعديل السعر</button></div></div>`).join('')||'لا يوجد مواد خام'}</div>`}
 function addRaw(){let n=$('#rn').value.trim(),c=+$('#rc').value,q=+$('#rq').value;if(!n)return;db.raw.push({id:id(),name:n,cost:c,qty:q});save();raw()}
-function purchases(){$('#app').innerHTML=`<div class="title">مشتريات مواد خام</div><div class="panel"><div class="row"><select id="pr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`)}</select><input id="pq" type="number" step=".001" placeholder="kg"><input id="pc" type="number" step=".001" placeholder="$/kg"><button onclick="buyRaw()">تسجيل شراء</button></div></div><div class="panel">${db.purchases.map(x=>`<div class="item">${x.name} — ${x.qty} kg × ${money(x.cost)}<span style="float:left">${x.date}</span></div>`).join('')}</div>`}
-function buyRaw(){let r=db.raw.find(x=>x.id==$('#pr').value),q=+$('#pq').value,c=+$('#pc').value;if(!r||q<=0)return;let old=r.qty*r.cost;r.cost=(old+q*c)/(r.qty+q);r.qty+=q;db.purchases.unshift({id:id(),rawId:r.id,name:r.name,qty:q,cost:c,date:today()});save();purchases()}
+function purchases(){
+ const cats=['مواد أولية','عبوات وتغليف','أكياس وكرتون','قطع غيار وصيانة','معدات وأدوات','تنظيف ومستلزمات معمل','نقل','مشتريات أخرى'];
+ const suppliers=(db.people||[]).filter(p=>p.type==='مورد');
+ $('#app').innerHTML=`<div class="title">المشتريات</div>
+ <div class="panel">
+  <div class="row"><input id="puDate" type="date" value="${today()}"><select id="puSupplier"><option value="">المورد / بدون تحديد</option>${suppliers.map(p=>`<option>${p.name}</option>`).join('')}</select></div>
+  <div class="row"><select id="puCat" onchange="purchaseCatChange()"><option value="">اختر التصنيف</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select><select id="puRaw" style="display:none"><option value="">اختر مادة من المخزون</option>${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select><input id="puDesc" placeholder="البيان / ماذا اشترينا؟"></div>
+  <div class="row"><input id="puQty" type="number" step=".001" min="0" placeholder="الكمية"><select id="puUnit"><option>kg</option><option>قطعة</option><option>كرتون</option><option>كيس</option><option>ليتر</option><option>طن</option><option>خدمة</option></select><input id="puPrice" type="number" step=".001" min="0" placeholder="سعر الوحدة $"></div>
+  <div class="row"><select id="puPay"><option>نقدي</option><option>آجل</option><option>تحويل</option><option>شيك</option></select><input id="puInvoice" placeholder="رقم الفاتورة"><input id="puNote" placeholder="ملاحظات"></div>
+  <button class="orange" style="width:100%;margin-top:8px" onclick="addPurchase()">تسجيل الشراء</button>
+ </div>
+ <div class="panel"><div class="row"><input id="puFrom" type="date" onchange="renderPurchaseList()"><input id="puTo" type="date" onchange="renderPurchaseList()"><select id="puFilterCat" onchange="renderPurchaseList()"><option value="">كل التصنيفات</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="purchaseList"></div></div>`;
+ purchaseCatChange();renderPurchaseList();
+}
+function purchaseCatChange(){
+ const c=$('#puCat')?.value||'',stock=['مواد أولية','عبوات وتغليف'].includes(c);
+ if($('#puRaw'))$('#puRaw').style.display=stock?'':'none';
+}
+function addPurchase(){
+ const cat=$('#puCat').value,rawId=$('#puRaw').value,desc=$('#puDesc').value.trim(),q=+$('#puQty').value,price=+$('#puPrice').value;
+ if(!cat)return alert('اختر التصنيف');if(q<=0)return alert('أدخل الكمية');if(price<0)return alert('السعر غير صحيح');
+ let raw=null,name=desc;
+ if(['مواد أولية','عبوات وتغليف'].includes(cat)&&rawId){raw=db.raw.find(r=>String(r.id)===String(rawId));if(raw)name=raw.name}
+ if(!name)return alert('اكتب البيان أو اختر المادة');
+ const total=q*price,p={id:id(),date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
+ db.purchases.unshift(p);
+ if(raw){let old=(+raw.qty||0)*(+raw.cost||0),newQty=(+raw.qty||0)+q;raw.cost=newQty?(old+total)/newQty:price;raw.qty=newQty;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
+ save();purchases();
+}
+function renderPurchaseList(){
+ const from=$('#puFrom')?.value||'',to=$('#puTo')?.value||'',cat=$('#puFilterCat')?.value||'';
+ let list=(db.purchases||[]).filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)&&(!cat||x.category===cat));
+ const total=list.reduce((a,x)=>a+(x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0)),0);
+ $('#purchaseList').innerHTML=`<div class="item"><b>إجمالي المشتريات</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(x=>{let t=x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0);return `<div class="item"><b>${x.name}</b> <span class="pill">${x.category||'مواد أولية'}</span><span style="float:left"><b>${money(t)}</b></span><div class="muted">${x.date||''} • ${x.qty||0} ${x.unit||'kg'} × ${money(x.cost||0)}${x.supplier?' • '+x.supplier:''}${x.invoiceNo?' • فاتورة '+x.invoiceNo:''}</div>${x.note?`<div class="muted">${x.note}</div>`:''}</div>`}).join(''):'<div class="muted">لا توجد مشتريات ضمن الاختيار</div>'}`;
+}
+function buyRaw(){addPurchase()}
 function production(){
  let formulaNames=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
  let recipeProducts=formulaNames.map(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(!p){p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true};db.products.push(p)}return p});
