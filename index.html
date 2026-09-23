@@ -1014,6 +1014,22 @@ history.replaceState({dropsView:currentView||'home'},'',location.href);
 /* MATERIAL CATEGORIES v122 */
 (function(){if(db._materialCategories122)return;(db.raw||[]).forEach(r=>{if(!r.category)r.category=rawCategoryOf(r);if(!r.unit)r.unit=r.category==='Raw Materials'?'kg':'Piece'});db._materialCategories122=true;save()})();
 
+/* PLASTIC PACKAGING MASTER v134 */
+(function(){
+ if(db._plasticPackaging134)return;
+ const items=[
+  {name:'4L Gallon',cost:0.45},
+  {name:'5L Gallon',cost:0.35},
+  {name:'1L Bottle',cost:0.16}
+ ];
+ items.forEach(a=>{
+  let r=(db.raw||[]).find(x=>String(x.name||'').trim().toLowerCase()===a.name.toLowerCase());
+  if(!r)db.raw.push({id:id(),name:a.name,cost:a.cost,qty:0,category:'Plastic & Packaging',unit:'Piece'});
+  else{r.category='Plastic & Packaging';r.unit='Piece';if(!(+(r.cost||0)>0))r.cost=a.cost}
+ });
+ db._plasticPackaging134=true;save()
+})();
+
 /* TRIAL ALL FINISHED PRICE 5 v79 */
 (function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
 </script></body></html>
