@@ -967,6 +967,17 @@ history.replaceState({dropsView:currentView||'home'},'',location.href);
  db._ensureRequired5L116=true;save();
 })();
 
+/* REMOVE BAD DISHWASHING 1L-AS-5L RECORD v121 */
+(function(){
+ if(db._removeBadDish1As5v121)return;
+ const bad=(db.products||[]).filter(p=>!p.formulaMaster&&+(p.size||0)===5&&/^dishwashing\s+1l$/i.test(String(p.name||'').trim()));
+ bad.forEach(p=>{
+   db.products=db.products.filter(x=>String(x.id)!==String(p.id));
+   db.stockMoves=(db.stockMoves||[]).filter(x=>String(x.productId||'')!==String(p.id));
+ });
+ db._removeBadDish1As5v121=true;save();
+})();
+
 /* TRIAL ALL FINISHED PRICE 5 v79 */
 (function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
 </script></body></html>
