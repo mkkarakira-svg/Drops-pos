@@ -302,7 +302,8 @@ function renderPurchaseList(){
 function buyRaw(){addPurchase()}
 function production(){
  let formulaNames=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
- let recipeProducts=formulaNames.map(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(!p){p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true};db.products.push(p)}return p});
+ formulaNames.forEach(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase()&&x.formulaMaster);if(!p)db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true})});
+ let recipeProducts=db.products.filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  let recipeOpts=recipeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
  let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item"><div><b>${String(b.product).replace(/\\s+(1|4|5)L\\s*$/i,'')}</b><div class="muted">${b.liters} L</div></div><b>${money(b.cost)}</b></div>`).join('');
  $('#app').innerHTML=`
@@ -318,7 +319,7 @@ function production(){
    <button class="orange produce-wide" onclick="produceAndPack()">⚙️ إنتاج وتعبئة</button>
   </div>
   <div class="panel prod-card">
-   <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>تعريف وصفة لكل 1 لتر</b><div class="muted">حدد المنتج والمادة والكمية بالغرام لكل لتر</div></div></div>
+   <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>الخلطات والوصفات</b><div class="muted">عرّف خلطة جديدة أو عدّل مكونات خلطة موجودة</div></div></div><div class="row" style="margin-bottom:10px"><input id="newFormulaName" placeholder="اسم خلطة جديدة"><button onclick="addFormulaMaster()">＋ إضافة خلطة</button></div>
    <div class="recipe-grid">
     <select id="rp" onchange="renderRecipeEditor()">${recipeOpts}</select>
     <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
@@ -329,7 +330,8 @@ function production(){
   <div class="panel prod-card"><div class="prod-card-head"><div class="prod-icon">📋</div><div><b>آخر الطبخات</b><div class="muted">آخر عمليات الإنتاج المسجلة</div></div></div>${batches||'<div class="muted">لا توجد طبخات بعد</div>'}</div>
  </div>`;
  setTimeout(()=>{renderRecipeEditor();syncPackOptions()},0);
-}function syncPackOptions(){let sel=$('#packSize'),bp=$('#bp');if(!sel||!bp)return;let p=db.products.find(x=>String(x.id)===String(bp.value)),sizes=allowedPackSizes(p?.name);sel.innerHTML='<option value="">بدون تعبئة</option>'+sizes.filter(x=>x!==1).sort((a,b)=>a-b).map(x=>'<option value="'+x+'">'+x+' لتر</option>').join('')}
+}function addFormulaMaster(){let n=String($('#newFormulaName')?.value||'').trim();if(!n)return alert('اكتب اسم الخلطة');if(db.products.some(p=>p.formulaMaster&&String(p.name).trim().toLowerCase()===n.toLowerCase()))return alert('الخلطة موجودة مسبقاً');let p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true,customFormula:true};db.products.push(p);save();production();setTimeout(()=>{if($('#rp')){$('#rp').value=p.id;renderRecipeEditor()}},0)}
+function syncPackOptions(){let sel=$('#packSize'),bp=$('#bp');if(!sel||!bp)return;let p=db.products.find(x=>String(x.id)===String(bp.value)),sizes=allowedPackSizes(p?.name);sel.innerHTML='<option value="">بدون تعبئة</option>'+sizes.filter(x=>x!==1).sort((a,b)=>a-b).map(x=>'<option value="'+x+'">'+x+' لتر</option>').join('')}
 function recipeGram(q){let n=(+q||0)*1000;return Number.isInteger(Math.round(n*1000000)/1000000)?String(Math.round(n)):String(+n.toFixed(3))}function renderRecipeEditor(){let el=$('#recipeEditor'),pid=$('#rp')?.value;if(!el||!pid)return;let rec=db.recipes.filter(x=>String(x.productId)===String(pid));el.innerHTML=rec.length?`<div class="recipe-list-title">مكونات الخلطة الحالية</div>${rec.map(x=>{let r=db.raw.find(a=>String(a.id)===String(x.rawId));return `<div class="recipe-row"><b>${r?.name||'مادة'}</b><div><input type="text" inputmode="numeric" value="${recipeGram(x.qtyPerLiter)}" onchange="recipeQtyEdit('${pid}','${x.rawId}',this.value)"><span> g/L</span></div><button onclick="recipeDelete('${pid}','${x.rawId}')">حذف</button></div>`}).join('')}`:'<div class="recipe-empty">لا توجد مواد محفوظة لهذه الخلطة بعد</div>'}
 function recipeQtyEdit(pid,rid,v){let x=db.recipes.find(a=>String(a.productId)===String(pid)&&String(a.rawId)===String(rid)),g=+v;if(!x||g<=0)return;x.qtyPerLiter=g/1000;save();renderRecipeEditor()}
 function recipeDelete(pid,rid){db.recipes=db.recipes.filter(a=>!(String(a.productId)===String(pid)&&String(a.rawId)===String(rid)));save();renderRecipeEditor()}
