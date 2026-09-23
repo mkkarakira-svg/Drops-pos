@@ -251,18 +251,18 @@ function go(x,fromHistory=false){
  }
 }
 
-if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];if(!db.people)db.people=[];if(!db.expenses)db.expenses=[];if(!db.invoices)db.invoices=[];
+if(!db.products)db.products=[];if(!db.raw)db.raw=[];if(!db.recipes)db.recipes=[];if(!db.batches)db.batches=[];if(!db.invoices)db.invoices=[];if(!db.expenses)db.expenses=[];if(!db.purchases)db.purchases=[];if(!db.people)db.people=[];if(!db.settings)db.settings={usdLbp:90000};if(!db.rawMoves)db.rawMoves=[];if(!db.stockMoves)db.stockMoves=[];if(!db.packings)db.packings=[];if(!db.adjustments)db.adjustments=[];if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];
 function home(){
  currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
  let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
  exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
  profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
  stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
- buys=db.purchases.filter(x=>x.date===today()).reduce((a,x)=>a+x.qty*x.cost,0);
+ buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0);
  $('#app').innerHTML=`
  <div class="kpi-grid">
   <div class="kpi-card"><span class="ico">📈</span><b>مبيعات اليوم</b><div class="kpi">${money(sales)}</div><span class="muted">${d.length} فاتورة</span></div>
-  <div class="kpi-card"><span class="ico">🧾</span><b>مشتريات اليوم</b><div class="kpi">${money(buys)}</div><span class="muted">${db.purchases.filter(x=>x.date===today()).length} عملية</span></div>
+  <div class="kpi-card"><span class="ico">🧾</span><b>مشتريات اليوم</b><div class="kpi">${money(buys)}</div><span class="muted">${(db.purchases||[]).filter(x=>x.date===today()).length} عملية</span></div>
   <div class="kpi-card"><span class="ico">📦</span><b>المخزون</b><div class="kpi">${money(stock)}</div><span class="muted">${low} تنبيه</span></div>
   <div class="kpi-card"><span class="ico">🪙</span><b>صافي الربح</b><div class="kpi">${money(profit)}</div><span class="muted">تقديري</span></div>
  </div>
