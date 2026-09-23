@@ -864,8 +864,6 @@ if(!db._allFormulaMasters1){
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
-try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){}
-currentView='home';home();
 </script><script>
 window.goHome=function(){currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};document.body.classList.add('home-view');home();};
 
@@ -984,4 +982,12 @@ window.goHome=function(){currentView='home';try{sessionStorage.setItem('dropsCur
 
 /* TRIAL ALL FINISHED PRICE 5 v79 */
 (function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
+
+/* SAFE BOOT v126 */
+try{
+ let v='home';try{v=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){}
+ const ok=['home','sale','products','reports','raw','materials','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage','packing','leftovers','historyReport','priceMaster'];
+ if(!ok.includes(v))v='home';
+ if(v==='home')home();else go(v,true);
+}catch(e){currentView='home';home();}
 </script></body></html>
