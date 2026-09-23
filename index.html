@@ -165,6 +165,24 @@ body:not(.home-view) .app-back{display:block!important}
 .inventory-value-row .finished-value{background:linear-gradient(135deg,#eaf2ff,#d7e6ff)!important;border-right:5px solid #2f6fd6!important}
 .inventory-value-row .kpi-card b{font-size:20px!important;color:#071426!important}
 .inventory-value-row .muted{color:#334155!important;font-weight:800!important}
+
+/* BACK OFFICE REDESIGN v84 */
+.backoffice-page{padding-bottom:8px}
+.bo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;background:#fff;padding:12px;border-radius:22px;box-shadow:0 5px 18px #10243a18}
+.bo-card{min-height:92px;border:0;border-radius:17px;background:#f4f8ff;color:#102033;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:10px 6px;font-size:15px;line-height:1.25;box-shadow:inset 0 0 0 1px #dbe7f6}
+.bo-card span{font-size:27px}.bo-card b{font-weight:800}.bo-card:active{transform:scale(.98)}
+.bo-card:nth-child(1),.bo-card:nth-child(2),.bo-card:nth-child(3){background:#eef5ff}
+.bo-card:nth-child(4),.bo-card:nth-child(5),.bo-card:nth-child(6){background:#f0fbf5}
+.bo-card.bo-danger{background:#fff4f1;color:#a53b25;grid-column:1/-1;min-height:66px;flex-direction:row}
+.bo-section-title{font-size:22px!important;margin-top:20px!important}
+.bo-settings{padding:13px!important}
+.bo-setting-row{display:grid;grid-template-columns:1fr 115px 82px;gap:8px;align-items:center}
+.bo-setting-row input{min-width:0;text-align:center}
+.bo-setting-row button{height:48px}
+.bo-backup-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #d9dee5}
+.bo-backup-row button,.bo-file{min-height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700}
+.bo-file{background:#f4f6f8;border:1px solid #d9dee5;padding:6px;cursor:pointer}.bo-file input{display:none}
+@media(min-width:600px){.bo-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.bo-card.bo-danger{grid-column:auto}}
 </style></head><body>
 <header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
@@ -377,7 +395,26 @@ function renderDetailedReports(){
  <div class="panel"><b>تفاصيل المصاريف</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">لا توجد مصاريف</div>'}</div>
  <div class="panel"><b>الإنتاج والتعبئة</b><div class="muted">طبخات: ${batches.length} • عمليات تعبئة: ${packs.length} • ليترات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • ليترات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
 }
-function settings(){$('#app').innerHTML=`<div class="title">Back Office</div><div class="panel"><div class="row"><button onclick="packing()">📦 تعبئة الطبخات</button><button onclick="leftovers()">🧴 فضلات / 1 لتر</button><button onclick="historyReport()">🕘 سجل الحركات</button><button onclick="raw()">🧪 المواد الأولية</button><button onclick="purchasePriceMaster()">💲 دليل المشتريات والأسعار</button><button onclick="production()">🏭 الطبخات والوصفات</button><button onclick="resetTrial()">🧹 تصفير التجربة</button></div></div><div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
+function settings(){
+ $('#app').innerHTML=`
+ <div class="backoffice-page">
+  <div class="title">Back Office</div>
+  <div class="bo-grid">
+   <button class="bo-card" onclick="packing()"><span>📦</span><b>تعبئة الطبخات</b></button>
+   <button class="bo-card" onclick="leftovers()"><span>🧴</span><b>فضلات / 1 لتر</b></button>
+   <button class="bo-card" onclick="historyReport()"><span>🕘</span><b>سجل الحركات</b></button>
+   <button class="bo-card" onclick="raw()"><span>🧪</span><b>المواد الأولية</b></button>
+   <button class="bo-card" onclick="production()"><span>🏭</span><b>الطبخ والوصفات</b></button>
+   <button class="bo-card" onclick="purchasePriceMaster()"><span>💲</span><b>دليل الأسعار</b></button>
+   <button class="bo-card bo-danger" onclick="resetTrial()"><span>🧹</span><b>تصفير التجربة</b></button>
+  </div>
+  <div class="title bo-section-title">الإعدادات والنسخ الاحتياطي</div>
+  <div class="panel bo-settings">
+   <div class="bo-setting-row"><div><b>سعر الدولار</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ</button></div>
+   <div class="bo-backup-row"><button onclick="backup()">⬇️ تصدير Backup</button><label class="bo-file">📁 اختيار Backup<input type="file" id="restore" accept=".json"></label><button class="orange" onclick="restoreDB()">استيراد</button></div>
+  </div>
+ </div>`;
+}
 
 
 function leftovers(){
