@@ -248,7 +248,7 @@ function purchases(){
   <div class="row"><select id="puPay"><option>نقدي</option><option>آجل</option><option>تحويل</option><option>شيك</option></select><input id="puInvoice" placeholder="رقم الفاتورة"><input id="puNote" placeholder="ملاحظات"></div>
   <button class="orange" style="width:100%;margin-top:8px" onclick="addPurchase()">تسجيل الشراء</button>
  </div>
- <div class="panel"><div class="row"><input id="puFrom" type="date" onchange="renderPurchaseList()"><input id="puTo" type="date" onchange="renderPurchaseList()"><select id="puFilterCat" onchange="renderPurchaseList()"><option value="">كل التصنيفات</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="purchaseList"></div></div>`;
+ <div class="panel"><div style="margin-bottom:10px"><b>تقرير سريع للمشتريات</b><div class="muted">فلترة سجل المشتريات حسب الفترة والتصنيف</div></div><div class="row"><input id="puFrom" type="date" aria-label="من تاريخ" title="من تاريخ" onchange="renderPurchaseList()"><input id="puTo" type="date" aria-label="إلى تاريخ" title="إلى تاريخ" onchange="renderPurchaseList()"><select id="puFilterCat" onchange="renderPurchaseList()"><option value="">كل التصنيفات</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="purchaseList"></div></div>`;
  purchaseCatChange();renderPurchaseList();
 }
 function purchaseCatChange(){
