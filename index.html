@@ -362,7 +362,12 @@ function raw(){
 function addRaw(){let n=String($('#rn')?.value||'').trim(),c=+($('#rc')?.value||0),q=+($('#rq')?.value||0),category=$('#rCat')?.value||'Raw Materials',unit=$('#rUnit')?.value||'kg';if(!n)return alert('Enter item name');if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase()))return alert('Item already exists');db.raw.push({id:id(),name:n,cost:Math.max(0,c),qty:Math.max(0,q),category,unit});save();raw()}
 
 function purchasePriceMaster(){
- $('#app').innerHTML=`<div class="title">Purchase Price Master</div><div class="panel"><div class="muted">Official master prices for materials and packaging. Purchases use these prices automatically.</div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join('')}</div>`;
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
+ const grouped={};cats.forEach(c=>grouped[c]=[]);
+ (db.raw||[]).forEach(r=>{let c=rawCategoryOf(r);if(!grouped[c])c='Raw Materials';grouped[c].push(r)});
+ $('#app').innerHTML=`<div class="title">Purchase Price Master</div>
+ <div class="panel"><div class="muted">Official purchase prices. Materials are separated by category and Purchases use these prices automatically.</div></div>
+ ${cats.map(c=>`<div class="panel"><h3 style="margin-top:0">${c}</h3>${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}`;
 }
 function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value;if(!r||v<0)return;r.cost=v;save();alert('Price updated for '+r.name)}
 function purchases(){
