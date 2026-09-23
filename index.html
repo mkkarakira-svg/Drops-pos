@@ -360,35 +360,21 @@ function products(){nav('products');$('#app').innerHTML=`<div class="title">Fini
 function renderProducts(){
  const el=$('#plist');if(!el)return;
  const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
- const moveQty=(family,sz)=>{
-   const ids=new Set(db.products.filter(p=>!p.formulaMaster&&base(p.name)===family.toLowerCase()&&+(p.size||0)===sz).map(p=>String(p.id)));
-   const moves=(db.stockMoves||[]).filter(m=>ids.has(String(m.productId))||((!m.productId)&&base(m.name)===family.toLowerCase()&&String(m.name||'').trim().toLowerCase().endsWith(sz+'l')));
-   if(!moves.length)return null;
-   const latest=moves[0];
-   if(latest&&Number.isFinite(+latest.balance))return +latest.balance;
-   return moves.reduce((a,m)=>a+(+m.qty||0),0);
+ const qtyFor=(family,sz)=>{
+   const matches=db.products.filter(p=>!p.formulaMaster&&base(p.name)===family.toLowerCase()&&+(p.size||0)===sz);
+   return matches.reduce((a,p)=>a+(+p.qty||0),0);
  };
- el.innerHTML=finishedFamilies().map(f=>{let sizes=allowedPackSizes(f.name);return `<div class="stock-family"><div class="stock-family-name">${f.name}</div><div class="stock-sizes">${sizes.map(sz=>{
-   let ms=db.products.filter(x=>!x.formulaMaster&&base(x.name)===f.name.toLowerCase()&&+(x.size||0)===sz);
-   let p=ms.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0],dbQty=ms.reduce((a,x)=>a+(+x.qty||0),0),ledger=moveQty(f.name,sz),q=ledger==null?dbQty:Math.max(dbQty,ledger);
-   let last=(db.stockMoves||[]).find(m=>(String(m.productId)===String(p?.id)||base(m.name)===f.name.toLowerCase())&&(+m.qty||0)>0);
-   let c=p&&+p.cost>0?+p.cost:(last?+last.unitCost||0:0),r=p?+p.price||0:0,w=p?+(p.wholesalePrice||0):0,margin=r>0?((r-c)/r*100):0;
+ el.innerHTML=finishedFamilies().map(f=>{
+  const sizes=allowedPackSizes(f.name);
+  return `<div class="stock-family"><div class="stock-family-name">${f.name}</div><div class="stock-sizes">${sizes.map(sz=>{
+   const ms=db.products.filter(p=>!p.formulaMaster&&base(p.name)===f.name.toLowerCase()&&+(p.size||0)===sz);
+   const p=ms.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];
+   const q=qtyFor(f.name,sz),c=p?+p.cost||0:0,r=p?+p.price||0:0,w=p?+p.wholesalePrice||0:0,margin=r>0?((r-c)/r*100):0;
    return `<div class="stock-size"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small></div>`;
- }).join('')}</div></div>`}).join('');
-},'i').test(String(m.name||''))));
-   if(!moves.length)return null;
-   const latest=moves[0];
-   if(latest&&Number.isFinite(+latest.balance))return +latest.balance;
-   return moves.reduce((a,m)=>a+(+m.qty||0),0);
- };
- el.innerHTML=finishedFamilies().map(f=>{let sizes=allowedPackSizes(f.name);return `<div class="stock-family"><div class="stock-family-name">${f.name}</div><div class="stock-sizes">${sizes.map(sz=>{
-   let ms=db.products.filter(x=>!x.formulaMaster&&base(x.name)===f.name.toLowerCase()&&+(x.size||0)===sz);
-   let p=ms.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0],dbQty=ms.reduce((a,x)=>a+(+x.qty||0),0),ledger=moveQty(f.name,sz),q=ledger==null?dbQty:Math.max(dbQty,ledger);
-   let last=(db.stockMoves||[]).find(m=>(String(m.productId)===String(p?.id)||base(m.name)===f.name.toLowerCase())&&(+m.qty||0)>0);
-   let c=p&&+p.cost>0?+p.cost:(last?+last.unitCost||0:0),r=p?+p.price||0:0,w=p?+(p.wholesalePrice||0):0,margin=r>0?((r-c)/r*100):0;
-   return `<div class="stock-size"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small></div>`;
- }).join('')}</div></div>`}).join('');
-}function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
+  }).join('')}</div></div>`;
+ }).join('');
+}
+function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
 function stockIn(i){let p=db.products.find(x=>x.id===i),q=+$('#q'+i)?.value;if(q>0){p.qty+=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'adjustment_in',productId:p.id,name:p.name,qty:q,balance:p.qty});db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,note:'Manual stock in'});save();renderProducts()}}
 function editP(i){let p=db.products.find(x=>x.id===i),pr=prompt('Selling Price',p.price),q=prompt('Quantity',p.qty);if(pr!==null)p.price=+pr;if(q!==null)p.qty=+q;save();renderProducts()}
 function sale(){nav('sale');cart={};window._saleMode='retail';$('#app').innerHTML=`<div class="title">Point of Sale</div><div class="panel"><div class="row"><button id="retailModeBtn" class="sale-mode active" onclick="setSaleMode('retail')">🛒 Retail</button><button id="wholesaleModeBtn" class="sale-mode" onclick="setSaleMode('wholesale')">📦 Wholesale</button></div><small>Default mode: Retail — Wholesale applies to this invoice only</small></div><div class="panel pos-distributor"><div class="row"><button type="button" onclick="toggleDistributor()">🧑‍💼 Add Distributor</button><select id="posEmployee" style="display:none"><option value="" selected>No Distributor</option>${(db.employees||[]).filter(e=>e.active!==false&&(e.role==='Distributor'||e.role==='Sales Employee')).map(e=>`<option value="${e.id}">${e.name} — ${+e.commission||0}%</option>`).join('')}</select></div></div><div class="panel"><select id="posCustomer"><option value="">Cash Customer / No Account</option>${(db.people||[]).filter(p=>p.type==='Customer').map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select><select id="posPayMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option><option>Credit</option></select></div><div class="pos-search"><input id="posSearch" placeholder="🔎 Search product..." oninput="renderPOSProducts()"></div><div class="pos-size-tabs"><button data-size="all" onclick="posSizeFilter('all',this)">All</button><button data-size="1" onclick="posSizeFilter(1,this)">1L</button><button data-size="4" onclick="posSizeFilter(4,this)">4L</button><button class="active" data-size="5" onclick="posSizeFilter(5,this)">5L</button><button data-size="10" onclick="posSizeFilter(10,this)">10L</button><button data-size="20" onclick="posSizeFilter(20,this)">20L</button></div><div id="posProducts" class="pos-products"></div><div class="pos-cart panel"><div class="pos-cart-head"><b>🛒 Cart</b><span id="posCartCount">0 Pack</span></div><div id="cart"></div></div>`;window._posSize=5;ensurePOSFabricSoftener5L();renderPOSProducts();renderCart()}
