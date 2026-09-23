@@ -214,7 +214,7 @@ body:not(.home-view) .app-back{display:block!important}
 .home-view .main-grid{gap:8px!important}
 .home-view .action-card{min-height:94px!important;padding:10px 13px!important;border-radius:17px!important}
 .home-view .action-card b{font-size:20px!important}.home-view .action-card .ico{font-size:22px!important}
-.home-view .panel[onclick="leftovers()"]{padding:12px!important;margin:9px 0!important}
+.home-view .panel[onclick="go('leftovers')"]{padding:12px!important;margin:9px 0!important}
 .home-view .admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
 .home-view .admin-card{min-height:91px!important;padding:8px 3px!important;border-radius:17px!important}
 .home-view .admin-card .ico{font-size:22px!important}.home-view .admin-card b{font-size:13px!important}
@@ -250,7 +250,7 @@ function go(x,fromHistory=false){
   case 'raw':return raw();case 'production':return production();case 'purchases':return purchases();
   case 'expenses':return expenses();case 'cashbox':return cashbox();case 'stocktake':return stocktake();case 'closingPage':return closingPage();case 'accountsPage':return accountsPage();case 'invoices':return invoices();case 'people':return people();
   case 'settings':return settings();case 'employees':return employees();
-  case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();
+  case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();case 'materials':return raw();case 'packing':return packing();case 'leftovers':return leftovers();case 'historyReport':return historyReport();case 'priceMaster':return purchasePriceMaster();
   default:return home();
  }
 }
@@ -296,9 +296,9 @@ function home(){
   ${actionCard('🛒','Sales','sale','#2473f3')}${actionCard('🏭','Production','production','#11b85b')}
   ${actionCard('🧾','Purchases','purchases','#ff7900')}${actionCard('📦','Stock','products','#6236e8')}
  </div>
- <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="panel" onclick="products()"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=10).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
+ <div class="panel" onclick="go('leftovers')" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="panel" onclick="products()"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=10).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
  <div class="admin-grid">
-  ${adminCard('👥','Customers','people')}${adminCard('💵','Cashbox','cashbox')}${adminCard('📋','Physical Stocktake','stocktake')}${adminCard('🔒','Daily / Monthly Closing','closingPage')}${adminCard('📒','Customer & Supplier Accounts','accountsPage')}${adminCard('🧑‍💼','Employees & Distributors','employees')}${adminCard('↩️','Returns','returnsPage')}${adminCard('💳','Receivables & Collections','receivablesPage')}${adminCard('💸','Expenses','expenses')}${adminCard('📊','Reports','reports')}${adminCard('⚙️','Settings','settings')}
+  ${adminCard('🧪','Materials Inventory','materials')}${adminCard('👥','Customers','people')}${adminCard('💵','Cashbox','cashbox')}${adminCard('📋','Physical Stocktake','stocktake')}${adminCard('🔒','Daily / Monthly Closing','closingPage')}${adminCard('📒','Customer & Supplier Accounts','accountsPage')}${adminCard('🧑‍💼','Employees & Distributors','employees')}${adminCard('↩️','Returns','returnsPage')}${adminCard('💳','Receivables & Collections','receivablesPage')}${adminCard('💸','Expenses','expenses')}${adminCard('📊','Reports','reports')}${adminCard('⚙️','Settings','settings')}
  </div>
  <div class="section-title">Quick Info</div>
  <div class="quick-grid">
@@ -352,7 +352,7 @@ function rawCategoryOf(r){
  if(/carton|box|bag|sack/.test(n))return 'Bags & Cartons';
  return 'Raw Materials';
 }
-function raw(){
+function raw(){currentView='materials';try{sessionStorage.setItem('dropsCurrentView','materials')}catch(e){};history.replaceState({dropsView:'materials'},'',location.pathname+location.search+'#materials');
  const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
  $('#app').innerHTML=`<div class="title">Materials Inventory</div>
  <div class="panel"><b>Add New Item</b><div class="row" style="margin-top:8px"><select id="rCat">${cats.map(c=>`<option>${c}</option>`).join('')}</select><input id="rn" placeholder="Item name"><select id="rUnit"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="rc" type="number" step=".001" min="0" placeholder="Unit Cost $"><input id="rq" type="number" step=".001" min="0" placeholder="Opening Qty"><button onclick="addRaw()">Add</button></div></div>
@@ -360,7 +360,7 @@ function raw(){
 }
 function addRaw(){let n=String($('#rn')?.value||'').trim(),c=+($('#rc')?.value||0),q=+($('#rq')?.value||0),category=$('#rCat')?.value||'Raw Materials',unit=$('#rUnit')?.value||'kg';if(!n)return alert('Enter item name');if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase()))return alert('Item already exists');db.raw.push({id:id(),name:n,cost:Math.max(0,c),qty:Math.max(0,q),category,unit});save();raw()}
 
-function purchasePriceMaster(){
+function purchasePriceMaster(){currentView='priceMaster';try{sessionStorage.setItem('dropsCurrentView','priceMaster')}catch(e){};history.replaceState({dropsView:'priceMaster'},'',location.pathname+location.search+'#priceMaster');
  $('#app').innerHTML=`<div class="title">Purchase Price Master</div><div class="panel"><div class="muted">Official master prices for materials and packaging. Purchases use these prices automatically.</div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join('')}</div>`;
 }
 function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value;if(!r||v<0)return;r.cost=v;save();alert('Price updated for '+r.name)}
@@ -635,12 +635,12 @@ function settings(){
  <div class="backoffice-page">
   <div class="title">Back Office</div>
   <div class="bo-grid">
-   <button class="bo-card" onclick="packing()"><span>📦</span><b>Batch Packing</b></button>
-   <button class="bo-card" onclick="leftovers()"><span>🧴</span><b>Leftovers / 1 Liter</b></button>
-   <button class="bo-card" onclick="historyReport()"><span>🕘</span><b>Movement History</b></button>
-   <button class="bo-card" onclick="raw()"><span>🧪</span><b>Raw Materials</b></button>
-   <button class="bo-card" onclick="production()"><span>🏭</span><b>Production & Recipes</b></button>
-   <button class="bo-card" onclick="purchasePriceMaster()"><span>💲</span><b>Price Master</b></button>
+   <button class="bo-card" onclick="go('packing')"><span>📦</span><b>Batch Packing</b></button>
+   <button class="bo-card" onclick="go('leftovers')"><span>🧴</span><b>Leftovers / 1 Liter</b></button>
+   <button class="bo-card" onclick="go('historyReport')"><span>🕘</span><b>Movement History</b></button>
+   <button class="bo-card" onclick="go('materials')"><span>🧪</span><b>Materials Inventory</b></button>
+   <button class="bo-card" onclick="go('production')"><span>🏭</span><b>Production & Recipes</b></button>
+   <button class="bo-card" onclick="go('priceMaster')"><span>💲</span><b>Price Master</b></button>
    <button class="bo-card bo-danger" onclick="resetTrial()"><span>🧹</span><b>Reset Trial Data</b></button>
   </div>
   <div class="title bo-section-title">Settings & Backup</div>
@@ -652,7 +652,7 @@ function settings(){
 }
 
 
-function leftovers(){
+function leftovers(){currentView='leftovers';try{sessionStorage.setItem('dropsCurrentView','leftovers')}catch(e){};history.replaceState({dropsView:'leftovers'},'',location.pathname+location.search+'#leftovers');
  const masters=db.products.filter(p=>p.formulaMaster&&String(p.name||'').trim().toLowerCase()!=='car').sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  $('#app').innerHTML=`<div class="title">Leftovers / 1L Packing</div>
  <div class="panel"><div class="muted">Select the product and enter the number of 1L bottles packed from leftovers. They are added directly to finished stock without deducting raw materials again.</div></div>
@@ -671,7 +671,7 @@ function quickLeftover1L(pid){
 }
 function packLeftover1L(bid){const b=db.batches.find(x=>String(x.id)===String(bid));if(!b)return;const base=db.products.find(x=>String(x.id)===String(b.productId));if(!base||String(base.name).toLowerCase()==='car')return;const q=+document.getElementById('lf'+b.id)?.value;if(!q)return;quickLeftover1L(base.id)}
 
-function packing(){
+function packing(){currentView='packing';try{sessionStorage.setItem('dropsCurrentView','packing')}catch(e){};history.replaceState({dropsView:'packing'},'',location.pathname+location.search+'#packing');
  let open=db.batches.filter(b=>(b.remainingLiters??b.liters)>0);
  $('#app').innerHTML='<div class="title">Batch Packing</div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b> — Batch '+b.liters+' L<br><span class="muted">Remaining '+(b.remainingLiters??b.liters).toFixed(2)+' L • '+b.date+'</span><div class="row" style="margin-top:8px"><select id="pkp'+b.id+'">'+db.products.map(p=>'<option value="'+p.id+'">'+p.name+' ('+(p.size||1)+'L)</option>').join('')+'</select><input id="pkq'+b.id+'" type="number" min="1" placeholder="Pack Count"><button onclick="packBatch('+b.id+')">Pack</button></div></div>').join('')||'No open batches')+'</div>';
 }
@@ -696,7 +696,7 @@ function packBatch(bid){
  db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
  save();alert('Packing completed: '+q+' × '+size+'L\nAdded to finished goods stock\nand deducted '+q+' empty container'+(label?' + '+q+' label':'') );packing();
 }
-function historyReport(){
+function historyReport(){currentView='historyReport';try{sessionStorage.setItem('dropsCurrentView','historyReport')}catch(e){};history.replaceState({dropsView:'historyReport'},'',location.pathname+location.search+'#historyReport');
  let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
  let all=[
   ...db.rawMoves.map(x=>({...x,kind:'Raw Materials'})),
@@ -705,7 +705,7 @@ function historyReport(){
   ...db.batches.map(x=>({...x,kind:'Batch',time:x.time||x.date,qty:x.liters,name:x.product})),
   ...db.expenses.map(x=>({...x,kind:'مصروف',time:x.time||x.date,qty:x.amount}))
  ].filter(x=>x.date>=from&&x.date<=to).sort((a,b)=>String(b.time||b.date).localeCompare(String(a.time||a.date)));
- $('#app').innerHTML='<div class="title">Movement History</div><div class="panel"><div class="row"><input id="histFrom" type="date" value="'+from+'"><input id="histTo" type="date" value="'+to+'"><button onclick="historyReport()">View</button></div></div><div class="panel">'+(all.map(x=>'<div class="item"><b>'+x.kind+'</b> — '+(x.name||'')+'<span style="float:left">'+(x.qty!==undefined?x.qty:'')+'</span><div class="muted">'+x.date+' • '+(x.type||'')+'</div></div>').join('')||'No movements in selected period')+'</div>';
+ $('#app').innerHTML='<div class="title">Movement History</div><div class="panel"><div class="row"><input id="histFrom" type="date" value="'+from+'"><input id="histTo" type="date" value="'+to+'"><button onclick="go('historyReport')">View</button></div></div><div class="panel">'+(all.map(x=>'<div class="item"><b>'+x.kind+'</b> — '+(x.name||'')+'<span style="float:left">'+(x.qty!==undefined?x.qty:'')+'</span><div class="muted">'+x.date+' • '+(x.type||'')+'</div></div>').join('')||'No movements in selected period')+'</div>';
 }
 
 
@@ -864,7 +864,7 @@ if(!db._allFormulaMasters1){
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
-let _restoreView=String(location.hash||'').replace(/^#/,'')||'home';try{if(_restoreView==='home')_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};const _validViews=['home','sale','products','reports','raw','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage'];if(!_validViews.includes(_restoreView))_restoreView='home';if(_restoreView!=='home')go(_restoreView,true);else home();
+let _restoreView=String(location.hash||'').replace(/^#/,'')||'home';try{if(_restoreView==='home')_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};const _validViews=['home','sale','products','reports','raw','materials','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage','packing','leftovers','historyReport','priceMaster'];if(!_validViews.includes(_restoreView))_restoreView='home';if(_restoreView!=='home')go(_restoreView,true);else home();
 </script><script>
 window.goHome=function(){
   if(currentView==='home') return;
