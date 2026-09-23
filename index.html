@@ -237,6 +237,10 @@ function invoiceView(i){let v=db.invoices.find(x=>x.id===i);$('#app').innerHTML=
 function invoices(){$('#app').innerHTML=`<div class="title">الفواتير</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(${v.id})"><b>#${v.id}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'لا يوجد فواتير'}</div>`}
 function raw(){$('#app').innerHTML=`<div class="title">المواد الخام</div><div class="panel"><div class="row"><input id="rn" placeholder="اسم المادة"><input id="rc" type="number" step=".001" placeholder="كلفة / kg"><input id="rq" type="number" step=".001" placeholder="كمية kg"><button onclick="addRaw()">إضافة</button></div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${r.qty.toFixed(3)} kg</span><div class="muted">${money(r.cost)}/kg <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 تعديل السعر</button></div></div>`).join('')||'لا يوجد مواد خام'}</div>`}
 function addRaw(){let n=$('#rn').value.trim(),c=+$('#rc').value,q=+$('#rq').value;if(!n)return;db.raw.push({id:id(),name:n,cost:c,qty:q});save();raw()}
+function purchasePriceMaster(){
+ $('#app').innerHTML=`<div class="title">دليل المشتريات والأسعار</div><div class="panel"><div class="muted">هيدا المرجع الرسمي لأسعار المواد والعبوات. أي تعديل هون تعتمد عليه المشتريات تلقائياً.</div></div><div class="panel">${db.raw.map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="سعر الوحدة $"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'قطعة':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">حفظ</button></div></div>`).join('')}</div>`;
+}
+function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value;if(!r||v<0)return;r.cost=v;save();alert('تم تحديث سعر '+r.name)}
 function purchases(){
  const cats=['مواد أولية','عبوات وتغليف','أكياس وكرتون','قطع غيار وصيانة','معدات وأدوات','تنظيف ومستلزمات معمل','نقل','مشتريات أخرى'];
  const suppliers=(db.people||[]).filter(p=>p.type==='مورد');
@@ -253,7 +257,12 @@ function purchases(){
 }
 function purchaseCatChange(){
  const c=$('#puCat')?.value||'',stock=['مواد أولية','عبوات وتغليف'].includes(c);
- if($('#puRaw'))$('#puRaw').style.display=stock?'':'none';
+ if($('#puRaw')){$('#puRaw').style.display=stock?'':'none';$('#puRaw').onchange=purchaseItemPrice}
+ if($('#puPrice')){$('#puPrice').readOnly=stock;if(stock)purchaseItemPrice()}
+}
+function purchaseItemPrice(){
+ const r=db.raw.find(x=>String(x.id)===String($('#puRaw')?.value||''));
+ if(r&&$('#puPrice')){$('#puPrice').value=(+r.cost||0);$('#puDesc').value=r.name}
 }
 function addPurchase(){
  const cat=$('#puCat').value,rawId=$('#puRaw').value,desc=$('#puDesc').value.trim(),q=+$('#puQty').value,price=+$('#puPrice').value;
@@ -263,7 +272,7 @@ function addPurchase(){
  if(!name)return alert('اكتب البيان أو اختر المادة');
  const total=q*price,p={id:id(),date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
  db.purchases.unshift(p);
- if(raw){let old=(+raw.qty||0)*(+raw.cost||0),newQty=(+raw.qty||0)+q;raw.cost=newQty?(old+total)/newQty:price;raw.qty=newQty;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
+ if(raw){raw.qty=(+raw.qty||0)+q;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
  save();purchases();
 }
 function renderPurchaseList(){
@@ -368,7 +377,7 @@ function renderDetailedReports(){
  <div class="panel"><b>تفاصيل المصاريف</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">لا توجد مصاريف</div>'}</div>
  <div class="panel"><b>الإنتاج والتعبئة</b><div class="muted">طبخات: ${batches.length} • عمليات تعبئة: ${packs.length} • ليترات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • ليترات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
 }
-function settings(){$('#app').innerHTML=`<div class="title">Back Office</div><div class="panel"><div class="row"><button onclick="packing()">📦 تعبئة الطبخات</button><button onclick="leftovers()">🧴 فضلات / 1 لتر</button><button onclick="historyReport()">🕘 سجل الحركات</button><button onclick="raw()">🧪 المواد الأولية</button><button onclick="production()">🏭 الطبخات والوصفات</button><button onclick="resetTrial()">🧹 تصفير التجربة</button></div></div><div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
+function settings(){$('#app').innerHTML=`<div class="title">Back Office</div><div class="panel"><div class="row"><button onclick="packing()">📦 تعبئة الطبخات</button><button onclick="leftovers()">🧴 فضلات / 1 لتر</button><button onclick="historyReport()">🕘 سجل الحركات</button><button onclick="raw()">🧪 المواد الأولية</button><button onclick="purchasePriceMaster()">💲 دليل المشتريات والأسعار</button><button onclick="production()">🏭 الطبخات والوصفات</button><button onclick="resetTrial()">🧹 تصفير التجربة</button></div></div><div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
 
 
 function leftovers(){
