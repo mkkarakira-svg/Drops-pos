@@ -471,12 +471,21 @@ function produceAndPack(){
  const p0=db.products.find(x=>String(x.id)===String(pid)),rec=db.recipes.filter(x=>String(x.productId)===String(p0?.id));
  if(!p0||L<=0||!rec.length)return alert('Recipe is incomplete');
  for(const x of rec){const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;if(!r||r.qty<need)return alert('Insufficient material: '+(r?r.name:'')+'\nRequired '+need.toFixed(3)+' kg\nAvailable '+(r?r.qty.toFixed(3):0)+' kg')}
- let pack=null,label=null,q=0;
- if(size){q=Math.floor(L/size);const pn=size===20?'Gallon 20L':size===10?'Gallon 10L':size===5?'Gallon 5L':size===4?'Gallon 4L':'Bottle 1L';pack=db.raw.find(r=>String(r.name).toLowerCase()===pn.toLowerCase());label=(size===4||size===5)?db.raw.find(r=>String(r.name).toLowerCase()==='label sticker'):null;if(!pack||pack.qty<q)return alert('Not enough empty containers: '+pn);if(label&&label.qty<q)return alert('Not enough labels');}
+ let pack=null,label=null,cap=null,q=0;
+ if(size){
+  q=Math.floor(L/size);
+  const aliases=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
+  pack=db.raw.find(r=>aliases.includes(String(r.name||'').trim().toLowerCase()));
+  label=db.raw.find(r=>['label sticker','label','sticker'].includes(String(r.name||'').trim().toLowerCase()));
+  cap=db.raw.find(r=>{let n=String(r.name||'').trim().toLowerCase();return n==='cap'||n===size+'l cap'||n==='bottle cap'||n==='gallon cap'});
+  if(!pack||pack.qty<q)return alert('Not enough empty containers: '+aliases[0]);
+  if(cap&&cap.qty<q)return alert('Not enough caps');
+  if(label&&label.qty<q)return alert('Not enough labels');
+ }
  const bid=id(),ts=new Date().toISOString();let cost=0;
  rec.forEach(x=>{const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});
  const b={id:bid,date:today(),time:ts,productId:p0.id,product:p0.name,liters:L,remainingLiters:L,cost,status:'open'};db.batches.unshift(b);
- if(size){let baseName=String(p0.name).replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();let fp=ensureFinishedProduct(baseName,size);pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost})};fp.qty+=q;b.remainingLiters=L-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'};fp.cost=(cost/L*size)+pack.cost+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
+ if(size){let baseName=String(p0.name).replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();let fp=ensureFinishedProduct(baseName,size);pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(cap){cap.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'cap_use',rawId:cap.id,name:cap.name,qty:-q,balance:cap.qty,cost:cap.cost})};if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost})};fp.qty+=q;b.remainingLiters=L-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'};fp.cost=(cost/L*size)+pack.cost+(cap?cap.cost:0)+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
  save();alert(size?'Production and packing completed: '+q+' × '+size+'L':'Batch saved and materials deducted');production();
 }
 
