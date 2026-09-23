@@ -247,7 +247,7 @@ function go(x,fromHistory=false){
  nav(x);if(!fromHistory)history.pushState({dropsView:x},'',location.href);
  switch(x){
   case 'sale':return sale();case 'products':return products();case 'reports':return reports();
-  case 'raw':return raw();case 'production':return production();case 'purchases':return purchases();
+  case 'raw':return raw();case 'stockAlerts':return stockAlerts();case 'production':return production();case 'purchases':return purchases();
   case 'expenses':return expenses();case 'cashbox':return cashbox();case 'stocktake':return stocktake();case 'closingPage':return closingPage();case 'accountsPage':return accountsPage();case 'invoices':return invoices();case 'people':return people();
   case 'settings':return settings();case 'employees':return employees();
   case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();
@@ -283,7 +283,7 @@ function home(){
  exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
  profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
  stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
- buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0);
+ buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0),cashBalance=(db.cashMoves||[]).reduce((a,x)=>a+(x.type==='withdrawal'||x.type==='expense'?-Math.abs(+x.amount||0):Math.abs(+x.amount||0)),0),lastBatch=(db.batches||[])[0];
  $('#app').innerHTML=`
  <div class="kpi-grid">
   <div class="kpi-card"><span class="ico">📈</span><b>Today's Sales</b><div class="kpi">${money(sales)}</div><span class="muted">${d.length} Invoice</span></div>
@@ -296,14 +296,14 @@ function home(){
   ${actionCard('🛒','Sales','sale','#2473f3')}${actionCard('🏭','Production','production','#11b85b')}
   ${actionCard('🧾','Purchases','purchases','#ff7900')}${actionCard('📦','Stock','products','#6236e8')}
  </div>
- <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="panel" onclick="products()"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
+ <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="quick-grid" style="margin-bottom:12px"><div class="kpi-card" onclick="cashbox()" style="cursor:pointer"><div class="muted">💵 Cashbox Balance</div><b>${money(cashBalance)}</b></div><div class="kpi-card" onclick="production()" style="cursor:pointer"><div class="muted">🏭 Latest Production</div><b>${lastBatch?lastBatch.product:'No batches yet'}</b><div class="muted">${lastBatch?(lastBatch.liters+' L • '+lastBatch.date):''}</div></div></div><div class="panel" onclick="go('stockAlerts')" style="cursor:pointer"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
  <div class="admin-grid">
   ${adminCard('👥','Customers','people')}${adminCard('💵','Cashbox','cashbox')}${adminCard('📋','Physical Stocktake','stocktake')}${adminCard('🔒','Daily / Monthly Closing','closingPage')}${adminCard('📒','Customer & Supplier Accounts','accountsPage')}${adminCard('🧑‍💼','Employees & Distributors','employees')}${adminCard('↩️','Returns','returnsPage')}${adminCard('💳','Receivables & Collections','receivablesPage')}${adminCard('💸','Expenses','expenses')}${adminCard('📊','Reports','reports')}${adminCard('⚙️','Settings','settings')}
  </div>
  <div class="section-title">Quick Info</div>
  <div class="quick-grid">
   <div class="quick-card" onclick="go('products')"><span>🏷️ Products<br><b>${db.products.length}</b></span><span>‹</span></div>
-  <div class="quick-card" onclick="go('products')"><span>🔔 Stock Alerts<br><b>${low}</b></span><span>‹</span></div>
+  <div class="quick-card" onclick="go('stockAlerts')"><span>🔔 Stock Alerts<br><b>${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length+db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length}</b></span><span>‹</span></div>
  </div>`;
 }
 function actionCard(i,t,g,color){return `<div class="action-card" style="background:${color}" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="arrow">‹</span></div>`}
@@ -352,6 +352,13 @@ function rawCategoryOf(r){
  if(/gallon|bottle|cap|label|spray|pump|jar|plastic/.test(n))return 'Plastic & Packaging';
  if(/carton|box|bag|sack/.test(n))return 'Bags & Cartons';
  return 'Raw Materials';
+}
+function stockAlerts(){
+ const finished=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)<=5);
+ const materials=(db.raw||[]).filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10));
+ $('#app').innerHTML=`<div class="title">Stock Alerts</div>
+ <div class="panel"><h3>Finished Products</h3>${finished.length?finished.map(p=>`<div class="item" onclick="products()" style="cursor:pointer"><b>${p.name}</b><span class="pill">${+p.qty||0} Pack</span><div class="muted">Low / Out of Stock</div></div>`).join(''):'<div class="muted">No finished-product alerts</div>'}</div>
+ <div class="panel"><h3>Materials & Packaging</h3>${materials.length?materials.map(r=>`<div class="item" onclick="raw()" style="cursor:pointer"><b>${r.name}</b><span class="pill">${(+r.qty||0).toFixed(r.unit==='Piece'?0:3)} ${r.unit||'kg'}</span><div class="muted">Minimum: ${r.minStock!=null?+r.minStock:10}</div></div>`).join(''):'<div class="muted">No material or packaging alerts</div>'}</div>`;
 }
 function raw(){
  const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
@@ -768,7 +775,7 @@ function editRaw(rid){
  db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'edit',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:r.cost});
  save();raw();
 }
-function resetTrial(){if(!confirm('Reset trial data? Recipes, prices, customers and employees will be kept.'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];save();alert('Trial transactions reset.');home();}
+function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions and quantities will be cleared. Recipes, products, purchase prices, price history, customers, suppliers and employees will be kept.'))return;if(!confirm('Final confirmation: clear trial stock and transactions now?'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];db.settings.lastBusinessDate=today();save();alert('GO-LIVE reset completed. Master data and price history were kept. Enter physical stock before starting sales.');home();}
 
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
 function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
