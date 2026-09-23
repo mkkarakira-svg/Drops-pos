@@ -947,6 +947,19 @@ history.replaceState({dropsView:'home'},'',location.href);
 /* DISHWASHING 5L HARD CLEAN v78 */
 (function(){if(db._dishwashing5HardClean78)return;const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();let ds=db.products.filter(p=>baseOf(p.name)==='dishwashing'&&+(p.size||0)===5);if(ds.length){let keep=ds.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];keep.name='Dishwashing 5L';ds.filter(x=>x!==keep).forEach(drop=>{keep.qty=(+keep.qty||0)+(+drop.qty||0);[db.stockMoves,db.packings].forEach(arr=>arr.forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=keep.id}));db.products=db.products.filter(x=>x!==drop)})}db._dishwashing5HardClean78=true;save()})();
 
+/* ENSURE REQUIRED 5L STOCKTAKE PRODUCTS v116 */
+(function(){
+ if(db._ensureRequired5L116)return;
+ const wanted=['Dishwashing','Fabric Softner','Laundry Gel','Floor Cleaner'];
+ wanted.forEach(name=>{
+   const aliases=name==='Fabric Softner'?['fabric softner','fabric softener','comfort']:[name.toLowerCase()];
+   let p=db.products.find(x=>+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));
+   if(p){p.name=name+' 5L';p.size=5}
+   else db.products.push({id:id(),name:name+' 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5});
+ });
+ db._ensureRequired5L116=true;save();
+})();
+
 /* TRIAL ALL FINISHED PRICE 5 v79 */
 (function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
 </script></body></html>
