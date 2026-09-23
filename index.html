@@ -243,7 +243,7 @@ function go(x,fromHistory=false){
  const th=document.querySelector('.top'); if(th) th.classList.toggle('has-back',x!=='home');
  nav(x);
  if(!fromHistory) history.pushState({dropsView:x},'',location.href);
- ({home,sale,products,reports,raw,production,purchases,expenses,invoices,people,settings}[x]||home)();
+ ({home,sale,products,reports,raw,production,purchases,expenses,invoices,people,settings,employees,returnsPage,receivablesPage,profitLossReport,employeeSalesReport}[x]||home)();
 }
 if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];
 function home(){
