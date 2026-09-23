@@ -411,7 +411,7 @@ function reports(){
  const inv=db.invoices||[], ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
  const defaultFrom=dates[0]||todayStr;
- $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div><div class="panel"><button class="orange" style="width:100%" onclick="profitLossReport()">📊 Profit & Loss — تقرير الأرباح والخسائر</button></div>
+ $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 المصاريف</button></div></div>
  <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${todayStr}"><button onclick="renderDetailedReports()">عرض الفترة</button></div></div>
  <div id="detailedReports"></div>`;
  renderDetailedReports();
