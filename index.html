@@ -238,13 +238,19 @@ function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laun
 function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
 let currentView='home';
 function go(x,fromHistory=false){
- currentView=x;
- document.body.classList.toggle('home-view',x==='home');
- const th=document.querySelector('.top'); if(th) th.classList.toggle('has-back',x!=='home');
- nav(x);
- if(!fromHistory) history.pushState({dropsView:x},'',location.href);
- ({home,sale,products,reports,raw,production,purchases,expenses,invoices,people,settings,employees,returnsPage,receivablesPage,profitLossReport,employeeSalesReport}[x]||home)();
+ currentView=x;document.body.classList.toggle('home-view',x==='home');
+ const th=document.querySelector('.top');if(th)th.classList.toggle('has-back',x!=='home');
+ nav(x);if(!fromHistory)history.pushState({dropsView:x},'',location.href);
+ switch(x){
+  case 'sale':return sale();case 'products':return products();case 'reports':return reports();
+  case 'raw':return raw();case 'production':return production();case 'purchases':return purchases();
+  case 'expenses':return expenses();case 'invoices':return invoices();case 'people':return people();
+  case 'settings':return settings();case 'employees':return employees();
+  case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();
+  default:return home();
+ }
 }
+
 if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];
 function home(){
  currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
@@ -276,7 +282,7 @@ function home(){
  </div>`;
 }
 function actionCard(i,t,g,color){return `<div class="action-card" style="background:${color}" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="arrow">‹</span></div>`}
-function adminCard(i,t,g){return `<div class="admin-card" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b></div>`}
+function adminCard(i,t,g){return `<div class="admin-card" role="button" onclick="window[g] ? window[g]() : go(g)"><span class="ico">${i}</span><b>${t}</b></div>`.replaceAll('g)',`'${g}')`).replace('window[g]',`window['${g}']`)}
 function card(i,t,g){return `<div class="card" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="muted">فتح</span></div>`} function homeCard(i,t,g,color){return `<div class="card" style="background:${color};color:white" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b></div>`}
 function allowedPackSizes(base){let n=String(base||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();if(n==='car')return [10,20];if(['laundry gel','dishwashing','comfort','floor cleaner'].includes(n))return [1,4,5];return [1,4]}
 function finishedFamilies(){const names=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"],norm=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();return names.map(name=>({name,items:[1,4,5,10,20].map(size=>allowedPackSizes(name).includes(size)?(db.products.find(p=>norm(p.name)===name.toLowerCase()&&+(p.size||0)===size)||null):null)}))}function ensureFinishedProduct(base,size){const norm=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();let p=db.products.find(x=>norm(x.name)===norm(base)&&+(x.size||0)===size);if(!p){p={id:id(),name:base+' '+size+'L',price:0,cost:0,qty:0,size};db.products.push(p)}return p}
