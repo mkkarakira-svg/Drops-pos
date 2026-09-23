@@ -293,7 +293,47 @@ function expenses(){$('#app').innerHTML=`<div class="title">المصاريف</di
 function addExp(){let n=$('#en').value.trim(),a=+$('#ea').value;if(!n||a<=0)return;db.expenses.unshift({id:id(),name:n,amount:a,date:today()});save();expenses()}
 function people(){$('#app').innerHTML=`<div class="title">العملاء والموردون</div><div class="panel"><div class="row"><input id="nn" placeholder="الاسم"><select id="nt"><option>عميل</option><option>مورد</option></select><input id="np" placeholder="الهاتف"><button onclick="addPerson()">إضافة</button></div></div><div class="panel">${db.people.map(p=>`<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div></div>`).join('')}</div>`}
 function addPerson(){let n=$('#nn').value.trim();if(!n)return;db.people.push({id:id(),name:n,type:$('#nt').value,phone:$('#np').value});save();people()}
-function reports(){nav('reports');let ts=db.invoices.filter(x=>x.date===today()).reduce((a,x)=>a+x.total,0),te=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),profit=db.invoices.filter(x=>x.date===today()).reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-te;$('#app').innerHTML=`<div class="title">التقارير</div><div class="grid"><div class="card"><span>مبيعات اليوم</span><div class="kpi">${money(ts)}</div></div><div class="card"><span>مصاريف اليوم</span><div class="kpi">${money(te)}</div></div><div class="card"><span>ربح تقديري</span><div class="kpi">${money(profit)}</div></div><div class="card"><span>قيمة المواد الخام</span><div class="kpi">${money(db.raw.reduce((a,r)=>a+r.qty*r.cost,0))}</div></div></div>`}
+function reports(){
+ nav('reports');
+ const inv=db.invoices||[], ex=db.expenses||[], todayStr=today();
+ const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
+ const defaultFrom=dates[0]||todayStr;
+ $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div>
+ <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${todayStr}"><button onclick="renderDetailedReports()">عرض الفترة</button></div></div>
+ <div id="detailedReports"></div>`;
+ renderDetailedReports();
+}
+function renderDetailedReports(){
+ const from=$('#repFrom')?.value||today(),to=$('#repTo')?.value||today(),
+ inv=(db.invoices||[]).filter(x=>x.date>=from&&x.date<=to),
+ ex=(db.expenses||[]).filter(x=>x.date>=from&&x.date<=to),
+ batches=(db.batches||[]).filter(x=>x.date>=from&&x.date<=to),
+ packs=(db.packings||[]).filter(x=>x.date>=from&&x.date<=to);
+ const sales=inv.reduce((a,x)=>a+(+x.total||0),0),expensesTotal=ex.reduce((a,x)=>a+(+x.amount||0),0),
+ gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-(+i.cost||0))*(+i.qty||0),0),0),
+ net=gross-expensesTotal,items=inv.flatMap(v=>(v.items||[]).map(i=>({...i,date:v.date,invoiceId:v.id}))),
+ units=items.reduce((a,i)=>a+(+i.qty||0),0),liters=items.reduce((a,i)=>a+(+i.qty||0)*(+i.size||+(String(i.name||'').match(/(1|4|5|10|20)L/i)?.[1])||0),0);
+ const byProduct={};items.forEach(i=>{let k=i.name||'منتج';if(!byProduct[k])byProduct[k]={qty:0,sales:0,profit:0};byProduct[k].qty+=+i.qty||0;byProduct[k].sales+=(+i.price||0)*(+i.qty||0);byProduct[k].profit+=((+i.price||0)-(+i.cost||0))*(+i.qty||0)});
+ const rawValue=(db.raw||[]).reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),finishedValue=(db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*(+p.cost||0),0);
+ const top=Object.entries(byProduct).sort((a,b)=>b[1].sales-a[1].sales);
+ $('#detailedReports').innerHTML=`
+ <div class="grid">
+  <div class="card"><span>إجمالي المبيعات</span><div class="kpi">${money(sales)}</div></div>
+  <div class="card"><span>عدد الفواتير</span><div class="kpi">${inv.length}</div></div>
+  <div class="card"><span>العبوات المباعة</span><div class="kpi">${units}</div></div>
+  <div class="card"><span>ليترات مباعة</span><div class="kpi">${liters.toFixed(0)} L</div></div>
+  <div class="card"><span>الربح الإجمالي</span><div class="kpi">${money(gross)}</div></div>
+  <div class="card"><span>المصاريف</span><div class="kpi">${money(expensesTotal)}</div></div>
+  <div class="card"><span>صافي الربح</span><div class="kpi">${money(net)}</div></div>
+  <div class="card"><span>قيمة المواد الخام</span><div class="kpi">${money(rawValue)}</div></div>
+  <div class="card"><span>قيمة البضاعة الجاهزة</span><div class="kpi">${money(finishedValue)}</div></div>
+  <div class="card"><span>الطبخات</span><div class="kpi">${batches.length}</div></div>
+ </div>
+ <div class="panel"><b>المبيعات حسب المنتج</b>${top.length?top.map(([n,v])=>`<div class="item"><b>${n}</b><div class="muted">الكمية ${v.qty} • المبيعات ${money(v.sales)} • الربح ${money(v.profit)}</div></div>`).join(''):'<div class="muted">لا توجد مبيعات ضمن الفترة</div>'}</div>
+ <div class="panel"><b>تفاصيل الفواتير</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
+ <div class="panel"><b>تفاصيل المصاريف</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">لا توجد مصاريف</div>'}</div>
+ <div class="panel"><b>الإنتاج والتعبئة</b><div class="muted">طبخات: ${batches.length} • عمليات تعبئة: ${packs.length} • ليترات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • ليترات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
+}
 function settings(){$('#app').innerHTML=`<div class="title">Back Office</div><div class="panel"><div class="row"><button onclick="packing()">📦 تعبئة الطبخات</button><button onclick="leftovers()">🧴 فضلات / 1 لتر</button><button onclick="historyReport()">🕘 سجل الحركات</button><button onclick="raw()">🧪 المواد الأولية</button><button onclick="production()">🏭 الطبخات والوصفات</button><button onclick="resetTrial()">🧹 تصفير التجربة</button></div></div><div class="title">الإعدادات والنسخ الاحتياطي</div><div class="panel"><div class="row"><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('تم الحفظ')">حفظ سعر الدولار</button></div><hr><div class="row"><button onclick="backup()">تصدير Backup</button><input type="file" id="restore" accept=".json"><button class="orange" onclick="restoreDB()">استيراد</button></div></div>`}
 
 
