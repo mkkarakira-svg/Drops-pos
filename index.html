@@ -253,7 +253,7 @@ body:not(.home-view) .app-back{display:block!important}
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
-const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=>new Date().toISOString().slice(0,10);
+const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 let db=JSON.parse(localStorage.getItem('dropsDB')||'null')||{products:[],raw:[],recipes:[],batches:[],invoices:[],expenses:[],purchases:[],people:[],settings:{usdLbp:90000}};
 db.products=db.products||[];db.raw=db.raw||[];db.recipes=db.recipes||[];db.batches=db.batches||[];db.invoices=db.invoices||[];db.expenses=db.expenses||[];db.purchases=db.purchases||[];db.people=db.people||[];db.settings=db.settings||{usdLbp:90000};
 db.rawMoves=db.rawMoves||[];db.stockMoves=db.stockMoves||[];db.packings=db.packings||[];db.adjustments=db.adjustments||[];db.priceHistory=db.priceHistory||[];
