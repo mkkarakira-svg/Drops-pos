@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded',function(){var e=document.getElemen
 const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=>new Date().toISOString().slice(0,10);
 let db=JSON.parse(localStorage.getItem('dropsDB')||'null')||{products:[],raw:[],recipes:[],batches:[],invoices:[],expenses:[],purchases:[],people:[],settings:{usdLbp:90000}};
 db.products=db.products||[];db.raw=db.raw||[];db.recipes=db.recipes||[];db.batches=db.batches||[];db.invoices=db.invoices||[];db.expenses=db.expenses||[];db.purchases=db.purchases||[];db.people=db.people||[];db.settings=db.settings||{usdLbp:90000};
-db.rawMoves=db.rawMoves||[];db.stockMoves=db.stockMoves||[];db.packings=db.packings||[];db.adjustments=db.adjustments||[];
+db.rawMoves=db.rawMoves||[];db.stockMoves=db.stockMoves||[];db.packings=db.packings||[];db.adjustments=db.adjustments||[];db.priceHistory=db.priceHistory||[];
 let cart={}; const save=()=>localStorage.setItem('dropsDB',JSON.stringify(db)); const id=()=>Date.now()+Math.floor(Math.random()*999);
 function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laundry Gel 1L','Laundry Gel 4L','Hand Soap 1L','Hand Soap 4L','Floor Cleaner 4L'].forEach((n,i)=>db.products.push({id:id()+i,name:n,price:[2.56,2.56,2.89,2.89,3.11,3.11,2.22][i],qty:0,cost:0,size:+((n.match(/([0-9.]+)L/)||[,1])[1])}));save()}}seed();
 function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
@@ -255,7 +255,7 @@ function go(x,fromHistory=false){
  }
 }
 
-if(!db.products)db.products=[];if(!db.raw)db.raw=[];if(!db.recipes)db.recipes=[];if(!db.batches)db.batches=[];if(!db.invoices)db.invoices=[];if(!db.expenses)db.expenses=[];if(!db.purchases)db.purchases=[];if(!db.people)db.people=[];if(!db.settings)db.settings={usdLbp:90000};if(!db.rawMoves)db.rawMoves=[];if(!db.stockMoves)db.stockMoves=[];if(!db.packings)db.packings=[];if(!db.adjustments)db.adjustments=[];if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];if(!db.closings)db.closings=[];if(!db.commissionPayments)db.commissionPayments=[];
+if(!db.products)db.products=[];if(!db.raw)db.raw=[];if(!db.recipes)db.recipes=[];if(!db.batches)db.batches=[];if(!db.invoices)db.invoices=[];if(!db.expenses)db.expenses=[];if(!db.purchases)db.purchases=[];if(!db.people)db.people=[];if(!db.settings)db.settings={usdLbp:90000};if(!db.rawMoves)db.rawMoves=[];if(!db.stockMoves)db.stockMoves=[];if(!db.packings)db.packings=[];if(!db.adjustments)db.adjustments=[];if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];if(!db.closings)db.closings=[];if(!db.commissionPayments)db.commissionPayments=[];if(!db.priceHistory)db.priceHistory=[];
 function closingSnapshotFor(period,autoFlag){
  var inv=(db.invoices||[]).filter(function(v){return !v.voided&&v.date===period});
  var ex=(db.expenses||[]).filter(function(x){return x.date===period});
@@ -372,7 +372,7 @@ function purchasePriceMaster(){
  </div>
  ${cats.map((c,i)=>`<div id="ppmBox${i}" class="panel" style="display:${i===0?'block':'none'}"><h3 style="margin-top:0">${c}</h3>
  <div class="row" style="margin-bottom:10px"><input id="ppmName${i}" placeholder="New item name"><select id="ppmUnit${i}"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="ppmCost${i}" type="number" step=".001" min="0" placeholder="Unit Price $"><button class="green" onclick="addPriceMasterItem(${i})">+ Add Item</button></div>
- ${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><input id="min_${r.id}" type="number" step=".001" min="0" value="${+r.minStock||0}" placeholder="Min Stock"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}`;
+ ${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><input id="min_${r.id}" type="number" step=".001" min="0" value="${+r.minStock||0}" placeholder="Min Stock"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button><button onclick="showPriceHistory('${r.id}')">History</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}<div id="priceHistoryBox"></div>`;
 }
 function showPriceMasterCategory(i){
  [0,1,2].forEach(n=>{let b=document.getElementById('ppmBox'+n),t=document.getElementById('ppmTab'+n);if(b)b.style.display=n===i?'block':'none';if(t)t.classList.toggle('green',n===i)});
@@ -383,7 +383,8 @@ function addPriceMasterItem(i){
  if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===name.toLowerCase()))return alert('Item already exists');
  db.raw.push({id:id(),name,cost:Math.max(0,cost),qty:0,category:cats[i],unit});save();purchasePriceMaster();showPriceMasterCategory(i);
 }
-function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value,m=+document.getElementById('min_'+rid).value;if(!r||v<0||m<0)return;r.cost=v;r.minStock=m;save();alert('Price & minimum stock updated for '+r.name)}
+function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value,m=+document.getElementById('min_'+rid).value;if(!r||v<0||m<0)return;let old=+r.cost||0;if(v!==old)db.priceHistory.unshift({id:id(),rawId:r.id,name:r.name,date:today(),time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:v,source:'Price Master'});r.cost=v;r.minStock=m;save();alert('Price & minimum stock updated for '+r.name)}
+function showPriceHistory(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),h=(db.priceHistory||[]).filter(x=>String(x.rawId)===String(rid)).slice(0,10),el=document.getElementById('priceHistoryBox');if(!el||!r)return;el.innerHTML=`<div class="panel"><h3>${r.name} — Price History</h3>${h.length?h.map(x=>`<div class="item"><b>${money(x.oldPrice)} → ${money(x.newPrice)}</b><div class="muted">${x.date} • ${x.source||''}</div></div>`).join(''):'<div class="muted">No price changes yet</div>'}</div>`;el.scrollIntoView({behavior:'smooth'})}
 function purchases(){
  const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
  const suppliers=(db.people||[]).filter(p=>p.type==='Supplier');
@@ -415,7 +416,7 @@ function addPurchase(){
  if(!name)return alert('Enter description or select material');
  const total=q*price,p={id:id(),date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
  db.purchases.unshift(p);
- if(raw){raw.qty=(+raw.qty||0)+q;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
+ if(raw){let old=+raw.cost||0;if(price!==old){db.priceHistory.unshift({id:id(),rawId:raw.id,name:raw.name,date:p.date,time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:price,source:'Purchase',supplier:p.supplier||''});raw.cost=price}raw.qty=(+raw.qty||0)+q;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
  save();purchases();
 }
 function renderPurchaseList(){
@@ -673,7 +674,7 @@ function settings(){
   <div class="title bo-section-title">Settings & Backup</div>
   <div class="panel bo-settings">
    <div class="bo-setting-row"><div><b>USD/LBP Rate</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('Saved')">Save</button></div>
-   <div class="bo-backup-row"><button onclick="backup()">⬇️ Export Backup</button><label class="bo-file">📁 Choose Backup<input type="file" id="restore" accept=".json"></label><button class="orange" onclick="restoreDB()">Import</button></div>
+   <div class="muted" style="margin-bottom:8px">Full backup includes stock, prices, recipes, purchases, sales and settings.</div><div class="bo-backup-row"><button onclick="backup()">⬇️ Export Full Backup</button><label class="bo-file">📁 Choose Backup<input type="file" id="restore" accept=".json,application/json"></label><button class="orange" onclick="restoreDB()">Restore Backup</button></div>
   </div>
  </div>`;
 }
@@ -770,7 +771,7 @@ function editRaw(rid){
 function resetTrial(){if(!confirm('Reset trial data? Recipes, prices, customers and employees will be kept.'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];save();alert('Trial transactions reset.');home();}
 
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
-function restoreDB(){let f=$('#restore').files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();home()}catch(e){alert('Invalid file')}};r.readAsText(f)}
+function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
 const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
 if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
 
