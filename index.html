@@ -256,6 +256,27 @@ function go(x,fromHistory=false){
 }
 
 if(!db.products)db.products=[];if(!db.raw)db.raw=[];if(!db.recipes)db.recipes=[];if(!db.batches)db.batches=[];if(!db.invoices)db.invoices=[];if(!db.expenses)db.expenses=[];if(!db.purchases)db.purchases=[];if(!db.people)db.people=[];if(!db.settings)db.settings={usdLbp:90000};if(!db.rawMoves)db.rawMoves=[];if(!db.stockMoves)db.stockMoves=[];if(!db.packings)db.packings=[];if(!db.adjustments)db.adjustments=[];if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];if(!db.closings)db.closings=[];if(!db.commissionPayments)db.commissionPayments=[];
+function closingSnapshotFor(period,autoFlag){
+ var inv=(db.invoices||[]).filter(function(v){return !v.voided&&v.date===period});
+ var ex=(db.expenses||[]).filter(function(x){return x.date===period});
+ var moves=(db.cashMoves||[]).filter(function(x){return x.date===period});
+ var sales=inv.reduce(function(a,x){return a+(+x.total||0)},0);
+ var expenses=ex.reduce(function(a,x){return a+(+x.amount||0)},0);
+ var gross=inv.reduce(function(a,v){return a+(v.items||[]).reduce(function(q,i){return q+((+i.price||0)-(+i.cost||0))*(+i.qty||0)},0)},0);
+ var cashIn=moves.filter(function(x){return (+x.amount||0)>0}).reduce(function(a,x){return a+(+x.amount||0)},0);
+ var cashOut=Math.abs(moves.filter(function(x){return (+x.amount||0)<0}).reduce(function(a,x){return a+(+x.amount||0)},0));
+ var debt=inv.reduce(function(a,v){return a+Math.max(0,(+v.total||0)-(+v.paid||0))},0);
+ return {id:id(),type:'day',period:period,date:today(),sales:sales,expenses:expenses,gross:gross,net:gross-expenses,cashIn:cashIn,cashOut:cashOut,debt:debt,auto:!!autoFlag};
+}
+function autoEndOfDay(){
+ var d=today(),last=db.settings.lastBusinessDate;
+ if(!last){db.settings.lastBusinessDate=d;save();return}
+ if(last===d)return;
+ var exists=(db.closings||[]).some(function(c){return c.type==='day'&&c.period===last});
+ if(!exists)db.closings.unshift(closingSnapshotFor(last,true));
+ db.settings.lastBusinessDate=d;save();
+}
+autoEndOfDay();
 function home(){
  currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
  let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
