@@ -242,7 +242,7 @@ function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laun
 function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
 let currentView='home';
 function go(x,fromHistory=false){
- currentView=x;try{sessionStorage.setItem('dropsCurrentView',x)}catch(e){};document.body.classList.toggle('home-view',x==='home');
+ currentView=x;try{sessionStorage.setItem('dropsCurrentView',x)}catch(e){};if(location.hash!=='#'+x)history.replaceState({dropsView:x},'',location.pathname+location.search+'#'+x);document.body.classList.toggle('home-view',x==='home');
  const th=document.querySelector('.top');if(th)th.classList.toggle('has-back',x!=='home');
  nav(x);if(!fromHistory)history.pushState({dropsView:x},'',location.href);
  switch(x){
@@ -851,11 +851,11 @@ if(!db._allFormulaMasters1){
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
-let _restoreView='home';try{_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};if(_restoreView!=='home')go(_restoreView,true);else home();
+let _restoreView=String(location.hash||'').replace(/^#/,'')||'home';try{if(_restoreView==='home')_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};const _validViews=['home','sale','products','reports','raw','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage'];if(!_validViews.includes(_restoreView))_restoreView='home';if(_restoreView!=='home')go(_restoreView,true);else home();
 </script><script>
 window.goHome=function(){
   if(currentView==='home') return;
-  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};
+  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};history.replaceState({dropsView:'home'},'',location.pathname+location.search+'#home');
   document.body.classList.add('home-view');
   home();
   history.pushState({dropsView:'home'},'',location.href);
