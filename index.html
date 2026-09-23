@@ -367,7 +367,7 @@ function reports(){
  const inv=db.invoices||[], ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
  const defaultFrom=dates[0]||todayStr;
- $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div>
+ $('#app').innerHTML=`<div class="title">التقارير التفصيلية</div><div class="panel"><button class="orange" style="width:100%" onclick="profitLossReport()">📊 Profit & Loss — تقرير الأرباح والخسائر</button></div>
  <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${todayStr}"><button onclick="renderDetailedReports()">عرض الفترة</button></div></div>
  <div id="detailedReports"></div>`;
  renderDetailedReports();
@@ -402,6 +402,22 @@ function renderDetailedReports(){
  <div class="panel"><b>تفاصيل الفواتير</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
  <div class="panel"><b>تفاصيل المصاريف</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">لا توجد مصاريف</div>'}</div>
  <div class="panel"><b>الإنتاج والتعبئة</b><div class="muted">طبخات: ${batches.length} • عمليات تعبئة: ${packs.length} • ليترات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • ليترات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
+}
+function profitLossReport(){
+ const now=new Date(),ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+ $('#app').innerHTML=`<div class="title">Profit & Loss</div><div class="panel"><div class="row"><input id="plMonth" type="month" value="${ym}" onchange="renderProfitLoss()"><button onclick="reports()">رجوع للتقارير</button></div></div><div id="plBody"></div>`;
+ renderProfitLoss();
+}
+function renderProfitLoss(){
+ const m=$('#plMonth')?.value||'',inv=(db.invoices||[]).filter(x=>String(x.date||'').startsWith(m)),ex=(db.expenses||[]).filter(x=>String(x.date||'').startsWith(m));
+ const sales=inv.reduce((a,x)=>a+(+x.total||0),0);
+ const cogs=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+(+i.cost||0)*(+i.qty||0),0),0);
+ const gross=sales-cogs,expenses=ex.reduce((a,x)=>a+(+x.amount||0),0),net=gross-expenses;
+ const byExp={};ex.forEach(e=>{let k=e.category||e.name||'مصاريف أخرى';byExp[k]=(byExp[k]||0)+(+e.amount||0)});
+ const margin=sales?net/sales*100:0;
+ $('#plBody').innerHTML=`<div class="grid"><div class="card"><span>إيرادات المبيعات</span><div class="kpi">${money(sales)}</div></div><div class="card"><span>تكلفة البضاعة المباعة</span><div class="kpi">${money(cogs)}</div></div><div class="card"><span>مجمل الربح</span><div class="kpi">${money(gross)}</div></div><div class="card"><span>مصاريف التشغيل</span><div class="kpi">${money(expenses)}</div></div><div class="card"><span>صافي الربح / الخسارة</span><div class="kpi">${money(net)}</div></div><div class="card"><span>هامش الصافي</span><div class="kpi">${margin.toFixed(1)}%</div></div></div>
+ <div class="panel"><b>تفصيل المصاريف</b>${Object.keys(byExp).length?Object.entries(byExp).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="item">${n}<span style="float:left"><b>${money(v)}</b></span></div>`).join(''):'<div class="muted">لا توجد مصاريف مسجلة لهذا الشهر</div>'}</div>
+ <div class="panel"><div class="item"><b>المبيعات</b><span style="float:left">${money(sales)}</span></div><div class="item">− تكلفة البضاعة المباعة<span style="float:left">${money(cogs)}</span></div><div class="item"><b>= مجمل الربح</b><span style="float:left"><b>${money(gross)}</b></span></div><div class="item">− مصاريف التشغيل<span style="float:left">${money(expenses)}</span></div><div class="item"><b>= صافي الربح / الخسارة</b><span style="float:left"><b>${money(net)}</b></span></div></div>`;
 }
 function settings(){
  $('#app').innerHTML=`
