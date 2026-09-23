@@ -278,32 +278,30 @@ function autoEndOfDay(){
 }
 autoEndOfDay();
 function home(){
- currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
- let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
- exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
- profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
- stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
- buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0);
+ currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){}
+ document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
+ const invoices=(db.invoices||[]),expenses=(db.expenses||[]),products=(db.products||[]),raws=(db.raw||[]),purchases=(db.purchases||[]);
+ let d=invoices.filter(x=>x&&x.date===today()&&!x.voided);
+ let sales=d.reduce((a,x)=>a+(+x.total||0),0);
+ let exp=expenses.filter(x=>x&&x.date===today()).reduce((a,x)=>a+(+x.amount||0),0);
+ let profit=d.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-(+i.cost||0))*(+i.qty||0),0),0)-exp;
+ let stock=products.reduce((a,p)=>a+(+p.qty||0)*(+p.cost||0),0);
+ let rawStock=raws.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0);
+ let low=products.filter(p=>p&&!p.formulaMaster&&(+p.qty||0)<=5).length;
+ let buys=purchases.filter(x=>x&&x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0);
  $('#app').innerHTML=`
  <div class="kpi-grid">
   <div class="kpi-card"><span class="ico">📈</span><b>Today's Sales</b><div class="kpi">${money(sales)}</div><span class="muted">${d.length} Invoice</span></div>
-  <div class="kpi-card"><span class="ico">🧾</span><b>Today's Purchases</b><div class="kpi">${money(buys)}</div><span class="muted">${(db.purchases||[]).filter(x=>x.date===today()).length} Transaction</span></div>
+  <div class="kpi-card"><span class="ico">🧾</span><b>Today's Purchases</b><div class="kpi">${money(buys)}</div><span class="muted">${purchases.filter(x=>x&&x.date===today()).length} Transaction</span></div>
   <div class="kpi-card"><span class="ico">📦</span><b>Inventory</b><div class="kpi">${money(stock)}</div><span class="muted">${low} Alert</span></div>
   <div class="kpi-card"><span class="ico">🪙</span><b>Net Profit</b><div class="kpi">${money(profit)}</div><span class="muted">Estimated</span></div>
  </div>
- <div class="quick-grid inventory-value-row" style="margin-bottom:12px"><div class="kpi-card raw-value"><div class="muted">🧪 Raw Materials Value</div><b>${money(rawStock)}</b></div><div class="kpi-card finished-value"><div class="muted">📦 Finished Goods Value</div><b>${money(stock)}</b></div></div><div class="section-title">Main Operations</div>
- <div class="main-grid">
-  ${actionCard('🛒','Sales','sale','#2473f3')}${actionCard('🏭','Production','production','#11b85b')}
-  ${actionCard('🧾','Purchases','purchases','#ff7900')}${actionCard('📦','Stock','products','#6236e8')}
+ <div class="quick-grid inventory-value-row" style="margin-bottom:12px"><div class="kpi-card raw-value"><div class="muted">🧪 Materials Value</div><b>${money(rawStock)}</b></div><div class="kpi-card finished-value"><div class="muted">📦 Finished Goods Value</div><b>${money(stock)}</b></div></div>
+ <div class="section-title">Main Operations</div><div class="main-grid">
+  ${actionCard('🛒','Sales','sale','#2473f3')}${actionCard('🏭','Production','production','#11b85b')}${actionCard('🧾','Purchases','purchases','#ff7900')}${actionCard('📦','Stock','products','#6236e8')}
  </div>
- <div class="panel" onclick="go('leftovers')" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="panel" onclick="products()"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=10).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
- <div class="admin-grid">
+ <div class="section-title">Management</div><div class="admin-grid">
   ${adminCard('🧪','Materials Inventory','materials')}${adminCard('👥','Customers','people')}${adminCard('💵','Cashbox','cashbox')}${adminCard('📋','Physical Stocktake','stocktake')}${adminCard('🔒','Daily / Monthly Closing','closingPage')}${adminCard('📒','Customer & Supplier Accounts','accountsPage')}${adminCard('🧑‍💼','Employees & Distributors','employees')}${adminCard('↩️','Returns','returnsPage')}${adminCard('💳','Receivables & Collections','receivablesPage')}${adminCard('💸','Expenses','expenses')}${adminCard('📊','Reports','reports')}${adminCard('⚙️','Settings','settings')}
- </div>
- <div class="section-title">Quick Info</div>
- <div class="quick-grid">
-  <div class="quick-card" onclick="go('products')"><span>🏷️ Products<br><b>${db.products.length}</b></span><span>‹</span></div>
-  <div class="quick-card" onclick="go('products')"><span>🔔 Stock Alerts<br><b>${low}</b></span><span>‹</span></div>
  </div>`;
 }
 function actionCard(i,t,g,color){return `<div class="action-card" style="background:${color}" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="arrow">‹</span></div>`}
@@ -983,11 +981,6 @@ window.goHome=function(){currentView='home';try{sessionStorage.setItem('dropsCur
 /* TRIAL ALL FINISHED PRICE 5 v79 */
 (function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
 
-/* SAFE BOOT v126 */
-try{
- let v='home';try{v=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){}
- const ok=['home','sale','products','reports','raw','materials','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage','packing','leftovers','historyReport','priceMaster'];
- if(!ok.includes(v))v='home';
- if(v==='home')home();else go(v,true);
-}catch(e){currentView='home';home();}
+/* SAFE BOOT v127 */
+try{currentView='home';home()}catch(e){document.getElementById('app').innerHTML='<div class="panel"><b>Drops POS</b><div>Reload required.</div></div>'}
 </script></body></html>
