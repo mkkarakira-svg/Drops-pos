@@ -358,8 +358,18 @@ function produceAndPack(){
  save();alert(size?'تم الإنتاج والتعبئة: '+q+' × '+size+'L':'تم حفظ الطبخة وخصم المواد');production();
 }
 
-function expenses(){$('#app').innerHTML=`<div class="title">المصاريف</div><div class="panel"><div class="row"><input id="en" placeholder="البيان"><input id="ea" type="number" step=".01" placeholder="$"><button onclick="addExp()">إضافة</button></div></div><div class="panel">${db.expenses.map(e=>`<div class="item">${e.name}<span style="float:left">${money(e.amount)} — ${e.date}</span></div>`).join('')}</div>`}
-function addExp(){let n=$('#en').value.trim(),a=+$('#ea').value;if(!n||a<=0)return;db.expenses.unshift({id:id(),name:n,amount:a,date:today()});save();expenses()}
+function expenses(){
+ const cats=['إيجار','كهرباء','رواتب موظفين','يد عاملة','نقل ومحروقات','صيانة','اتصالات وإنترنت','رسوم واشتراكات','مصاريف إدارية','مصاريف إضافية','أخرى'];
+ $('#app').innerHTML=`<div class="title">مصاريف المعمل</div>
+ <div class="panel"><div class="row"><input id="ed" type="date" value="${today()}"><select id="ec">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+ <div class="row"><input id="en" placeholder="البيان — مثال: أجار شهر أيلول"><input id="ea" type="number" step=".01" min="0" placeholder="المبلغ $"></div>
+ <div class="row"><select id="ep"><option>نقدي</option><option>تحويل</option><option>شيك</option><option>آجل</option></select><input id="enote" placeholder="ملاحظات"></div>
+ <button class="orange" style="width:100%;margin-top:8px" onclick="addExp()">تسجيل المصروف</button></div>
+ <div class="panel"><div class="row"><input id="efrom" type="date" onchange="renderExpenseList()"><input id="eto" type="date" onchange="renderExpenseList()"><select id="efcat" onchange="renderExpenseList()"><option value="">كل المصاريف</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="expenseList"></div></div>`;
+ renderExpenseList();
+}
+function addExp(){let n=$('#en').value.trim(),a=+$('#ea').value,c=$('#ec').value;if(!n||a<=0)return alert('أدخل البيان والمبلغ');db.expenses.unshift({id:id(),name:n,amount:a,category:c,date:$('#ed').value||today(),payment:$('#ep').value,note:$('#enote').value.trim()});save();expenses()}
+function renderExpenseList(){let from=$('#efrom')?.value||'',to=$('#eto')?.value||'',cat=$('#efcat')?.value||'',list=(db.expenses||[]).filter(e=>(!from||e.date>=from)&&(!to||e.date<=to)&&(!cat||e.category===cat)),total=list.reduce((a,e)=>a+(+e.amount||0),0);$('#expenseList').innerHTML=`<div class="item"><b>إجمالي المصاريف</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(e=>`<div class="item"><b>${e.name}</b> <span class="pill">${e.category||'أخرى'}</span><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date||''}${e.payment?' • '+e.payment:''}</div>${e.note?`<div class="muted">${e.note}</div>`:''}</div>`).join(''):'<div class="muted">لا توجد مصاريف ضمن الاختيار</div>'}`}
 function people(){$('#app').innerHTML=`<div class="title">العملاء والموردون</div><div class="panel"><div class="row"><input id="nn" placeholder="الاسم"><select id="nt"><option>عميل</option><option>مورد</option></select><input id="np" placeholder="الهاتف"><button onclick="addPerson()">إضافة</button></div></div><div class="panel">${db.people.map(p=>`<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div></div>`).join('')}</div>`}
 function addPerson(){let n=$('#nn').value.trim();if(!n)return;db.people.push({id:id(),name:n,type:$('#nt').value,phone:$('#np').value});save();people()}
 function reports(){
