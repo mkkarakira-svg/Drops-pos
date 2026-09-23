@@ -186,6 +186,20 @@ body:not(.home-view) .app-back{display:block!important}
 
 /* FORMULA MANAGEMENT v86 */
 .recipe-formula-manage{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}.recipe-formula-manage select{min-width:0}.recipe-formula-manage button{padding:9px 8px;white-space:nowrap}.recipe-delete-formula{background:#fff2ef!important;color:#a83b28!important;border:1px solid #f0c8bf!important}@media(max-width:480px){.recipe-formula-manage{grid-template-columns:1fr 1fr}.recipe-formula-manage select{grid-column:1/-1}}
+
+/* COMPACT HOME v90 */
+.home-view .kpi-grid{gap:8px!important}
+.home-view .kpi-card{padding:11px 7px!important;min-height:128px!important;border-radius:18px!important}
+.home-view .kpi-card .ico{font-size:21px!important}
+.home-view .kpi-card .kpi{font-size:25px!important;margin:5px 0!important}
+.home-view .inventory-value-row .kpi-card{min-height:88px!important;padding:10px!important}
+.home-view .main-grid{gap:9px!important}
+.home-view .action-card{min-height:112px!important;padding:14px!important;border-radius:18px!important}
+.home-view .action-card .ico{font-size:24px!important}
+.home-view .admin-grid{gap:9px!important}
+.home-view .admin-card{min-height:118px!important;padding:12px 7px!important;border-radius:18px!important}
+.home-view .admin-card .ico{font-size:25px!important}
+.home-view .section-title{margin:18px 0 10px!important}
 </style></head><body>
 <header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div>USD/LBP <strong id="headerFx">90,000</strong></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>الرئيسية</button><button onclick="go('products')" id="n-products">📦<br>المنتجات</button><button onclick="go('sale')" id="n-sale">🛒<br>بيع</button><button onclick="go('reports')" id="n-reports">▤<br>التقارير</button><button onclick="go('settings')" id="n-settings">☰<br>المزيد</button></nav>
