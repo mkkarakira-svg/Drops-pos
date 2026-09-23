@@ -362,7 +362,7 @@ function renderProducts(){
  const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
  const moveQty=(family,sz)=>{
    const ids=new Set(db.products.filter(p=>!p.formulaMaster&&base(p.name)===family.toLowerCase()&&+(p.size||0)===sz).map(p=>String(p.id)));
-   const moves=(db.stockMoves||[]).filter(m=>ids.has(String(m.productId))||((!m.productId)&&base(m.name)===family.toLowerCase()&&new RegExp('\\\\s'+sz+'L\\\\s*
+   const moves=(db.stockMoves||[]).filter(m=>ids.has(String(m.productId))||((!m.productId)&&base(m.name)===family.toLowerCase()&&String(m.name||'').trim().toLowerCase().endsWith(sz+'l')));
    if(!moves.length)return null;
    const latest=moves[0];
    if(latest&&Number.isFinite(+latest.balance))return +latest.balance;
