@@ -511,8 +511,8 @@ function renderDetailedReports(){
  <div class="grid">
   <div class="card" role="button" onclick="reportDrill('sales')"><span>إجمالي المبيعات</span><div class="kpi">${money(sales)}</div></div>
   <div class="card" role="button" onclick="reportDrill('invoices')"><span>عدد الفواتير</span><div class="kpi">${inv.length}</div></div>
-  <div class="card" role="button" onclick="reportDrill('units')"><span>العبوات المباعة</span><div class="kpi">${units}</div></div>
-  <div class="card" role="button" onclick="reportDrill('liters')"><span>ليترات مباعة</span><div class="kpi">${liters.toFixed(0)} L</div></div>
+  <div class="card" role="button" onclick="reportDrill('units')"><span>إجمالي العبوات المباعة</span><div class="kpi">${units}</div></div>
+  <div class="card" role="button" onclick="reportDrill('liters')"><span>تفصيل القناني والجالونات</span><div class="kpi">${units}</div></div>
   <div class="card" role="button" onclick="reportDrill('gross')"><span>الربح الإجمالي</span><div class="kpi">${money(gross)}</div></div>
   <div class="card" role="button" onclick="reportDrill('expenses')"><span>المصاريف</span><div class="kpi">${money(expensesTotal)}</div></div>
   <div class="card" role="button" onclick="reportDrill('net')"><span>صافي الربح</span><div class="kpi">${money(net)}</div></div>
@@ -534,14 +534,14 @@ function reportDrill(type){
  var items=[];inv.forEach(function(v){(v.items||[]).forEach(function(i){items.push(i)})});
  var title='',rows=[];
  if(type==='sales'||type==='invoices'){title=type==='sales'?'تفصيل المبيعات':'تفصيل الفواتير';rows=inv.map(function(v){return '<div class="item" onclick="invoiceView('+v.id+')"><b>فاتورة #'+v.id+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+'</div></div>'})}
- if(type==='units'||type==='liters'){title=type==='units'?'تفصيل العبوات المباعة':'تفصيل الليترات المباعة';var m={};items.forEach(function(i){var n=i.name||'منتج',mt=String(n).match(/(1|4|5|10|20)L/i),sz=mt?Number(mt[1]):0;if(!m[n])m[n]={q:0,l:0};m[n].q+=Number(i.qty)||0;m[n].l+=(Number(i.qty)||0)*sz});Object.keys(m).forEach(function(n){rows.push('<div class="item"><b>'+n+'</b><span style="float:left">'+(type==='units'?m[n].q:m[n].l+' L')+'</span></div>')})}
+ if(type==='units'||type==='liters'){title='تفصيل العبوات المباعة';var m={};items.forEach(function(i){var n=i.name||'منتج',mt=String(n).match(/(1|4|5|10|20)L/i),sz=mt?Number(mt[1]):0;if(!m[n])m[n]={q:0,sz:sz};m[n].q+=Number(i.qty)||0});Object.keys(m).forEach(function(n){var v=m[n],unit=v.sz===1?'قنينة':'غالون';rows.push('<div class="item"><b>'+n+'</b><span style="float:left">'+v.q+' '+unit+'</span></div>')})}
  if(type==='gross'){title='تفصيل الربح الإجمالي';rows=items.map(function(i){var p=((Number(i.price)||0)-(Number(i.cost)||0))*(Number(i.qty)||0);return '<div class="item"><b>'+i.name+' × '+i.qty+'</b><span style="float:left">'+money(p)+'</span><div class="muted">بيع '+money(i.price)+' • كلفة '+money(i.cost)+'</div></div>'})}
  if(type==='expenses'){title='تفصيل المصاريف';rows=ex.map(function(e){return '<div class="item"><b>'+(e.name||e.category||'مصروف')+'</b><span style="float:left">'+money(e.amount)+'</span><div class="muted">'+e.date+'</div></div>'})}
  if(type==='net'){title='تفصيل صافي الربح';var g=items.reduce(function(a,i){return a+((Number(i.price)||0)-(Number(i.cost)||0))*(Number(i.qty)||0)},0),ee=ex.reduce(function(a,e){return a+(Number(e.amount)||0)},0);rows=['<div class="item"><b>الربح الإجمالي</b><span style="float:left">'+money(g)+'</span></div>','<div class="item"><b>المصاريف</b><span style="float:left">-'+money(ee)+'</span></div>','<div class="item"><b>الصافي</b><span style="float:left"><b>'+money(g-ee)+'</b></span></div>']}
  if(type==='raw'){title='تفصيل قيمة المواد الخام';rows=(db.raw||[]).filter(function(r){return Number(r.qty)||0}).map(function(r){return '<div class="item"><b>'+r.name+'</b><span style="float:left">'+money((Number(r.qty)||0)*(Number(r.cost)||0))+'</span><div class="muted">'+(Number(r.qty)||0)+' × '+money(r.cost)+'</div></div>'})}
  if(type==='finished'){title='تفصيل قيمة البضاعة الجاهزة';rows=(db.products||[]).filter(function(p){return !p.formulaMaster&&(Number(p.qty)||0)}).map(function(p){return '<div class="item"><b>'+p.name+'</b><span style="float:left">'+money((Number(p.qty)||0)*(Number(p.cost)||0))+'</span><div class="muted">'+(Number(p.qty)||0)+' × '+money(p.cost)+'</div></div>'})}
  if(type==='batches'){title='تفصيل الطبخات';rows=ba.map(function(x){return '<div class="item"><b>'+(x.product||x.name||'طبخة')+'</b><span style="float:left">'+(Number(x.liters)||0)+' L</span><div class="muted">'+x.date+'</div></div>'})}
- document.getElementById('app').innerHTML='<div class="title">'+title+'</div><div class="panel"><button onclick="reports()">← رجوع للتقارير</button></div><div class="panel">'+(rows.join('')||'<div class="muted">لا توجد بيانات ضمن الفترة</div>')+'</div>';
+ document.getElementById('app').innerHTML='<div class="title">'+title+'</div><div class="panel"><button onclick="history.back()">← رجوع للتقارير</button></div><div class="panel">'+(rows.join('')||'<div class="muted">لا توجد بيانات ضمن الفترة</div>')+'</div>';
 }
 
 function editExpense(i){let e=db.expenses.find(x=>String(x.id)===String(i));if(!e)return;let a=prompt('المبلغ $',e.amount);if(a===null)return;let n=prompt('البيان',e.name);if(n===null)return;e.amount=Math.max(0,+a||0);e.name=n.trim()||e.name;save();expenses()}
