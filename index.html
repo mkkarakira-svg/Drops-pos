@@ -228,7 +228,26 @@ body:not(.home-view) .app-back{display:block!important}
 
 /* PROFESSIONAL INVOICE v106 */
 .invoice-wrap{max-width:760px;margin:0 auto}.invoice-paper{background:#fff;border-radius:20px;padding:22px;box-shadow:0 5px 24px rgba(15,35,70,.09);direction:ltr}.invoice-brand{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #12294a;padding-bottom:14px;margin-bottom:14px}.invoice-logo{font-size:31px;font-weight:950;letter-spacing:1px;color:#12294a}.invoice-sub{font-size:11px;font-weight:800;letter-spacing:3px}.invoice-title{font-size:21px;font-weight:900}.invoice-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.invoice-meta>div,.invoice-party{background:#f5f7fa;border-radius:11px;padding:10px}.invoice-meta b{display:block;font-size:11px;color:#667}.invoice-party{line-height:1.9;margin-bottom:14px}.invoice-table{border:1px solid #e3e7ed;border-radius:12px;overflow:hidden}.invoice-row{display:grid;grid-template-columns:2fr .7fr .8fr .9fr;gap:5px;padding:10px;border-bottom:1px solid #edf0f4;align-items:center}.invoice-row:last-child{border-bottom:0}.invoice-head{background:#12294a;color:#fff;font-weight:800;font-size:12px}.invoice-totals{margin:15px 0 0 auto;max-width:310px}.invoice-totals>div{display:flex;justify-content:space-between;padding:7px 3px}.invoice-due{border-top:2px solid #12294a;font-size:18px}.invoice-thanks{text-align:center;border-top:1px dashed #ccd3dc;margin-top:18px;padding-top:14px;font-weight:700}.invoice-actions{display:flex;gap:8px;margin-top:12px}.invoice-actions button{flex:1}@media(max-width:500px){.invoice-paper{padding:14px;border-radius:14px}.invoice-logo{font-size:25px}.invoice-row{grid-template-columns:1.7fr .55fr .75fr .85fr;font-size:12px;padding:8px 5px}.invoice-meta{grid-template-columns:1fr}.invoice-title{font-size:18px}}@media print{body *{visibility:hidden!important}.invoice-paper,.invoice-paper *{visibility:visible!important}.invoice-paper{position:absolute;inset:0;width:100%;box-shadow:none;border-radius:0;padding:12mm}.top,.nav,.noPrint{display:none!important}}
-.top-info{text-align:left;line-height:1.25}.top-date{font-size:11px;opacity:.78;margin-top:3px;direction:ltr}</style></head><body>
+.top-info{text-align:left;line-height:1.25}.top-date{font-size:11px;opacity:.78;margin-top:3px;direction:ltr}
+/* Formula editor mobile cleanup v139 */
+.production-page .recipe-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+.production-page .recipe-formula-manage{grid-column:1/-1!important;display:grid!important;grid-template-columns:minmax(0,1fr) 110px 150px!important;gap:8px!important}
+.production-page .recipe-grid>select#rr{grid-column:1/2!important}
+.production-page .recipe-grid>input#rqpl{grid-column:2/3!important}
+.production-page .recipe-save{margin-top:10px!important}
+.production-page .recipe-row{display:grid!important;grid-template-columns:minmax(0,1fr) 112px 76px!important;align-items:center!important;gap:8px!important;padding:10px 0!important;border-bottom:1px solid #edf0f4}
+.production-page .recipe-row b{min-width:0;overflow-wrap:anywhere}
+.production-page .recipe-row>div{display:flex!important;align-items:center!important;gap:5px!important}
+.production-page .recipe-row input{width:72px!important;min-width:0!important;height:46px!important;min-height:46px!important;text-align:center!important;padding:5px!important}
+.production-page .recipe-row button{min-height:46px!important;height:46px!important;font-size:13px!important;padding:5px 8px!important}
+@media(max-width:520px){
+ .production-page .recipe-formula-manage{grid-template-columns:1fr 1fr!important}
+ .production-page .recipe-formula-manage select{grid-column:1/-1!important}
+ .production-page .recipe-formula-manage button{width:100%!important;min-width:0!important;font-size:14px!important;padding:7px!important}
+ .production-page .recipe-grid>select#rr,.production-page .recipe-grid>input#rqpl{grid-column:auto!important}
+ .production-page .recipe-row{grid-template-columns:minmax(0,1fr) 105px 70px!important}
+}
+</style></head><body>
 <header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
