@@ -251,7 +251,7 @@ function go(x,fromHistory=false){
  }
 }
 
-if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];
+if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];if(!db.people)db.people=[];if(!db.expenses)db.expenses=[];if(!db.invoices)db.invoices=[];
 function home(){
  currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
  let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
@@ -437,7 +437,6 @@ function accountsPage(){
 }
 function renderAccounts(){let q=String($('#accSearch')?.value||'').toLowerCase(),t=$('#accType')?.value||'',ps=(db.people||[]).filter(p=>(!t||p.type===t)&&(!q||String(p.name).toLowerCase().includes(q)||String(p.phone||'').includes(q)));$('#accountsList').innerHTML=`<div class="panel">${ps.map(p=>{let inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.customerId)===String(p.id)),sales=inv.reduce((a,v)=>a+(+v.total||0),0),debt=inv.reduce((a,v)=>a+Math.max(0,(+v.total||0)-(+v.paid||0)),0),pur=(db.purchases||[]).filter(x=>String(x.supplier||'').toLowerCase()===String(p.name).toLowerCase()),buys=pur.reduce((a,x)=>a+((+x.total||0)||(+x.qty||0)*(+x.cost||0)),0);return `<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div>${p.type==='عميل'? `<div>مبيعات: <b>${money(sales)}</b> • رصيد مستحق: <b>${money(debt)}</b> • ${inv.length} فاتورة</div>`:`<div>مشتريات: <b>${money(buys)}</b> • ${pur.length} عملية شراء</div>`}<button onclick="accountDetail('${p.id}')">كشف الحساب</button></div>`}).join('')||'لا توجد حسابات'}</div>`}
 function accountDetail(i){let p=db.people.find(x=>String(x.id)===String(i));if(!p)return;let inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.customerId)===String(p.id));let pur=(db.purchases||[]).filter(x=>String(x.supplier||'').toLowerCase()===String(p.name).toLowerCase());$('#app').innerHTML=`<div class="title">كشف حساب — ${p.name}</div><div class="panel"><b>${p.type}</b><div class="muted">${p.phone||''}</div></div><div class="panel"><b>الحركات</b>${p.type==='عميل'?inv.map(v=>`<div class="item">فاتورة #${v.id}<span style="float:left">${money(v.total)}</span><div class="muted">${v.date} • مدفوع ${money(v.paid||0)} • باقي ${money(Math.max(0,v.total-(v.paid||0)))}</div></div>`).join(''):pur.map(x=>`<div class="item">${x.description||x.item||x.raw||'شراء'}<span style="float:left">${money((+x.total||0)||(+x.qty||0)*(+x.cost||0))}</span><div class="muted">${x.date||''}</div></div>`).join('')}</div>`}
-}
 function expenses(){
  const cats=['إيجار','كهرباء','رواتب موظفين','يد عاملة','نقل ومحروقات','صيانة','اتصالات وإنترنت','رسوم واشتراكات','مصاريف إدارية','مصاريف إضافية','أخرى'];
  $('#app').innerHTML=`<div class="title">مصاريف المعمل</div>
