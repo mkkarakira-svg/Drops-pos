@@ -864,25 +864,10 @@ if(!db._allFormulaMasters1){
 }
 function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
-let _restoreView='home';try{_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){}
-const _validViews=['home','sale','products','reports','raw','materials','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage','packing','leftovers','historyReport','priceMaster'];
-if(!_validViews.includes(_restoreView))_restoreView='home';
-try{if(_restoreView!=='home')go(_restoreView,true);else home()}catch(e){try{sessionStorage.setItem('dropsCurrentView','home')}catch(_e){};currentView='home';home()}
+try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){}
+currentView='home';home();
 </script><script>
-window.goHome=function(){
-  if(currentView==='home') return;
-  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};
-  document.body.classList.add('home-view');
-  home();
-  history.pushState({dropsView:'home'},'',location.href);
-};
-window.addEventListener('popstate',function(e){
- const v=e.state&&e.state.dropsView;
- if(currentView!=='home'){ currentView='home';document.body.classList.add('home-view');nav('home');home();history.pushState({dropsView:'home'},'',location.href);return; }
- if(v&&v!=='home') go(v,true);
- else history.pushState({dropsView:'home'},'',location.href);
-});
-history.replaceState({dropsView:currentView||'home'},'',location.href);
+window.goHome=function(){currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};document.body.classList.add('home-view');home();};
 
 /* EXCEL RECIPE IMPORT v54 */
 (function(){
