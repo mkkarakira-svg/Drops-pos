@@ -541,7 +541,7 @@ function reportDrill(type){
  if(type==='raw'){title='تفصيل قيمة المواد الخام';rows=(db.raw||[]).filter(function(r){return Number(r.qty)||0}).map(function(r){return '<div class="item"><b>'+r.name+'</b><span style="float:left">'+money((Number(r.qty)||0)*(Number(r.cost)||0))+'</span><div class="muted">'+(Number(r.qty)||0)+' × '+money(r.cost)+'</div></div>'})}
  if(type==='finished'){title='تفصيل قيمة البضاعة الجاهزة';rows=(db.products||[]).filter(function(p){return !p.formulaMaster&&(Number(p.qty)||0)}).map(function(p){return '<div class="item"><b>'+p.name+'</b><span style="float:left">'+money((Number(p.qty)||0)*(Number(p.cost)||0))+'</span><div class="muted">'+(Number(p.qty)||0)+' × '+money(p.cost)+'</div></div>'})}
  if(type==='batches'){title='تفصيل الطبخات';rows=ba.map(function(x){return '<div class="item"><b>'+(x.product||x.name||'طبخة')+'</b><span style="float:left">'+(Number(x.liters)||0)+' L</span><div class="muted">'+x.date+'</div></div>'})}
- document.getElementById('app').innerHTML='<div class="title">'+title+'</div><div class="panel"><button onclick="history.back()">← رجوع للتقارير</button></div><div class="panel">'+(rows.join('')||'<div class="muted">لا توجد بيانات ضمن الفترة</div>')+'</div>';
+ document.getElementById('app').innerHTML='<div class="title">'+title+'</div><div class="panel"><button onclick="reports()">← رجوع للتقارير</button></div><div class="panel">'+(rows.join('')||'<div class="muted">لا توجد بيانات ضمن الفترة</div>')+'</div>';
 }
 
 function editExpense(i){let e=db.expenses.find(x=>String(x.id)===String(i));if(!e)return;let a=prompt('المبلغ $',e.amount);if(a===null)return;let n=prompt('البيان',e.name);if(n===null)return;e.amount=Math.max(0,+a||0);e.name=n.trim()||e.name;save();expenses()}
