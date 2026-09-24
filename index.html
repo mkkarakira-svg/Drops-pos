@@ -2376,28 +2376,21 @@ document.addEventListener('click',function(e){
    openInvoiceCount();
  }
 },true);</script>
+
 <script>
-/* CONTEXTUAL BACK FIX */
+/* SIMPLE INVOICE BACK FIX */
 (function(){
- const oldInvoiceView=invoiceView;
+ const baseInvoiceView=invoiceView;
  invoiceView=function(i){
-   window._dropsSubpage='invoice';
-   oldInvoiceView(i);
- };
- const oldOpenInvoiceCount=openInvoiceCount;
- openInvoiceCount=function(){
-   window._dropsSubpage='invoiceBreakdown';
-   oldOpenInvoiceCount();
- };
- window.addEventListener('popstate',function(e){
-   if(window._dropsSubpage==='invoice'){
-     window._dropsSubpage='invoiceBreakdown';
-     setTimeout(openInvoiceCount,0);
-   }else if(window._dropsSubpage==='invoiceBreakdown'){
-     window._dropsSubpage='';
-     setTimeout(reports,0);
+   baseInvoiceView(i);
+   const actions=document.querySelector('.invoice-actions');
+   if(actions){
+     const back=document.createElement('button');
+     back.textContent='← Back to Invoice List';
+     back.onclick=function(){ reports(); setTimeout(openInvoiceCount,0); };
+     actions.insertBefore(back,actions.firstChild);
    }
- },true);
+ };
 })();
 </script>
 </body></html>
