@@ -2439,4 +2439,36 @@ document.addEventListener('click',function(e){
    openInvoiceCount();
  }
 },true);</script>
+
+<script>
+/* CANONICAL VOID — cash reversal + stock return */
+window.voidInvoice=function(i){
+ var v=(db.invoices||[]).find(function(x){return String(x.id)===String(i)});
+ if(!v||v.voided)return;
+ if(!confirm('Void invoice and return quantities to stock?'))return;
+
+ (v.items||[]).forEach(function(it){
+   var p=(db.products||[]).find(function(x){return String(x.id)===String(it.productId)});
+   if(p){
+     p.qty=(+p.qty||0)+(+it.qty||0);
+     db.stockMoves=db.stockMoves||[];
+     db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'return',productId:p.id,name:p.name,qty:+it.qty||0,balance:p.qty,invoiceId:v.id});
+   }
+ });
+
+ var received=Math.max(0,+v.paid||0);
+ if(received>0){
+   db.cashMoves=db.cashMoves||[];
+   db.cashMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'void_refund',method:v.paymentMethod||'Cash',amount:-received,ref:v.id,note:'Void Invoice #'+invNo(v)});
+ }
+
+ v.voided=true;
+ v.voidDate=today();
+ v.voidTime=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+ db.returns=db.returns||[];
+ db.returns.unshift({id:id(),invoiceId:v.id,date:today(),time:new Date().toISOString(),amount:+v.total||0,employeeId:v.employeeId||''});
+ save();
+ returnsPage();
+};
+</script>
 </body></html>
