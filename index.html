@@ -2412,17 +2412,12 @@ window.invoiceView=function(i){
 function openInvoiceCount(){
  var list=(db.invoices||[]).filter(function(x){return !x.voided;}).slice().reverse();
  var app=document.getElementById('app');
- var rows=list.map(function(v,idx){
-   return '<button type="button" class="item invoice-open-row" data-idx="'+idx+'" style="display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eee;padding:14px 10px"><b>'+String(v.date||'')+' — '+money(v.total)+'</b><div class="muted">'+(v.items||[]).map(function(i){return (i.name||'Product')+' × '+(+i.qty||0)}).join(' • ')+'</div></button>';
+ var rows=list.map(function(v){
+   var due=Math.max(0,(+v.total||0)-(+v.paid||0)),items=v.items||[];
+   return '<details class="item invoice-detail-native" style="display:block;padding:0"><summary style="padding:14px 10px;cursor:pointer;list-style:none"><b>'+String(v.date||'')+' — '+money(v.total)+'</b><div class="muted">'+items.map(function(i){return (i.name||'Product')+' × '+(+i.qty||0)}).join(' • ')+'</div></summary><div style="padding:0 10px 14px"><div class="invoice-paper"><div class="invoice-brand"><div><div class="invoice-logo">DROPS</div><div class="invoice-sub">DETERGENTS</div></div><div class="invoice-title">Sales Invoice</div></div><div class="invoice-meta"><div><b>Invoice No.</b><span>#'+invNo(v)+'</span></div><div><b>Date</b><span>'+String(v.date||'').split('-').reverse().join('/')+' – '+txTime(v)+'</span></div></div><div class="invoice-party">'+(v.customerName?'<div><b>Customer:</b> '+v.customerName+'</div>':'')+(v.employeeName?'<div><b>Distributor:</b> '+v.employeeName+'</div>':'')+'<div><b>Payment Method:</b> '+(v.paymentMethod||'Cash')+'</div></div><div class="invoice-table"><div class="invoice-row invoice-head"><span>Item</span><span>Quantity</span><span>Price</span><span>Total</span></div>'+items.map(function(q){return '<div class="invoice-row"><span>'+q.name+'</span><span>'+q.qty+'</span><span>'+money(q.price)+'</span><span>'+money((+q.price||0)*(+q.qty||0))+'</span></div>'}).join('')+'</div><div class="invoice-totals"><div><span>Total</span><b>'+money(v.total)+'</b></div><div><span>Paid</span><b>'+money(v.paid||0)+'</b></div><div class="invoice-due"><span>Balance</span><b>'+money(due)+'</b></div></div></div></div></details>';
  }).join('');
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b>'+rows+'</div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
- window._invoiceBreakList=list;
-}
-function openInvoiceBreakIndex(idx){
- var x=(window._invoiceBreakList||[])[Number(idx)]; if(!x)return;
- var due=Math.max(0,(+x.total||0)-(+x.paid||0)),items=x.items||[];
- document.getElementById('app').innerHTML='<div class="invoice-wrap"><div class="invoice-paper"><div class="invoice-brand"><div><div class="invoice-logo">DROPS</div><div class="invoice-sub">DETERGENTS</div></div><div class="invoice-title">Sales Invoice</div></div><div class="invoice-meta"><div><b>Invoice No.</b><span>#'+invNo(x)+'</span></div><div><b>Date</b><span>'+String(x.date||'').split('-').reverse().join('/')+' – '+txTime(x)+'</span></div></div><div class="invoice-party">'+(x.customerName?'<div><b>Customer:</b> '+x.customerName+'</div>':'')+(x.employeeName?'<div><b>Distributor:</b> '+x.employeeName+'</div>':'')+'<div><b>Payment Method:</b> '+(x.paymentMethod||'Cash')+'</div></div><div class="invoice-table"><div class="invoice-row invoice-head"><span>Item</span><span>Quantity</span><span>Price</span><span>Total</span></div>'+items.map(function(q){return '<div class="invoice-row"><span>'+q.name+'</span><span>'+q.qty+'</span><span>'+money(q.price)+'</span><span>'+money((+q.price||0)*(+q.qty||0))+'</span></div>'}).join('')+'</div><div class="invoice-totals"><div><span>Total</span><b>'+money(x.total)+'</b></div><div><span>Paid</span><b>'+money(x.paid||0)+'</b></div><div class="invoice-due"><span>Balance</span><b>'+money(due)+'</b></div></div><div class="invoice-thanks">Thank you for choosing Drops Detergents</div></div><div class="invoice-actions noPrint"><button onclick="reports()">← Reports</button><button class="orange" onclick="print()">🖨 Print Invoice</button></div></div>';
 }
 const _reportsOriginal=reports;
 reports=function(){
@@ -2436,12 +2431,6 @@ reports=function(){
  }
 };
 document.addEventListener('click',function(e){
- var row=e.target.closest&&e.target.closest('.invoice-open-row');
- if(row){
-   e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-   openInvoiceBreakIndex(row.getAttribute('data-idx'));
-   return;
- }
  var card=e.target.closest&&e.target.closest('#detailedReports .grid .card');
  if(!card)return;
  var cards=[...document.querySelectorAll('#detailedReports .grid .card')];
