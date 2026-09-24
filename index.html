@@ -2395,4 +2395,34 @@ document.addEventListener('click',function(e){
  };
 })();
 </script>
+<script>
+/* CASHBOX DISPLAY QA FIX */
+(function(){
+ const baseCashbox=cashbox;
+ cashbox=function(){
+   baseCashbox();
+   setTimeout(function(){
+     const app=document.getElementById('app');
+     if(!app)return;
+     const items=[...app.querySelectorAll('.item')];
+     const moves=(db.cashMoves||[]).slice(0,60);
+     items.forEach((row,i)=>{
+       const x=moves[i]; if(!x)return;
+       const v=(db.invoices||[]).find(z=>String(z.id)===String(x.ref));
+       const b=row.querySelector('b');
+       if(b&&v){
+         const label=x.type==='collection'?'Collect Invoice #':'Invoice #';
+         const amount=(+x.amount>=0?'+':'')+money(+x.amount||0);
+         b.textContent=amount+'  '+label+invNo(v);
+       }
+       const meta=row.querySelector('.muted');
+       if(meta){
+         const t=txTime(x);
+         meta.textContent=(x.date||'')+(t?' • '+t:'')+(x.method?' • '+x.method:'');
+       }
+     });
+   },0);
+ };
+})();
+</script>
 </body></html>
