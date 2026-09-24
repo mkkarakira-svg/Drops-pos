@@ -2421,7 +2421,7 @@ function openInvoiceCount(){
    row.style.cursor='pointer';
    row.style.touchAction='manipulation';
    row.innerHTML='<b>'+String(v.date||'')+' — '+money(v.total)+'</b><div class="muted">'+(v.items||[]).map(function(i){return (i.name||'Product')+' × '+(+i.qty||0)}).join(' • ')+'</div>';
-   row.addEventListener('click',function(){ window.invoiceView(v.id); });
+   row.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); var fn=window.invoiceView||invoiceView; fn(String(v.id)); });
    host.appendChild(row);
  });
 }
