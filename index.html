@@ -2329,42 +2329,21 @@ function renderDetailedReports(){
 }
 </script>
 <script>
-/* REPORT KPI CLICK FIX — 2026-09-24 */
-(function(){
- const oldRender=renderDetailedReports;
- renderDetailedReports=function(){
-  oldRender();
-  const cards=document.querySelectorAll('#detailedReports .grid .card');
-  const types=['sales','invoices','units','liters','gross','expenses','net','raw','finished','batches'];
-  cards.forEach((card,i)=>{
-   if(!types[i])return;
-   card.style.cursor='pointer';
-   card.onclick=function(){ reportDrill(types[i]); };
-  });
- };
-})();
-</script>
-<script>
-/* INVOICE COUNT DIRECT FIX */
+/* REPORTS FINAL CLICK FIX */
 function openInvoiceCount(){
- var from=document.getElementById('repFrom')?.value||today();
- var to=document.getElementById('repTo')?.value||today();
- var list=(db.invoices||[]).filter(v=>!v.voided&&v.date>=from&&v.date<=to);
- document.getElementById('app').innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button onclick="reports()">← Back to Reports</button></div><div class="panel">'+(list.map(v=>'<div class="item" data-invoice-id="'+String(v.id)+'"><b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+'</div></div>').join('')||'<div class="muted">No invoices in selected period</div>')+'</div>';
- document.querySelectorAll('[data-invoice-id]').forEach(el=>el.addEventListener('click',()=>invoiceView(el.getAttribute('data-invoice-id'))));
+ const from=document.getElementById('repFrom')?.value||today(),to=document.getElementById('repTo')?.value||today();
+ const list=(db.invoices||[]).filter(v=>!v.voided&&v.date>=from&&v.date<=to);
+ document.getElementById('app').innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button onclick="reports()">← Back to Reports</button></div><div class="panel">'+(list.map(v=>'<div class="item" onclick="invoiceView(\\''+v.id+'\\')"><b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+'</div></div>').join('')||'<div class="muted">No invoices in selected period</div>')+'</div>';
 }
-(function(){
- const base=renderDetailedReports;
- renderDetailedReports=function(){
-  base();
-  const cards=[...document.querySelectorAll('#detailedReports .grid .card')];
-  const invoiceCard=cards.find(x=>x.textContent.includes('Invoice Count'));
-  if(invoiceCard){
-   invoiceCard.removeAttribute('onclick');
-   invoiceCard.style.cursor='pointer';
-   invoiceCard.addEventListener('click',openInvoiceCount);
-  }
- };
-})();
+const _reportsRenderFinal=renderDetailedReports;
+renderDetailedReports=function(){
+ _reportsRenderFinal();
+ const cards=document.querySelectorAll('#detailedReports .grid .card');
+ if(cards[1]){
+   cards[1].setAttribute('onclick','openInvoiceCount()');
+   cards[1].style.cursor='pointer';
+   cards[1].style.touchAction='manipulation';
+ }
+};
 </script>
 </body></html>
