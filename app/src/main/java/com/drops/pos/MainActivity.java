@@ -2,14 +2,16 @@ package com.drops.pos;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Build;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.view.View;
-import android.graphics.Color;
 import android.view.Window;
-import android.view.WindowManager;\nimport android.view.WindowInsets;
+import android.view.WindowInsets;
+import android.view.WindowManager;
+import android.graphics.Color;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -19,16 +21,24 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Hide the Android status bar (clock) while keeping the navigation area usable.
         Window window = getWindow();
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        window.setStatusBarColor(Color.rgb(245, 248, 252));
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         window.setNavigationBarColor(Color.rgb(245, 248, 252));
-        window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(245, 248, 252));
-        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);\n        // Android 15 may draw app content behind the system navigation bar.\n        // Add only the bottom system inset so the POS bottom buttons stay tappable.\n        webView.setOnApplyWindowInsetsListener((v, insets) -> {\n            int bottom = 0;\n            if (android.os.Build.VERSION.SDK_INT >= 30) {\n                bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;\n            } else {\n                bottom = insets.getSystemWindowInsetBottom();\n            }\n            v.setPadding(0, 0, 0, bottom);\n            return insets;\n        });
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        webView.setOnApplyWindowInsetsListener((v, insets) -> {
+            int bottom;
+            if (Build.VERSION.SDK_INT >= 30) {
+                bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+            } else {
+                bottom = insets.getSystemWindowInsetBottom();
+            }
+            v.setPadding(0, 0, 0, bottom);
+            return insets;
+        });
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
