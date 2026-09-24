@@ -2331,17 +2331,15 @@ function renderDetailedReports(){
 <script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
- const from=window._invoiceBreakFrom||document.getElementById('repFrom')?.value||today();
- const to=window._invoiceBreakTo||document.getElementById('repTo')?.value||today();
- const list=(db.invoices||[]).filter(v=>!v.voided&&v.date>=from&&v.date<=to);
+ const list=(db.invoices||[]).filter(v=>!v.voided);
  const app=document.getElementById('app');
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel" id="invoiceBreakList"></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
  const box=document.getElementById('invoiceBreakList');
- if(!list.length){box.innerHTML='<div class="muted">No invoices in selected period</div>';return;}
- list.forEach(v=>{
+ if(!list.length){box.innerHTML='<div class="muted">No invoices found</div>';return;}
+ list.slice().reverse().forEach(v=>{
    const row=document.createElement('div'); row.className='item';
-   row.innerHTML='<b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+'</div>';
+   row.innerHTML='<b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+(v.date||'')+(txTime(v)?' • '+txTime(v):'')+' • '+(v.saleMode==='wholesale'?'Wholesale':'Retail')+'</div>';
    row.onclick=function(){invoiceView(String(v.id));}; box.appendChild(row);
  });
 }
