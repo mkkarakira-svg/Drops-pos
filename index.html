@@ -2333,27 +2333,27 @@ function renderDetailedReports(){
 function openInvoiceCount(){
  const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
  if(!src){alert('Invoice list not ready');return;}
- const copy=src.cloneNode(true);
+ const sourceRows=[...src.querySelectorAll('.item')];
  const app=document.getElementById('app');
- app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div id="invoiceBreakHost"></div>';
+ app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b><div id="invoiceBreakHost"></div></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
- document.getElementById('invoiceBreakHost').appendChild(copy);
- const rows=[...copy.querySelectorAll('.item')];
- const reportInvoices=(db.invoices||[]).filter(v=>!v.voided).slice().reverse();
- rows.forEach((row,i)=>{
-   const v=reportInvoices[i];
-   if(v){
-     const b=row.querySelector('b');
-     if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
-     const m=row.querySelector('.muted');
-     if(m)m.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
-   }
+ const host=document.getElementById('invoiceBreakHost');
+ sourceRows.forEach((sourceRow,i)=>{
+   const row=sourceRow.cloneNode(true);
    row.style.cursor='pointer';
-   row.onclick=function(e){
-     e.preventDefault(); e.stopPropagation();
-     const v=reportInvoices[i];
-     if(v) invoiceView(String(v.id));
-   };
+   const originalClick=sourceRow.getAttribute('onclick')||'';
+   const m=originalClick.match(/invoiceView\(['"]?([^'")]+)['"]?\)/);
+   if(m){
+     const invoiceId=m[1];
+     row.removeAttribute('onclick');
+     row.addEventListener('click',function(){ invoiceView(invoiceId); });
+     const v=(db.invoices||[]).find(x=>String(x.id)===String(invoiceId));
+     if(v){
+       const b=row.querySelector('b'); if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
+       const meta=row.querySelector('.muted'); if(meta)meta.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
+     }
+   }
+   host.appendChild(row);
  });
 }
 const _reportsOriginal=reports;
