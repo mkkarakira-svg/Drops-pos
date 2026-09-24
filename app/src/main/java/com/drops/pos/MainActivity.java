@@ -50,7 +50,8 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
-        s.setCacheMode(WebSettings.LOAD_NO_CACHE);\n        webView.clearCache(true);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        webView.clearCache(true);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
         s.setSupportZoom(false);
