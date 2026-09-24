@@ -2417,6 +2417,16 @@ function openInvoiceCount(){
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div id="invoiceBreakHost"></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
  document.getElementById('invoiceBreakHost').appendChild(copy);
+ /* Rebind cloned invoice rows: cloneNode does not preserve JS event listeners. */
+ var rows=copy.querySelectorAll('.item');
+ var list=(db.invoices||[]).filter(function(x){return !x.voided;});
+ rows.forEach(function(row,idx){
+   var v=list[idx];
+   if(!v)return;
+   row.style.cursor='pointer';
+   row.style.touchAction='manipulation';
+   row.onclick=function(e){e.preventDefault();e.stopPropagation();invoiceView(v.id);};
+ });
 }
 const _reportsOriginal=reports;
 reports=function(){
