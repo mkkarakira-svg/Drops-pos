@@ -689,7 +689,10 @@ function renderDetailedReports(){
  <div class="panel"><b>Production & Packing</b><div class="muted">طبخات: ${batches.length} • عمليات Pack: ${packs.length} • Literات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • Literات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
 }
 function reportDrill(type){
- var from=document.getElementById('repFrom')?document.getElementById('repFrom').value:today();
+ var rf=document.getElementById('repFrom'),rt=document.getElementById('repTo');
+ var from=rf?rf.value:(window._reportFrom||today());
+ var to=rt?rt.value:(window._reportTo||today());
+ window._reportFrom=from;window._reportTo=to;
  var to=document.getElementById('repTo')?document.getElementById('repTo').value:today();
  var inv=(db.invoices||[]).filter(function(v){return !v.voided&&v.date>=from&&v.date<=to});
  var ex=(db.expenses||[]).filter(function(e){return e.date>=from&&e.date<=to});
