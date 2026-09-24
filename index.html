@@ -2446,34 +2446,4 @@ document.addEventListener('click',function(e){
 })();
 </script>
 
-<script>
-/* CASHBOX FINAL VIEW — rebuild display only, preserve data */
-cashbox=function(){
- const moves=db.cashMoves||[], tm=moves.filter(x=>x.date===today());
- const tin=tm.filter(x=>+x.amount>0).reduce((a,x)=>a+(+x.amount||0),0);
- const tout=Math.abs(tm.filter(x=>+x.amount<0).reduce((a,x)=>a+(+x.amount||0),0));
- const bal=moves.reduce((a,x)=>a+(+x.amount||0),0);
- const invs=db.invoices||[];
- function linked(x){
-   const candidates=[String(x.ref||'')].concat((String(x.note||'').match(/\d{10,}/g)||[]));
-   for(const n of candidates){const v=invs.find(z=>String(z.id)===n);if(v)return v;}
-   return null;
- }
- function label(x){
-   const v=linked(x), raw=String(x.note||x.type||'Transaction');
-   if(!v)return raw;
-   return (x.type==='collection'||/collect/i.test(raw)?'Collect Invoice #':'Invoice #')+invNo(v);
- }
- function meta(x){
-   const v=linked(x), t=txTime(x)||(v?txTime(v):'');
-   return (x.date||(v&&v.date)||'')+(t?' • '+t:'')+' • '+(x.method||(v&&v.paymentMethod)||'');
- }
- $('#app').innerHTML=
- '<div class="title">Cashbox / Cash Flow</div>'+
- '<div class="grid cash-kpis"><div class="kpi-card"><b>Today\'s Cash In</b><div class="kpi">'+money(tin)+'</div></div><div class="kpi-card"><b>Today\'s Cash Out</b><div class="kpi">'+money(tout)+'</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">'+money(bal)+'</div></div></div>'+
- '<div class="panel cash-entry"><b>Manual Cash Entry</b><div class="row"><input id="cashDate" type="date" value="'+today()+'"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input id="cashNote" placeholder="Description"><button onclick="addCashMove()">Record</button></div></div>'+
- '<div class="panel"><b>Recent Transactions</b>'+
- moves.slice(0,60).map(x=>'<div class="item cash-tx"><div class="tx-line"><b>'+label(x)+'</b><b>'+(+x.amount>=0?'+':'')+money(+x.amount||0)+'</b></div><div class="muted tx-meta">'+meta(x)+'</div></div>').join('')+
- '</div>';
-};
-</script></body></html>
+</body></html>
