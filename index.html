@@ -2341,6 +2341,13 @@ function openInvoiceCount(){
  const rows=[...copy.querySelectorAll('.item')];
  const reportInvoices=(db.invoices||[]).filter(v=>!v.voided).slice().reverse();
  rows.forEach((row,i)=>{
+   const v=reportInvoices[i];
+   if(v){
+     const b=row.querySelector('b');
+     if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
+     const m=row.querySelector('.muted');
+     if(m)m.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
+   }
    row.style.cursor='pointer';
    row.addEventListener('click',function(e){
      e.preventDefault(); e.stopPropagation();
