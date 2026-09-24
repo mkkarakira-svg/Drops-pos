@@ -1,23 +1,38 @@
-name: Build Drops POS Android APK
+name: Build Drops POS Signed APK
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build Drops POS 4.1
-        run: gradle assembleDebug
+
+      - name: Restore Drops POS signing key
+        env:
+          DROPS_KEYSTORE_BASE64: ${{ secrets.DROPS_KEYSTORE_BASE64 }}
+        run: echo "$DROPS_KEYSTORE_BASE64" | base64 --decode > app/drops-release.jks
+
+      - name: Build signed release APK
+        env:
+          DROPS_KEYSTORE_FILE: drops-release.jks
+          DROPS_KEYSTORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          DROPS_KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          DROPS_KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: gradle assembleRelease
+
       - uses: actions/upload-artifact@v4
         with:
-          name: DropsPOS-v4.1.0-build19
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: DropsPOS-v4.2.1-SIGNED
+          path: app/build/outputs/apk/release/app-release.apk
