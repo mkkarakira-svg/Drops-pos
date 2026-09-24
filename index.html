@@ -1126,6 +1126,18 @@ function invNo(v){
  return String(Math.max(1,n)).padStart(6,'0');
 }
 </script>
+<style>
+.cash-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cash-entry-grid input,.cash-entry-grid select,.cash-entry-grid button{width:100%;min-width:0}
+.cash-entry-grid .cash-wide{grid-column:1/-1}
+.cash-tx{padding:14px 0;border-bottom:1px solid #e5e7eb}
+.cash-tx:last-child{border-bottom:0}
+.cash-tx-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.cash-tx-note{font-weight:800;overflow-wrap:anywhere}
+.cash-tx-amount{font-weight:800;white-space:nowrap}
+.cash-tx-meta{margin-top:5px;color:#667085}
+@media(max-width:520px){.cash-entry-grid{grid-template-columns:1fr 1fr}}
+</style>
 <script>
 /* QA FIX PACK — 2026-09-24 */
 function invNo(v){
@@ -2315,7 +2327,22 @@ function purchasePriceMaster(){
 }
 function cashbox(){
  let moves=db.cashMoves||[],tm=moves.filter(x=>x.date===today()),tin=tm.filter(x=>x.amount>0).reduce((a,x)=>a+(+x.amount||0),0),tout=Math.abs(tm.filter(x=>x.amount<0).reduce((a,x)=>a+(+x.amount||0),0)),bal=moves.reduce((a,x)=>a+(+x.amount||0),0);
- $('#app').innerHTML='<div class="title">Cashbox / Cash Flow</div><div class="grid"><div class="kpi-card"><b>Today\\'s Cash In</b><div class="kpi">'+money(tin)+'</div></div><div class="kpi-card"><b>Today\\'s Cash Out</b><div class="kpi">'+money(tout)+'</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">'+money(bal)+'</div></div></div><div class="panel"><div class="row"><input id="cashDate" type="date" value="'+today()+'"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input id="cashNote" placeholder="Description"><button onclick="addCashMove()">Record</button></div></div><div class="panel"><b>Recent Transactions</b>'+moves.slice(0,60).map(x=>{let v=(db.invoices||[]).find(z=>String(z.id)===String(x.ref)),note=x.type==='sale'&&v?'Invoice #'+invNo(v):x.type==='collection'&&v?'Collect Invoice #'+invNo(v):x.note||x.type;return '<div class="item"><div class="tx-line"><b>'+note+'</b><b>'+(x.amount>=0?'+':'')+money(x.amount)+'</b></div><div class="muted tx-meta">'+x.date+(txTime(x)?' • '+txTime(x):'')+' • '+(x.method||'')+'</div></div>'}).join('')+'</div>';
+ function linkedInvoice(x){return (db.invoices||[]).find(v=>String(v.id)===String(x.ref)||String(v.id)===String(x.invoiceId))}
+ function label(x){
+   let v=linkedInvoice(x);
+   if(v&&x.type==='sale')return 'Invoice #'+invNo(v);
+   if(v&&x.type==='collection')return 'Collect Invoice #'+invNo(v);
+   if(v&&x.type==='void_refund')return 'Void Invoice #'+invNo(v);
+   let note=String(x.note||x.type||'Transaction');
+   if(v&&/invoice\s*#/i.test(note))return note.replace(/invoice\s*#\s*\d+/i,'Invoice #'+invNo(v));
+   let m=note.match(/(\d{10,})/);
+   if(m){let iv=(db.invoices||[]).find(z=>String(z.id)===m[1]);if(iv)note=note.replace(m[1],invNo(iv))}
+   return note;
+ }
+ $('#app').innerHTML='<div class="title">Cashbox / Cash Flow</div>'+
+ '<div class="grid"><div class="kpi-card"><b>Today\'s Cash In</b><div class="kpi">'+money(tin)+'</div></div><div class="kpi-card"><b>Today\'s Cash Out</b><div class="kpi">'+money(tout)+'</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">'+money(bal)+'</div></div></div>'+
+ '<div class="panel"><div class="cash-entry-grid"><input id="cashDate" type="date" value="'+today()+'"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input class="cash-wide" id="cashNote" placeholder="Description"><button class="cash-wide" onclick="addCashMove()">Record Transaction</button></div></div>'+
+ '<div class="panel"><b>Recent Transactions</b>'+moves.slice(0,60).map(x=>'<div class="cash-tx"><div class="cash-tx-top"><div class="cash-tx-note">'+label(x)+'</div><div class="cash-tx-amount">'+(x.amount>=0?'+':'')+money(x.amount)+'</div></div><div class="cash-tx-meta">'+(x.date||'')+(txTime(x)?' • '+txTime(x):'')+(x.method?' • '+x.method:'')+'</div></div>').join('')+'</div>';
 }
 function renderReturns(){let q=String($('#retSearch')?.value||'').toLowerCase(),list=(db.invoices||[]).filter(v=>!q||invNo(v).includes(q)||String(v.employeeName||'').toLowerCase().includes(q)).slice(0,100);$('#returnList').innerHTML='<div class="panel">'+list.map(v=>'<div class="item"><b>#'+invNo(v)+' — '+v.date+(txTime(v)?' • '+txTime(v):'')+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+(v.saleMode==='wholesale'?'Wholesale':'Retail')+' • '+(v.employeeName||'Direct Sale')+' • '+(v.items||[]).reduce((a,x)=>a+(+x.qty||0),0)+' Pack</div>'+(v.voided?'<span class="pill status-void">VOID • '+(v.voidDate||'')+(v.voidTime?' '+v.voidTime:'')+'</span>':'<button onclick="voidInvoice(\\''+v.id+'\\')">↩️ Void & Return to Stock</button>')+'</div>').join('')+'</div>'}
 function voidInvoice(i){
