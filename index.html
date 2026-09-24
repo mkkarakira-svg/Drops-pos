@@ -257,7 +257,7 @@ const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=
 let db=JSON.parse(localStorage.getItem('dropsDB')||'null')||{products:[],raw:[],recipes:[],batches:[],invoices:[],expenses:[],purchases:[],people:[],settings:{usdLbp:90000}};
 db.products=db.products||[];db.raw=db.raw||[];db.recipes=db.recipes||[];db.batches=db.batches||[];db.invoices=db.invoices||[];db.expenses=db.expenses||[];db.purchases=db.purchases||[];db.people=db.people||[];db.settings=db.settings||{usdLbp:90000};
 db.rawMoves=db.rawMoves||[];db.stockMoves=db.stockMoves||[];db.packings=db.packings||[];db.adjustments=db.adjustments||[];db.priceHistory=db.priceHistory||[];
-window.function txTime(x){let t=String((x&&x.time)||'');if(!t)return'';if(t.includes('T')){let d=new Date(t);if(!isNaN(d))return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}return t.slice(0,5)}
+function txTime(x){let t=String((x&&x.time)||'');if(!t)return'';if(t.includes('T')){let d=new Date(t);if(!isNaN(d))return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}return t.slice(0,5)}
 window.cart={}; const save=()=>localStorage.setItem('dropsDB',JSON.stringify(db)); const id=()=>Date.now()+Math.floor(Math.random()*999);
 function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laundry Gel 1L','Laundry Gel 4L','Hand Soap 1L','Hand Soap 4L','Floor Cleaner 4L'].forEach((n,i)=>db.products.push({id:id()+i,name:n,price:[2.56,2.56,2.89,2.89,3.11,3.11,2.22][i],qty:0,cost:0,size:+((n.match(/([0-9.]+)L/)||[,1])[1])}));save()}}seed();
 function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
