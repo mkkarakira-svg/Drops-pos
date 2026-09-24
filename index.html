@@ -2426,4 +2426,22 @@ document.addEventListener('click',function(e){
 })();
 </script>
 
-</body></html>
+<script>
+/* RECEIVABLES OPEN FIX */
+receivablesPage=function(){
+ var invoices=db.invoices||[], collections=db.collections||[];
+ var open=invoices.filter(function(v){return !v.voided&&(+v.paid||0)<(+v.total||0)});
+ var total=open.reduce(function(a,v){return a+((+v.total||0)-(+v.paid||0))},0);
+ var app=document.getElementById('app'); if(!app)return;
+ app.innerHTML='<div class="title">Receivables & Collections</div><div class="panel"><div class="item"><b>Total Open Receivables</b><span style="float:left"><b>'+money(total)+'</b></span></div><input id="debtSearch" placeholder="Search invoice or distributor"></div><div id="debtList"></div><div class="panel"><b>Recent Collections</b><div id="recentCollections"></div></div>';
+ var rc=document.getElementById('recentCollections');
+ rc.innerHTML=collections.slice(0,20).map(function(x){var v=invoices.find(function(z){return String(z.id)===String(x.invoiceId)});return '<div class="item">Invoice #'+(v?invNo(v):'------')+'<span style="float:left">'+money(x.amount)+'</span><div class="muted">'+(x.date||'')+'</div></div>'}).join('')||'<div class="muted">No collections yet</div>';
+ window.renderDebts=function(){
+  var q=String(document.getElementById('debtSearch')?.value||'').toLowerCase();
+  var list=open.filter(function(v){return !q||invNo(v).includes(q)||String(v.employeeName||'').toLowerCase().includes(q)});
+  document.getElementById('debtList').innerHTML='<div class="panel">'+(list.map(function(v){return '<div class="item"><b>Invoice #'+invNo(v)+'</b><span style="float:left"><b>'+money((+v.total||0)-(+v.paid||0))+'</b></span><div class="muted">'+(v.date||'')+' • '+(v.employeeName||'Direct Sale')+' • Total '+money(v.total)+' • Paid '+money(v.paid||0)+'</div><div class="row"><input id="debt_'+v.id+'" type="number" min="0" step=".01" placeholder="Collection $"><button onclick="collectInvoice(\''+v.id+'\')">Collect</button></div></div>'}).join('')||'<div class="muted">No open receivables</div>')+'</div>';
+ };
+ document.getElementById('debtSearch').oninput=window.renderDebts;
+ window.renderDebts();
+};
+</script></body></html>
