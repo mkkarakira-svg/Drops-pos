@@ -2349,11 +2349,11 @@ function openInvoiceCount(){
      if(m)m.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
    }
    row.style.cursor='pointer';
-   row.addEventListener('click',function(e){
+   row.onclick=function(e){
      e.preventDefault(); e.stopPropagation();
      const v=reportInvoices[i];
      if(v) invoiceView(String(v.id));
-   },true);
+   };
  });
 }
 const _reportsOriginal=reports;
