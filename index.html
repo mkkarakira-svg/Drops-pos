@@ -2331,20 +2331,28 @@ function renderDetailedReports(){
 <script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
- const from=document.getElementById('repFrom')?.value||window._reportFrom||'0000-01-01';
- const to=document.getElementById('repTo')?.value||window._reportTo||'9999-12-31';
- const list=(db.invoices||[]).filter(v=>!v.voided&&String(v.date||'')>=from&&String(v.date||'')<=to);
+ const reportBox=document.getElementById('detailedReports');
+ const panels=reportBox?[...reportBox.querySelectorAll('.panel')]:[];
+ const src=panels.find(p=>p.textContent.includes('Invoice Details'));
+ const sourceRows=src?[...src.querySelectorAll('.item')]:[];
  const app=document.getElementById('app');
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b><div id="invoiceBreakList"></div></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
  const box=document.getElementById('invoiceBreakList');
- list.slice().reverse().forEach(v=>{
-   const row=document.createElement('div'); row.className='item'; row.style.cursor='pointer';
-   row.innerHTML='<b>Invoice #'+invNo(v)+' — '+money(v.total)+'</b><div class="muted">'+(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(i=>i.name+' × '+(+i.qty||0)).join(' • ')+'</div>';
-   row.addEventListener('click',function(){ invoiceView(String(v.id)); });
+ const visible=(db.invoices||[]).filter(v=>!v.voided).slice().reverse();
+ sourceRows.forEach((srcRow,i)=>{
+   const row=srcRow.cloneNode(true); row.style.cursor='pointer';
+   const v=visible[i];
+   if(v){
+     const b=row.querySelector('b');
+     if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
+     const m=row.querySelector('.muted');
+     if(m)m.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
+     row.onclick=function(){invoiceView(String(v.id));};
+   }
    box.appendChild(row);
  });
- if(!list.length)box.innerHTML='<div class="muted">No invoices found</div>';
+ if(!sourceRows.length)box.innerHTML='<div class="muted">No invoices found</div>';
 }
 const _reportsOriginal=reports;
 reports=function(){
