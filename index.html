@@ -2329,9 +2329,10 @@ function renderDetailedReports(){
 }
 </script>
 <script>
-/* REPORTS FINAL CLICK FIX */
+/* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
- const from=document.getElementById('repFrom')?.value||today(),to=document.getElementById('repTo')?.value||today();
+ const from=document.getElementById('repFrom')?.value||today();
+ const to=document.getElementById('repTo')?.value||today();
  const list=(db.invoices||[]).filter(v=>!v.voided&&v.date>=from&&v.date<=to);
  const app=document.getElementById('app');
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel" id="invoiceBreakList"></div>';
@@ -2341,18 +2342,20 @@ function openInvoiceCount(){
  list.forEach(v=>{
    const row=document.createElement('div'); row.className='item';
    row.innerHTML='<b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+'</div>';
-   row.onclick=()=>invoiceView(String(v.id)); box.appendChild(row);
+   row.onclick=function(){invoiceView(String(v.id));}; box.appendChild(row);
  });
 }
-const _reportsRenderFinal=renderDetailedReports;
-renderDetailedReports=function(){
- _reportsRenderFinal();
- const cards=document.querySelectorAll('#detailedReports .grid .card');
- if(cards[1]){
-   cards[1].setAttribute('onclick','openInvoiceCount()');
-   cards[1].style.cursor='pointer';
-   cards[1].style.touchAction='manipulation';
+const _reportsOriginal=reports;
+reports=function(){
+ _reportsOriginal();
+ const box=document.getElementById('detailedReports');
+ if(!box)return;
+ const cards=box.querySelectorAll('.grid .card');
+ if(cards.length>1){
+   const old=cards[1], fresh=old.cloneNode(true);
+   fresh.style.cursor='pointer'; fresh.style.touchAction='manipulation';
+   fresh.onclick=openInvoiceCount;
+   old.parentNode.replaceChild(fresh,old);
  }
-};
-</script>
+};</script>
 </body></html>
