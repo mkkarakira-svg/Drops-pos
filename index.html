@@ -2399,6 +2399,15 @@ window.cashbox=function(){
 };
 </script>
 <script>
+/* INVOICE CANONICAL OVERRIDE — sale type visible */
+window.invoiceView=function(i){
+ var v=(db.invoices||[]).find(function(x){return String(x.id)===String(i)}); if(!v)return;
+ var due=Math.max(0,(+v.total||0)-(+v.paid||0)),items=v.items||[];
+ var mode=(String(v.saleMode||'').toLowerCase()==='wholesale'?'Wholesale':'Retail');
+ document.getElementById('app').innerHTML='<div class="invoice-wrap"><div class="invoice-paper"><div class="invoice-brand"><div><div class="invoice-logo">DROPS</div><div class="invoice-sub">DETERGENTS</div></div><div class="invoice-title">Sales Invoice</div></div><div class="invoice-meta"><div><b>Invoice No.</b><span>#'+invNo(v)+'</span></div><div><b>Date</b><span>'+String(v.date||'').split('-').reverse().join('/')+' – '+txTime(v)+'</span></div></div><div class="invoice-party">'+(v.customerName?'<div><b>Customer:</b> '+v.customerName+'</div>':'')+(v.employeeName?'<div><b>Distributor:</b> '+v.employeeName+'</div>':'')+'<div><b>Sale Type:</b> '+mode+'</div><div><b>Payment Method:</b> '+(v.paymentMethod||'Cash')+'</div>'+(v.voided?'<div><b>STATUS: VOID</b></div>':'')+'</div><div class="invoice-table"><div class="invoice-row invoice-head"><span>Item</span><span>Quantity</span><span>Price</span><span>Total</span></div>'+items.map(function(x){return '<div class="invoice-row"><span>'+x.name+'</span><span>'+x.qty+'</span><span>'+money(x.price)+'</span><span>'+money((+x.price||0)*(+x.qty||0))+'</span></div>'}).join('')+'</div><div class="invoice-totals"><div><span>Total</span><b>'+money(v.total)+'</b></div><div><span>Paid</span><b>'+money(v.paid||0)+'</b></div><div class="invoice-due"><span>Balance</span><b>'+money(due)+'</b></div></div><div class="invoice-thanks">Thank you for choosing Drops Detergents</div></div><div class="invoice-actions noPrint"><button onclick="go(\'sale\')">＋ New Sale</button><button class="orange" onclick="print()">🖨 Print Invoice</button></div></div>';
+};
+</script>
+<script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
  const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
