@@ -25,6 +25,9 @@ public class MainActivity extends Activity {
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         window.setNavigationBarColor(Color.rgb(245, 248, 252));
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setNavigationBarContrastEnforced(false);
+        }
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(245, 248, 252));
@@ -36,7 +39,8 @@ public class MainActivity extends Activity {
             } else {
                 bottom = insets.getSystemWindowInsetBottom();
             }
-            v.setPadding(0, 0, 0, bottom);
+            // Keep the page full height; the web bottom navigation gets its own safe-area padding.
+            v.setPadding(0, 0, 0, 0);
             return insets;
         });
 
