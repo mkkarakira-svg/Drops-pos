@@ -8,6 +8,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.view.View;
 import android.graphics.Color;
+import android.view.Window;
+import android.view.WindowManager;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -16,6 +18,13 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Keep the app content below the Android status bar and above navigation controls.
+        Window window = getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.setStatusBarColor(Color.rgb(245, 248, 252));
+        window.setNavigationBarColor(Color.rgb(245, 248, 252));
+        window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(245, 248, 252));
