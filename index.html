@@ -1159,6 +1159,1167 @@ function invoiceView(i){
  $('#app').innerHTML='<div class="invoice-wrap"><div class="invoice-paper"><div class="invoice-brand"><div><div class="invoice-logo">DROPS</div><div class="invoice-sub">DETERGENTS</div></div><div class="invoice-title">Sales Invoice</div></div><div class="invoice-meta"><div><b>Invoice No.</b><span>#'+invNo(v)+'</span></div><div><b>Date</b><span>'+String(v.date||'').split('-').reverse().join('/')+' – '+txTime(v)+'</span></div></div><div class="invoice-party">'+(v.customerName?'<div><b>Customer:</b> '+v.customerName+'</div>':'')+(v.employeeName?'<div><b>Distributor:</b> '+v.employeeName+'</div>':'')+'<div><b>Sale Type:</b> '+(v.saleMode==='wholesale'?'Wholesale':'Retail')+'</div><div><b>Payment Method:</b> '+(v.paymentMethod||'Cash')+'</div>'+(v.voided?'<div><b>STATUS: VOID</b></div>':'')+'</div><div class="invoice-table"><div class="invoice-row invoice-head"><span>Item</span><span>Quantity</span><span>Price</span><span>Total</span></div>'+items.map(x=>'<div class="invoice-row"><span>'+x.name+'</span><span>'+x.qty+'</span><span>'+money(x.price)+'</span><span>'+money((+x.price||0)*(+x.qty||0))+'</span></div>').join('')+'</div><div class="invoice-totals"><div><span>Total</span><b>'+money(v.total)+'</b></div><div><span>Paid</span><b>'+money(v.paid||0)+'</b></div><div class="invoice-due"><span>Balance</span><b>'+money(due)+'</b></div></div></div><div class="invoice-actions noPrint"><button onclick="go(\\'sale\\')">＋ New Sale</button><button class="orange" onclick="print()">🖨 Print Invoice</button></div></div>';
 }
 function accountDetail(i){let p=db.people.find(x=>String(x.id)===String(i));if(!p)return;let inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.customerId)===String(p.id)),pur=(db.purchases||[]).filter(x=>String(x.supplier||'').toLowerCase()===String(p.name).toLowerCase());$('#app').innerHTML='<div class="title">Account Statement — '+p.name+'</div><div class="panel"><b>'+p.type+'</b><div class="muted">'+(p.phone||'')+'</div></div><div class="panel"><b>Transactions</b>'+(p.type==='Customer'?inv.map(v=>'<div class="item"><div class="tx-line"><b>Invoice #'+invNo(v)+'</b><span>'+money(v.total)+'</span></div><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+' • '+(v.saleMode==='wholesale'?'Wholesale':'Retail')+' • Paid '+money(v.paid||0)+' • Balance '+money(Math.max(0,v.total-(v.paid||0)))+'</div></div>').join(''):pur.map(x=>'<div class="item">'+(x.description||x.item||x.raw||x.name||'Purchase')+'<span style="float:left">'+money((+x.total||0)||(+x.qty||0)*(+x.cost||0))+'</span><div class="muted">'+(x.date||'')+'</div></div>').join(''))+'</div>'}
+!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Drops POS</title><meta name="theme-color" content="#071426"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon.svg"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f8fc;color:#071426}.top{background:#071426;color:#fff;padding:30px 24px 56px;border-radius:0 0 34px 34px;position:relative;z-index:5}.top b{font-size:25px;letter-spacing:.2px;display:block;text-align:left;direction:ltr}.top small{display:block;opacity:.76;margin-top:44px;text-align:left;direction:ltr;font-weight:700}.wrap{max-width:900px;margin:-28px auto 0;padding:0 16px 100px}.hero{display:none}.hero .n{font-size:34px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.card,.panel{background:#fff;border-radius:28px;padding:18px;box-shadow:0 3px 8px #07142625}.card{cursor:pointer;min-height:135px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.card b{font-size:20px;display:block;margin-top:8px}.ico{font-size:24px}.panel{margin-top:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}input,select,button{font:inherit;border-radius:12px;border:1px solid #dce3ee;padding:12px;min-width:0}button{background:#1769ff;color:#fff;border:0;font-weight:700;cursor:pointer}.danger{background:#dc2626}.green{background:#10b95b}.orange{background:#ff7900}.muted{color:#687386}.item{padding:12px 0;border-bottom:1px solid #edf0f5}.item:last-child{border:0}.pill{display:inline-block;background:#eef4ff;color:#1769ff;border-radius:999px;padding:5px 9px;font-size:12px}.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e6eaf0;display:flex;z-index:8}.nav button{background:#fff;color:#071426;border-radius:0;padding:13px 4px}.nav button.active{color:#1769ff}.hide{display:none}.title{font-size:22px;font-weight:800;margin:4px 0 12px}.kpi{font-size:25px;font-weight:800}table{width:100%;border-collapse:collapse}td,th{padding:9px;border-bottom:1px solid #edf0f5;text-align:left}@media(max-width:520px){
+  .top{padding:14px 16px 26px;border-radius:0 0 24px 24px}
+  .top b{font-size:17px}
+  .top div{font-size:15px!important;margin-top:8px!important}
+  .top small{font-size:10px;margin-top:14px;white-space:nowrap}
+  .wrap{margin:-16px auto 0;padding:0 10px 68px}
+  .grid{gap:10px}
+  .card,.panel{border-radius:20px;padding:10px}
+  .card{min-height:88px}
+  .card b{font-size:15px;margin-top:3px}
+  .ico{font-size:18px}
+  h2{font-size:18px;margin:16px 4px 10px}
+  .bottom{height:58px;font-size:12px}
+}
+@media(max-width:380px){
+  .top b{font-size:16px}
+  .top small{font-size:9px}
+  .card{min-height:82px}
+  .card b{font-size:14px}
+}
+  .top small{font-size:10.5px}
+  .card{min-height:98px}
+  .card b{font-size:16px}
+}
+@media(min-width:700px){.grid{grid-template-columns:repeat(6,1fr)}}@media print{.top,.nav,.noPrint{display:none!important}.wrap{padding:0}.panel{box-shadow:none}}
+
+/* Production page polish */
+.production-page{font-family:Arial,"Noto Sans Arabic",sans-serif}
+.production-page .title{font-size:30px;font-weight:900;letter-spacing:-.4px;margin:20px 4px 24px}
+.production-page .panel{border-radius:24px;padding:20px 16px;margin-bottom:16px}
+.production-page .panel>b,.production-page .section-title{font-size:20px;font-weight:800;display:block;margin-bottom:14px}
+.production-page label{font-size:14px;font-weight:800;color:#667085;display:block;margin:4px 0 6px}
+.production-page select,.production-page input{font-size:17px;font-weight:700;min-height:54px;border-radius:16px}
+.production-page button{font-size:17px;font-weight:900;border-radius:16px;min-height:54px}
+.production-page .recipe-row,.production-page .batch-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.production-page .recipe-row,.production-page .batch-row{grid-template-columns:1fr}.production-page .title{font-size:28px}}
+
+/* Production approved layout v47 */
+.production-page .panel{overflow:hidden}
+.production-page .batch-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.production-page .batch-field{background:#f7f9fc;border:1px solid #edf0f5;border-radius:18px;padding:10px}
+.production-page .batch-field label{color:#071a33;font-size:14px;margin-bottom:7px}
+.production-page .batch-field select,.production-page .batch-field input{width:100%;min-width:0;background:#fff}
+.production-page .produce-wide{width:100%;margin-top:12px;background:#ff7900;color:#fff}
+@media(max-width:520px){.production-page .batch-fields{grid-template-columns:1fr}.production-page .produce-wide{min-height:58px}}
+
+/* exact approved production execution layout v49 */
+.production-page .batch-fields{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important;direction:ltr}
+.production-page .batch-field{min-width:0!important;padding:8px!important;border-radius:16px!important;background:#f7f9fc!important}
+.production-page .batch-field label{font-size:12px!important;line-height:1.3!important;white-space:normal!important;text-align:left!important}
+.production-page .batch-field select,.production-page .batch-field input{width:100%!important;min-width:0!important;height:52px!important;font-size:14px!important;padding:6px!important}
+.production-page .produce-wide{display:block!important;width:100%!important;margin:12px 0 0!important;min-height:58px!important;font-size:18px!important}
+@media(max-width:520px){.production-page .batch-fields{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+
+/* production clean mobile layout v50 */
+.production-page{direction:ltr}.prod-card{padding:16px!important;overflow:hidden}.prod-card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-align:left}.prod-card-head b{font-size:18px}.prod-icon{width:42px;height:42px;display:grid;place-items:center;background:#f1f5f9;border-radius:13px;font-size:21px;flex:0 0 42px}.recipe-grid,.production-page .batch-fields{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}.recipe-grid select,.recipe-grid input,.production-page .batch-field select,.production-page .batch-field input{width:100%!important;min-width:0!important;height:52px!important;margin:0!important;padding:6px 8px!important;font-size:13px!important}.production-page .batch-field{min-width:0!important;padding:0!important;background:transparent!important}.production-page .batch-field label{display:block;font-size:12px;font-weight:700;margin:0 2px 5px;text-align:left;white-space:nowrap}.recipe-save{width:100%!important;margin-top:10px!important;min-height:50px!important}.production-page .produce-wide{width:100%!important;margin:12px 0 0!important;min-height:58px!important;font-size:18px!important}.prod-batch-item{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;border-top:1px solid #edf0f4}.prod-batch-item:first-of-type{border-top:0}@media(max-width:520px){.recipe-grid,.production-page .batch-fields{grid-template-columns:repeat(3,minmax(0,1fr))!important}.prod-card{padding:13px!important}.prod-card-head b{font-size:17px}.production-page .batch-field label{font-size:11px}.recipe-grid select,.recipe-grid input,.production-page .batch-field select,.production-page .batch-field input{font-size:12px!important}}
+
+/* larger bottom navigation v51 */
+.bottom-nav,.bottomnav,.bottom-bar,nav.bottom{min-height:76px!important;padding:8px 4px 10px!important}.bottom-nav button,.bottom-nav .nav-item,.bottomnav button,.bottomnav .nav-item,.bottom-bar button,.bottom-bar .nav-item,nav.bottom button,nav.bottom .nav-item{font-size:15px!important;line-height:1.2!important;min-height:58px!important}.bottom-nav button>span:first-child,.bottom-nav .nav-item>span:first-child,.bottomnav button>span:first-child,.bottomnav .nav-item>span:first-child,.bottom-bar button>span:first-child,.bottom-bar .nav-item>span:first-child,nav.bottom button>span:first-child,nav.bottom .nav-item>span:first-child{font-size:22px!important}
+
+/* exact bottom nav sizing v52 */
+nav.nav{height:86px!important;min-height:86px!important;padding:8px 6px 12px!important;align-items:center!important}nav.nav button{font-size:16px!important;font-weight:800!important;line-height:1.45!important;min-height:64px!important;padding:4px 2px!important}nav.nav button::first-line{font-size:25px!important}
+
+/* recipe viewer/editor v53 */
+.recipe-editor{margin-top:14px;border-top:1px solid #e5e7eb;padding-top:12px}.recipe-list-title{font-weight:900;font-size:16px;margin-bottom:8px}.recipe-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 55px;gap:7px;align-items:center;padding:8px 0;border-bottom:1px solid #edf0f4}.recipe-row input{width:78px!important;height:40px!important;padding:5px!important;text-align:center}.recipe-row span{font-size:12px}.recipe-row button{min-height:40px!important;padding:5px!important;font-size:12px!important;background:#fff1f2!important;color:#be123c!important;border:1px solid #fecdd3!important}.recipe-empty{padding:12px;text-align:center;color:#64748b;background:#f8fafc;border-radius:12px}@media(max-width:520px){.recipe-row{grid-template-columns:minmax(0,1fr) 105px 50px}.recipe-row b{font-size:13px}.recipe-row input{width:66px!important}}
+
+/* compact recipe editor v55 */
+.recipe-editor{margin-top:8px!important;padding-top:8px!important}.recipe-list-title{font-size:14px!important;margin-bottom:4px!important}.recipe-row{grid-template-columns:minmax(0,1fr) 92px 44px!important;gap:4px!important;padding:4px 0!important}.recipe-row b{font-size:12px!important}.recipe-row input{width:58px!important;height:32px!important;padding:3px!important;font-size:12px!important}.recipe-row span{font-size:10px!important}.recipe-row button{min-height:32px!important;height:32px!important;padding:2px!important;font-size:10px!important;border-radius:8px!important}.recipe-empty{padding:8px!important;font-size:12px!important}
+
+/* finished stock matrix v61 */
+.stock-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}.stock-summary>div{background:#fff;border-radius:14px;padding:12px;box-shadow:0 2px 10px #0000000b}.stock-summary span{display:block;font-size:12px;color:#64748b}.stock-summary b{display:block;font-size:20px;margin-top:3px}.stock-family{background:#fff;border-radius:15px;padding:11px 12px;margin-bottom:9px;box-shadow:0 2px 10px #0000000b}.stock-family-name{font-weight:900;font-size:15px;margin-bottom:8px}.stock-sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.stock-size{background:#f7f9fc;border:1px solid #e6ebf2;border-radius:11px;text-align:center;padding:7px 3px}.stock-size span{display:block;font-size:11px;color:#64748b;font-weight:800}.stock-size b{display:block;font-size:19px;line-height:1.2}.stock-size small{font-size:9px;color:#94a3b8}
+
+/* POS EASY GRID v65 */
+.pos-search{margin-bottom:9px}.pos-search input{width:100%;height:48px;border-radius:14px;background:#fff}.pos-size-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}.pos-size-tabs button{background:#fff;color:#334155;border:1px solid #dfe5ed;min-height:40px;padding:6px;border-radius:11px;font-weight:800}.pos-size-tabs button.active{background:#176ff2;color:#fff;border-color:#176ff2}.pos-products{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}.pos-product{background:#fff;color:#111827;text-align:left;border:1px solid #e6ebf2;border-radius:14px;padding:10px;min-height:92px;box-shadow:0 2px 9px #0000000a}.pos-product.out{opacity:.45}.pos-prod-name{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pos-prod-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}.pos-prod-meta span{background:#eaf2ff;color:#176ff2;padding:3px 8px;border-radius:8px;font-size:12px;font-weight:900}.pos-prod-meta b{font-size:15px}.pos-product small{display:block;margin-top:5px;color:#64748b;font-size:10px}.pos-cart{padding:11px!important}.pos-cart-head{display:flex;justify-content:space-between;margin-bottom:5px}.pos-cart-head span{font-size:12px;color:#64748b}.pos-cart-row{display:grid;grid-template-columns:minmax(0,1fr) 92px 65px;gap:5px;align-items:center;padding:8px 0;border-bottom:1px solid #edf0f4}.pos-cart-row small{display:block;color:#64748b;font-size:10px;margin-top:2px}.pos-cart-row strong{text-align:left;font-size:12px}.pos-qty{display:grid;grid-template-columns:28px 1fr 28px;align-items:center;text-align:center}.pos-qty button{height:28px;min-height:28px;padding:0;border-radius:8px}.pos-total{display:flex;justify-content:space-between;align-items:center;padding:11px 2px 5px;font-size:17px}.pos-total b{font-size:22px}.pos-checkout{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}.pos-checkout input,.pos-checkout button{height:48px}.pos-empty{grid-column:1/-1;text-align:center;padding:18px;color:#64748b;font-size:12px}
+
+/* POS COLOR CODING v66 */
+.pos-product:nth-child(6n+1){background:linear-gradient(135deg,#eef5ff,#fff);border-right:5px solid #2473f3}.pos-product:nth-child(6n+2){background:linear-gradient(135deg,#edfff5,#fff);border-right:5px solid #11b85b}.pos-product:nth-child(6n+3){background:linear-gradient(135deg,#fff5e9,#fff);border-right:5px solid #ff8a1f}.pos-product:nth-child(6n+4){background:linear-gradient(135deg,#f5efff,#fff);border-right:5px solid #7c4dff}.pos-product:nth-child(6n+5){background:linear-gradient(135deg,#fff0f4,#fff);border-right:5px solid #ef4770}.pos-product:nth-child(6n){background:linear-gradient(135deg,#ecfbff,#fff);border-right:5px solid #16a6c9}.pos-product.out{background:#f2f3f5!important;border-right-color:#aeb5bf!important;opacity:.55}.pos-cart{background:linear-gradient(180deg,#ffffff,#f7faff)!important;border-top:4px solid #2473f3}.pos-total{background:#eef5ff;border-radius:11px;padding:10px!important;margin-top:7px}.pos-size-tabs button[data-size="1"]{border-bottom:3px solid #16a6c9}.pos-size-tabs button[data-size="4"]{border-bottom:3px solid #11b85b}.pos-size-tabs button[data-size="5"]{border-bottom:3px solid #ff8a1f}
+
+/* COMPACT BOTTOM NAV v73 */
+nav.nav{height:72px!important;min-height:72px!important;padding:4px 6px 7px!important}nav.nav button{font-size:14px!important;line-height:1.25!important;min-height:55px!important;padding:2px!important}nav.nav button::first-line{font-size:21px!important}body{padding-bottom:82px!important}
+</style><style>
+@media(max-width:520px){
+  .top{padding:10px 14px 18px!important;border-radius:0 0 20px 20px!important}
+  .top b{font-size:15px!important}
+  .top div{font-size:13px!important;margin-top:5px!important}
+  .top small{font-size:8.5px!important;margin-top:8px!important}
+  .wrap{margin:-10px auto 0!important;padding:0 9px 60px!important}
+  .grid{gap:8px!important}
+  .card,.panel{border-radius:17px!important;padding:7px!important}
+  .card{min-height:68px!important}
+  .card b{font-size:13px!important;margin-top:2px!important}
+  .ico{font-size:16px!important}
+  h2{font-size:16px!important;margin:11px 3px 7px!important}
+  .bottom{height:52px!important;font-size:11px!important}
+}
+</style><style>
+@media(max-width:520px){
+ .top{min-height:0!important;height:auto!important;padding:9px 14px 12px!important;border-radius:0 0 18px 18px!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:2px 10px!important}
+ .top b{font-size:15px!important;line-height:1.1!important;margin:0!important}
+ .top div{font-size:13px!important;line-height:1.1!important;margin:0!important}
+ .top small{grid-column:1/-1!important;font-size:9px!important;line-height:1.1!important;margin:4px 0 0!important}
+}
+.app-back{position:fixed;top:10px;left:10px;z-index:9999;border:0;border-radius:12px;background:#071426;color:#fff;padding:8px 12px;font:700 14px system-ui;box-shadow:0 2px 8px #0003;display:none}
+body:not(.home-view) .app-back{display:block}
+</style><style id="approved-final-skin">
+:root{--navy:#071426;--blue:#2473f3;--bg:#f5f8fc}
+body{background:var(--bg);font-family:Arial,sans-serif}
+.top{max-width:900px;margin:10px auto 0;background:var(--navy);border-radius:22px;padding:14px 18px!important;display:grid!important;grid-template-columns:auto 1fr auto!important;grid-template-areas:"brand sub title"!important;align-items:center!important;gap:14px!important;min-height:82px!important}
+.top b{grid-area:brand;font-size:20px!important;line-height:1!important;margin:0!important;white-space:nowrap}
+.top div{grid-area:title;font-size:16px!important;margin:0!important;white-space:nowrap}
+.top small{grid-area:sub;font-size:11px!important;line-height:1.25!important;margin:0!important;opacity:.75!important;white-space:nowrap}
+.wrap{max-width:900px;margin:0 auto!important;padding:14px 14px 82px!important}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi-card{background:#fff;border-radius:20px;padding:12px 6px;text-align:center;box-shadow:0 4px 14px #07142612}
+.kpi-card .ico{font-size:20px}.kpi-card b{display:block;font-size:12px;margin:5px 0}.kpi-card .kpi{font-size:18px}.kpi-card .muted{font-size:10px}
+.section-title{font-size:20px;font-weight:800;margin:22px 4px 12px}
+.main-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.action-card{min-height:92px;border-radius:20px;padding:12px 16px;color:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px #07142618;cursor:pointer}
+.action-card .ico{font-size:25px}.action-card b{font-size:18px}.action-card .arrow{font-size:25px}
+.admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.admin-card{background:#fff;border-radius:18px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px #07142612;cursor:pointer}
+.admin-card .ico{font-size:22px}.admin-card b{font-size:13px;margin-top:7px}
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick-card{background:#fff;border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px #07142610;cursor:pointer;font-size:13px}
+.nav{height:62px;box-shadow:0 -3px 12px #07142610}.nav button{font-size:12px;padding:8px 2px}
+.app-back{top:12px!important;left:12px!important;padding:7px 11px!important}
+@media(max-width:520px){
+ .top{margin:8px 10px 0!important;border-radius:18px!important;padding:11px 12px!important;min-height:66px!important;gap:7px!important}
+ .top b{font-size:16px!important}.top div{font-size:13px!important}.top small{font-size:8px!important}
+ .wrap{padding:10px 10px 72px!important}
+ .section-title{font-size:18px;margin:17px 3px 9px}
+ .action-card{min-height:82px;padding:10px 12px}.action-card b{font-size:16px}.action-card .ico{font-size:22px}
+}
+</style><style id="header-fix">
+.top{grid-template-columns:auto 1fr auto!important;grid-template-areas:"brand sub title"!important;overflow:hidden}
+.top b{grid-area:brand!important;text-align:left!important;direction:ltr!important}
+.top div{grid-area:title!important;text-align:left!important}
+.top small{grid-area:sub!important;text-align:center!important;direction:ltr!important;overflow:hidden!important;text-overflow:ellipsis!important}
+@media(max-width:520px){
+ .top{grid-template-columns:auto 1fr!important;grid-template-areas:"brand title" "sub sub"!important;row-gap:7px!important;padding:12px 14px!important}
+ .top b{font-size:15px!important;white-space:nowrap!important}
+ .top div{font-size:13px!important;white-space:nowrap!important}
+ .top small{font-size:9px!important;text-align:left!important;white-space:nowrap!important}
+}
+</style><style id="simple-topbar">
+.top{max-width:900px!important;margin:8px auto 0!important;min-height:52px!important;padding:10px 16px!important;border-radius:17px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+.top b{font-size:17px!important;white-space:nowrap!important}
+.top div{font-size:13px!important;white-space:nowrap!important}
+@media(max-width:520px){.top{margin:7px 10px 0!important;min-height:48px!important;padding:9px 12px!important}.top b{font-size:15px!important}.top div{font-size:12px!important}}
+</style><style id="back-v12">
+.app-back{position:fixed!important;top:10px!important;left:10px!important;z-index:10000!important;background:#fff!important;color:#071426!important;border:1px solid #dbe2ea!important;border-radius:12px!important;padding:8px 13px!important;font-size:14px!important;font-weight:800!important;box-shadow:0 3px 10px #0002!important}
+body.home-view .app-back{display:none!important}
+body:not(.home-view) .app-back{display:block!important}
+</style><style id="header-back-v13">
+#headerBack{border:0;background:#fff;color:#071426;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;cursor:pointer;flex:0 0 auto}
+.top.has-back #headerBack{display:block!important}
+@media(max-width:520px){#headerBack{padding:6px 8px;font-size:12px}.top.has-back{gap:7px!important}.top.has-back b{font-size:13px!important}}
+</style><style id="inventory-value-colors-v22">
+.inventory-value-row .kpi-card{border:0!important;box-shadow:0 5px 14px #00000018!important}
+.inventory-value-row .raw-value{background:linear-gradient(135deg,#e8f7f1,#ccefe1)!important;border-right:5px solid #15966b!important}
+.inventory-value-row .finished-value{background:linear-gradient(135deg,#eaf2ff,#d7e6ff)!important;border-right:5px solid #2f6fd6!important}
+.inventory-value-row .kpi-card b{font-size:20px!important;color:#071426!important}
+.inventory-value-row .muted{color:#334155!important;font-weight:800!important}
+
+/* BACK OFFICE REDESIGN v84 */
+.backoffice-page{padding-bottom:8px}
+.bo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;background:#fff;padding:12px;border-radius:22px;box-shadow:0 5px 18px #10243a18}
+.bo-card{min-height:92px;border:0;border-radius:17px;background:#f4f8ff;color:#102033;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:10px 6px;font-size:15px;line-height:1.25;box-shadow:inset 0 0 0 1px #dbe7f6}
+.bo-card span{font-size:27px}.bo-card b{font-weight:800}.bo-card:active{transform:scale(.98)}
+.bo-card:nth-child(1),.bo-card:nth-child(2),.bo-card:nth-child(3){background:#eef5ff}
+.bo-card:nth-child(4),.bo-card:nth-child(5),.bo-card:nth-child(6){background:#f0fbf5}
+.bo-card.bo-danger{background:#fff4f1;color:#a53b25;grid-column:1/-1;min-height:66px;flex-direction:row}
+.bo-section-title{font-size:22px!important;margin-top:20px!important}
+.bo-settings{padding:13px!important}
+.bo-setting-row{display:grid;grid-template-columns:1fr 115px 82px;gap:8px;align-items:center}
+.bo-setting-row input{min-width:0;text-align:center}
+.bo-setting-row button{height:48px}
+.bo-backup-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #d9dee5}
+.bo-backup-row button,.bo-file{min-height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700}
+.bo-file{background:#f4f6f8;border:1px solid #d9dee5;padding:6px;cursor:pointer}.bo-file input{display:none}
+@media(min-width:600px){.bo-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.bo-card.bo-danger{grid-column:auto}}
+
+/* FORMULA MANAGEMENT v86 */
+.recipe-formula-manage{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}.recipe-formula-manage select{min-width:0}.recipe-formula-manage button{padding:9px 8px;white-space:nowrap}.recipe-delete-formula{background:#fff2ef!important;color:#a83b28!important;border:1px solid #f0c8bf!important}@media(max-width:480px){.recipe-formula-manage{grid-template-columns:1fr 1fr}.recipe-formula-manage select{grid-column:1/-1}}
+
+/* COMPACT HOME v90 */
+.home-view .kpi-grid{gap:8px!important}
+.home-view .kpi-card{padding:11px 7px!important;min-height:128px!important;border-radius:18px!important}
+.home-view .kpi-card .ico{font-size:21px!important}
+.home-view .kpi-card .kpi{font-size:25px!important;margin:5px 0!important}
+.home-view .inventory-value-row .kpi-card{min-height:88px!important;padding:10px!important}
+.home-view .main-grid{gap:9px!important}
+.home-view .action-card{min-height:112px!important;padding:14px!important;border-radius:18px!important}
+.home-view .action-card .ico{font-size:24px!important}
+.home-view .admin-grid{gap:9px!important}
+.home-view .admin-card{min-height:118px!important;padding:12px 7px!important;border-radius:18px!important}
+.home-view .admin-card .ico{font-size:25px!important}
+.home-view .section-title{margin:18px 0 10px!important}
+
+/* HOME REBALANCE v91 */
+.home-view .kpi-grid{gap:7px!important}
+.home-view .kpi-card{padding:9px 6px!important;min-height:112px!important;border-radius:17px!important}
+.home-view .kpi-card .ico{font-size:19px!important}
+.home-view .kpi-card b{font-size:14px!important}
+.home-view .kpi-card .kpi{font-size:22px!important;margin:3px 0!important}
+.home-view .kpi-card .muted{font-size:11px!important}
+.home-view .inventory-value-row{gap:8px!important;margin-bottom:8px!important}
+.home-view .inventory-value-row .kpi-card{min-height:72px!important;padding:8px!important}
+.home-view .inventory-value-row .kpi-card b{font-size:23px!important}
+.home-view .main-grid{gap:8px!important}
+.home-view .action-card{min-height:94px!important;padding:10px 13px!important;border-radius:17px!important}
+.home-view .action-card b{font-size:20px!important}.home-view .action-card .ico{font-size:22px!important}
+.home-view .panel[onclick="leftovers()"]{padding:12px!important;margin:9px 0!important}
+.home-view .admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+.home-view .admin-card{min-height:91px!important;padding:8px 3px!important;border-radius:17px!important}
+.home-view .admin-card .ico{font-size:22px!important}.home-view .admin-card b{font-size:13px!important}
+.home-view .section-title{font-size:22px!important;margin:14px 0 8px!important}
+@media(max-width:390px){.home-view .admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* QUICK LEFTOVERS v94 */
+.leftover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.leftover-card{margin:0!important;padding:12px!important}.leftover-card>b{font-size:16px}.leftover-card .row{display:grid;grid-template-columns:76px 1fr;gap:6px}.leftover-card input{text-align:center;min-width:0}.leftover-card button{padding:9px 5px;font-size:13px}@media(max-width:390px){.leftover-grid{grid-template-columns:1fr}}
+
+/* STAFF v95 */ .home-view .admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}@media(max-width:390px){.home-view .admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* PROFESSIONAL INVOICE v106 */
+.invoice-wrap{max-width:760px;margin:0 auto}.invoice-paper{background:#fff;border-radius:20px;padding:22px;box-shadow:0 5px 24px rgba(15,35,70,.09);direction:ltr}.invoice-brand{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #12294a;padding-bottom:14px;margin-bottom:14px}.invoice-logo{font-size:31px;font-weight:950;letter-spacing:1px;color:#12294a}.invoice-sub{font-size:11px;font-weight:800;letter-spacing:3px}.invoice-title{font-size:21px;font-weight:900}.invoice-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.invoice-meta>div,.invoice-party{background:#f5f7fa;border-radius:11px;padding:10px}.invoice-meta b{display:block;font-size:11px;color:#667}.invoice-party{line-height:1.9;margin-bottom:14px}.invoice-table{border:1px solid #e3e7ed;border-radius:12px;overflow:hidden}.invoice-row{display:grid;grid-template-columns:2fr .7fr .8fr .9fr;gap:5px;padding:10px;border-bottom:1px solid #edf0f4;align-items:center}.invoice-row:last-child{border-bottom:0}.invoice-head{background:#12294a;color:#fff;font-weight:800;font-size:12px}.invoice-totals{margin:15px 0 0 auto;max-width:310px}.invoice-totals>div{display:flex;justify-content:space-between;padding:7px 3px}.invoice-due{border-top:2px solid #12294a;font-size:18px}.invoice-thanks{text-align:center;border-top:1px dashed #ccd3dc;margin-top:18px;padding-top:14px;font-weight:700}.invoice-actions{display:flex;gap:8px;margin-top:12px}.invoice-actions button{flex:1}@media(max-width:500px){.invoice-paper{padding:14px;border-radius:14px}.invoice-logo{font-size:25px}.invoice-row{grid-template-columns:1.7fr .55fr .75fr .85fr;font-size:12px;padding:8px 5px}.invoice-meta{grid-template-columns:1fr}.invoice-title{font-size:18px}}@media print{body *{visibility:hidden!important}.invoice-paper,.invoice-paper *{visibility:visible!important}.invoice-paper{position:absolute;inset:0;width:100%;box-shadow:none;border-radius:0;padding:12mm}.top,.nav,.noPrint{display:none!important}}
+.top-info{text-align:left;line-height:1.25}.top-date{font-size:11px;opacity:.78;margin-top:3px;direction:ltr}
+/* Formula editor mobile cleanup v139 */
+.production-page .recipe-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+.production-page .recipe-formula-manage{grid-column:1/-1!important;display:grid!important;grid-template-columns:minmax(0,1fr) 110px 150px!important;gap:8px!important}
+.production-page .recipe-grid>select#rr{grid-column:1/2!important}
+.production-page .recipe-grid>input#rqpl{grid-column:2/3!important}
+.production-page .recipe-save{margin-top:10px!important}
+.production-page .recipe-row{display:grid!important;grid-template-columns:minmax(0,1fr) 112px 76px!important;align-items:center!important;gap:8px!important;padding:10px 0!important;border-bottom:1px solid #edf0f4}
+.production-page .recipe-row b{min-width:0;overflow-wrap:anywhere}
+.production-page .recipe-row>div{display:flex!important;align-items:center!important;gap:5px!important}
+.production-page .recipe-row input{width:72px!important;min-width:0!important;height:46px!important;min-height:46px!important;text-align:center!important;padding:5px!important}
+.production-page .recipe-row button{min-height:46px!important;height:46px!important;font-size:13px!important;padding:5px 8px!important}
+@media(max-width:520px){
+ .production-page .recipe-formula-manage{grid-template-columns:1fr 1fr!important}
+ .production-page .recipe-formula-manage select{grid-column:1/-1!important}
+ .production-page .recipe-formula-manage button{width:100%!important;min-width:0!important;font-size:14px!important;padding:7px!important}
+ .production-page .recipe-grid>select#rr,.production-page .recipe-grid>input#rqpl{grid-column:auto!important}
+ .production-page .recipe-row{grid-template-columns:minmax(0,1fr) 105px 70px!important}
+}
+.sale-mode{background:#fff!important;color:#102033!important;border:2px solid #d9e1ea!important}.sale-mode.active{background:#1677ff!important;color:#fff!important;border-color:#1677ff!important}
+</style></head><body>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS</b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
+<script>
+document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
+const $=s=>document.querySelector(s), money=n=>'$'+(+n||0).toFixed(2), today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+let db=JSON.parse(localStorage.getItem('dropsDB')||'null')||{products:[],raw:[],recipes:[],batches:[],invoices:[],expenses:[],purchases:[],people:[],settings:{usdLbp:90000}};
+db.products=db.products||[];db.raw=db.raw||[];db.recipes=db.recipes||[];db.batches=db.batches||[];db.invoices=db.invoices||[];db.expenses=db.expenses||[];db.purchases=db.purchases||[];db.people=db.people||[];db.settings=db.settings||{usdLbp:90000};
+db.rawMoves=db.rawMoves||[];db.stockMoves=db.stockMoves||[];db.packings=db.packings||[];db.adjustments=db.adjustments||[];db.priceHistory=db.priceHistory||[];
+let cart={}; const save=()=>localStorage.setItem('dropsDB',JSON.stringify(db)); const id=()=>Date.now()+Math.floor(Math.random()*999);
+function seed(){if(!db.products.length){['Dishwashing 1L','Dishwashing 4L','Laundry Gel 1L','Laundry Gel 4L','Hand Soap 1L','Hand Soap 4L','Floor Cleaner 4L'].forEach((n,i)=>db.products.push({id:id()+i,name:n,price:[2.56,2.56,2.89,2.89,3.11,3.11,2.22][i],qty:0,cost:0,size:+((n.match(/([0-9.]+)L/)||[,1])[1])}));save()}}seed();
+function nav(x){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));let n=$('#n-'+x);if(n)n.classList.add('active')}
+let currentView='home';
+function go(x,fromHistory=false){
+ currentView=x;try{sessionStorage.setItem('dropsCurrentView',x)}catch(e){};if(location.hash!=='#'+x)history.replaceState({dropsView:x},'',location.pathname+location.search+'#'+x);document.body.classList.toggle('home-view',x==='home');
+ const th=document.querySelector('.top');if(th)th.classList.toggle('has-back',x!=='home');
+ nav(x);if(!fromHistory)history.pushState({dropsView:x},'',location.href);
+ switch(x){
+  case 'sale':return sale();case 'products':return products();case 'reports':return reports();
+  case 'raw':return raw();case 'stockAlerts':return stockAlerts();case 'production':return production();case 'purchases':return purchases();
+  case 'expenses':return expenses();case 'cashbox':return cashbox();case 'stocktake':return stocktake();case 'closingPage':return closingPage();case 'accountsPage':return accountsPage();case 'invoices':return invoices();case 'people':return people();
+  case 'settings':return settings();case 'employees':return employees();
+  case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();
+  default:return home();
+ }
+}
+
+if(!db.products)db.products=[];if(!db.raw)db.raw=[];if(!db.recipes)db.recipes=[];if(!db.batches)db.batches=[];if(!db.invoices)db.invoices=[];if(!db.expenses)db.expenses=[];if(!db.purchases)db.purchases=[];if(!db.people)db.people=[];if(!db.settings)db.settings={usdLbp:90000};if(!db.rawMoves)db.rawMoves=[];if(!db.stockMoves)db.stockMoves=[];if(!db.packings)db.packings=[];if(!db.adjustments)db.adjustments=[];if(!db.employees)db.employees=[];if(!db.returns)db.returns=[];if(!db.receivables)db.receivables=[];if(!db.collections)db.collections=[];if(!db.cashMoves)db.cashMoves=[];if(!db.closings)db.closings=[];if(!db.commissionPayments)db.commissionPayments=[];if(!db.priceHistory)db.priceHistory=[];
+function closingSnapshotFor(period,autoFlag){
+ var inv=(db.invoices||[]).filter(function(v){return !v.voided&&v.date===period});
+ var ex=(db.expenses||[]).filter(function(x){return x.date===period});
+ var moves=(db.cashMoves||[]).filter(function(x){return x.date===period});
+ var sales=inv.reduce(function(a,x){return a+(+x.total||0)},0);
+ var expenses=ex.reduce(function(a,x){return a+(+x.amount||0)},0);
+ var gross=inv.reduce(function(a,v){return a+(v.items||[]).reduce(function(q,i){return q+((+i.price||0)-(+i.cost||0))*(+i.qty||0)},0)},0);
+ var cashIn=moves.filter(function(x){return (+x.amount||0)>0}).reduce(function(a,x){return a+(+x.amount||0)},0);
+ var cashOut=Math.abs(moves.filter(function(x){return (+x.amount||0)<0}).reduce(function(a,x){return a+(+x.amount||0)},0));
+ var debt=inv.reduce(function(a,v){return a+Math.max(0,(+v.total||0)-(+v.paid||0))},0);
+ return {id:id(),type:'day',period:period,date:today(),sales:sales,expenses:expenses,gross:gross,net:gross-expenses,cashIn:cashIn,cashOut:cashOut,debt:debt,auto:!!autoFlag};
+}
+function autoEndOfDay(){
+ var d=today(),last=db.settings.lastBusinessDate;
+ if(!last){db.settings.lastBusinessDate=d;save();return}
+ if(last===d)return;
+ var exists=(db.closings||[]).some(function(c){return c.type==='day'&&c.period===last});
+ if(!exists)db.closings.unshift(closingSnapshotFor(last,true));
+ db.settings.lastBusinessDate=d;save();
+}
+autoEndOfDay();
+function home(){
+ currentView='home';document.body.classList.add('home-view');const th=document.querySelector('.top');if(th)th.classList.remove('has-back');nav('home');
+ let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
+ exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
+ profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
+ stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
+ buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0),cashBalance=(db.cashMoves||[]).reduce((a,x)=>a+(x.type==='withdrawal'||x.type==='expense'?-Math.abs(+x.amount||0):Math.abs(+x.amount||0)),0),lastBatch=(db.batches||[])[0];
+ $('#app').innerHTML=`
+ <div class="kpi-grid">
+  <div class="kpi-card"><span class="ico">📈</span><b>Today's Sales</b><div class="kpi">${money(sales)}</div><span class="muted">${d.length} Invoice</span></div>
+  <div class="kpi-card"><span class="ico">🧾</span><b>Today's Purchases</b><div class="kpi">${money(buys)}</div><span class="muted">${(db.purchases||[]).filter(x=>x.date===today()).length} Transaction</span></div>
+  <div class="kpi-card"><span class="ico">📦</span><b>Inventory</b><div class="kpi">${money(stock)}</div><span class="muted">${low} Alert</span></div>
+  <div class="kpi-card"><span class="ico">🪙</span><b>Net Profit</b><div class="kpi">${money(profit)}</div><span class="muted">Estimated</span></div>
+ </div>
+ <div class="quick-grid inventory-value-row" style="margin-bottom:12px"><div class="kpi-card raw-value"><div class="muted">🧪 Raw Materials Value</div><b>${money(rawStock)}</b></div><div class="kpi-card finished-value"><div class="muted">📦 Finished Goods Value</div><b>${money(stock)}</b></div></div><div class="section-title">Main Operations</div>
+ <div class="main-grid">
+  ${actionCard('🛒','Sales','sale','#2473f3')}${actionCard('🏭','Production','production','#11b85b')}
+  ${actionCard('🧾','Purchases','purchases','#ff7900')}${actionCard('📦','Stock','products','#6236e8')}
+ </div>
+ <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="quick-grid" style="margin-bottom:12px"><div class="kpi-card" onclick="cashbox()" style="cursor:pointer"><div class="muted">💵 Cashbox Balance</div><b>${money(cashBalance)}</b></div><div class="kpi-card" onclick="production()" style="cursor:pointer"><div class="muted">🏭 Latest Production</div><b>${lastBatch?lastBatch.product:'No batches yet'}</b><div class="muted">${lastBatch?(lastBatch.liters+' L • '+lastBatch.date):''}</div></div></div><div class="panel" onclick="go('stockAlerts')" style="cursor:pointer"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
+ <div class="admin-grid">
+  ${adminCard('👥','Customers','people')}${adminCard('💵','Cashbox','cashbox')}${adminCard('📋','Physical Stocktake','stocktake')}${adminCard('🔒','Daily / Monthly Closing','closingPage')}${adminCard('📒','Customer & Supplier Accounts','accountsPage')}${adminCard('🧑‍💼','Employees & Distributors','employees')}${adminCard('↩️','Returns','returnsPage')}${adminCard('💳','Receivables & Collections','receivablesPage')}${adminCard('💸','Expenses','expenses')}${adminCard('📊','Reports','reports')}${adminCard('⚙️','Settings','settings')}
+ </div>
+ <div class="section-title">Quick Info</div>
+ <div class="quick-grid">
+  <div class="quick-card" onclick="go('products')"><span>🏷️ Products<br><b>${db.products.length}</b></span><span>‹</span></div>
+  <div class="quick-card" onclick="go('stockAlerts')"><span>🔔 Stock Alerts<br><b>${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length+db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length}</b></span><span>‹</span></div>
+ </div>`;
+}
+function actionCard(i,t,g,color){return `<div class="action-card" style="background:${color}" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="arrow">‹</span></div>`}
+function adminCard(i,t,g){return '<div class="admin-card" role="button" onclick="go(\''+g+'\')"><span class="ico">'+i+'</span><b>'+t+'</b></div>'}
+function card(i,t,g){return `<div class="card" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b><span class="muted">Open</span></div>`} function homeCard(i,t,g,color){return `<div class="card" style="background:${color};color:white" onclick="go('${g}')"><span class="ico">${i}</span><b>${t}</b></div>`}
+function allowedPackSizes(base){let n=String(base||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();if(n==='car')return [10,20];if(['laundry gel','laundrey gel','dishwashing','comfort','fabric softner','fabric softener','floor cleaner'].includes(n))return [1,4,5];return [1,4]}
+function finishedFamilies(){const names=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"],norm=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();return names.map(name=>({name,items:[1,4,5,10,20].map(size=>allowedPackSizes(name).includes(size)?(db.products.find(p=>norm(p.name)===name.toLowerCase()&&+(p.size||0)===size)||null):null)}))}function ensureFinishedProduct(base,size){const norm=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();let matches=db.products.filter(x=>!x.formulaMaster&&norm(x.name)===norm(base)&&+(x.size||0)===size),p=matches.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];if(!p){p={id:id(),name:base+' '+size+'L',price:0,cost:0,qty:0,size};db.products.push(p)}else{p.name=String(base).replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim()+' '+size+'L';matches.filter(x=>x!==p).forEach(drop=>{p.qty=(+p.qty||0)+(+drop.qty||0);if((+drop.cost||0)>0)p.cost=+drop.cost;if(!(+p.price||0)&&(+drop.price||0))p.price=+drop.price;if(!(+p.wholesalePrice||0)&&(+drop.wholesalePrice||0))p.wholesalePrice=+drop.wholesalePrice;[db.stockMoves,db.packings].forEach(arr=>(arr||[]).forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=p.id}));db.products=db.products.filter(x=>x!==drop)})}return p}
+/* FINISHED GOODS DUPLICATE RECONCILE v143 */
+(function(){
+ if(db._finishedGoodsReconcile143)return;
+ const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
+ const groups={};
+ db.products.filter(p=>!p.formulaMaster&&[1,4,5,10,20].includes(+(p.size||0))).forEach(p=>{
+   const k=baseOf(p.name)+'|'+(+p.size);
+   (groups[k]||(groups[k]=[])).push(p);
+ });
+ Object.values(groups).forEach(g=>{
+   if(g.length<2)return;
+   g.sort((a,b)=>(+b.qty||0)-(+a.qty||0));
+   const keep=g[0];
+   g.slice(1).forEach(drop=>{
+     keep.qty=(+keep.qty||0)+(+drop.qty||0);
+     if((+drop.cost||0)>0)keep.cost=+drop.cost;
+     if(!(+keep.price||0)&&(+drop.price||0))keep.price=+drop.price;
+     if(!(+keep.wholesalePrice||0)&&(+drop.wholesalePrice||0))keep.wholesalePrice=+drop.wholesalePrice;
+     [db.stockMoves,db.packings].forEach(arr=>(arr||[]).forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=keep.id}));
+     db.products=db.products.filter(x=>x!==drop);
+   });
+ });
+ db._finishedGoodsReconcile143=true;save();
+})();
+
+function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?(+p.qty||0)*(+p.cost||0):0),0),0))}</b></div></div><div id="plist"></div>`;renderProducts()}
+function renderProducts(){
+ const el=$('#plist');if(!el)return;
+ const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
+ const qtyFor=(family,sz)=>{
+   const matches=db.products.filter(p=>!p.formulaMaster&&base(p.name)===family.toLowerCase()&&+(p.size||0)===sz);
+   return matches.reduce((a,p)=>a+(+p.qty||0),0);
+ };
+ el.innerHTML=finishedFamilies().map(f=>{
+  const sizes=allowedPackSizes(f.name);
+  return `<div class="stock-family"><div class="stock-family-name">${f.name}</div><div class="stock-sizes">${sizes.map(sz=>{
+   const ms=db.products.filter(p=>!p.formulaMaster&&base(p.name)===f.name.toLowerCase()&&+(p.size||0)===sz);
+   const p=ms.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];
+   const q=qtyFor(f.name,sz),c=p?+p.cost||0:0,r=p?+p.price||0:0,w=p?+p.wholesalePrice||0:0,margin=r>0?((r-c)/r*100):0;
+   return `<div class="stock-size"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small></div>`;
+  }).join('')}</div></div>`;
+ }).join('');
+}
+function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
+function stockIn(i){let p=db.products.find(x=>x.id===i),q=+$('#q'+i)?.value;if(q>0){p.qty+=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'adjustment_in',productId:p.id,name:p.name,qty:q,balance:p.qty});db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,note:'Manual stock in'});save();renderProducts()}}
+function editP(i){let p=db.products.find(x=>x.id===i),pr=prompt('Selling Price',p.price),q=prompt('Quantity',p.qty);if(pr!==null)p.price=+pr;if(q!==null)p.qty=+q;save();renderProducts()}
+function sale(){nav('sale');cart={};window._saleMode='retail';$('#app').innerHTML=`<div class="title">Point of Sale</div><div class="panel"><div class="row"><button id="retailModeBtn" class="sale-mode active" onclick="setSaleMode('retail')">🛒 Retail</button><button id="wholesaleModeBtn" class="sale-mode" onclick="setSaleMode('wholesale')">📦 Wholesale</button></div><small>Default mode: Retail — Wholesale applies to this invoice only</small></div><div class="panel pos-distributor"><div class="row"><button type="button" onclick="toggleDistributor()">🧑‍💼 Add Distributor</button><select id="posEmployee" style="display:none"><option value="" selected>No Distributor</option>${(db.employees||[]).filter(e=>e.active!==false&&(e.role==='Distributor'||e.role==='Sales Employee')).map(e=>`<option value="${e.id}">${e.name} — ${+e.commission||0}%</option>`).join('')}</select></div></div><div class="panel"><select id="posCustomer"><option value="">Cash Customer / No Account</option>${(db.people||[]).filter(p=>p.type==='Customer').map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select><select id="posPayMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option><option>Credit</option></select></div><div class="pos-search"><input id="posSearch" placeholder="🔎 Search product..." oninput="renderPOSProducts()"></div><div class="pos-size-tabs"><button data-size="all" onclick="posSizeFilter('all',this)">All</button><button data-size="1" onclick="posSizeFilter(1,this)">1L</button><button data-size="4" onclick="posSizeFilter(4,this)">4L</button><button class="active" data-size="5" onclick="posSizeFilter(5,this)">5L</button><button data-size="10" onclick="posSizeFilter(10,this)">10L</button><button data-size="20" onclick="posSizeFilter(20,this)">20L</button></div><div id="posProducts" class="pos-products"></div><div class="pos-cart panel"><div class="pos-cart-head"><b>🛒 Cart</b><span id="posCartCount">0 Pack</span></div><div id="cart"></div></div>`;window._posSize=5;ensurePOSFabricSoftener5L();renderPOSProducts();renderCart()}
+function ensurePOSFabricSoftener5L(){let aliases=['fabric softner','fabric softener','comfort'];let p=(db.products||[]).find(x=>!x.formulaMaster&&+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));if(!p){db.products.push({id:id(),name:'Fabric Softner 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5});save()}else{p.name='Fabric Softner 5L';p.size=5;save()}}
+function toggleDistributor(){let e=$('#posEmployee');if(!e)return;let show=e.style.display==='none';e.style.display=show?'block':'none';if(!show)e.value=''}
+function posSellProducts(){return db.products.filter(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();return [1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster&&allowedPackSizes(base).includes(+(p.size||0))})}
+function posSizeFilter(sz,btn){window._posSize=sz;document.querySelectorAll('.pos-size-tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderPOSProducts()}
+function salePrice(p){return window._saleMode==='wholesale'?(+(p.wholesalePrice||0)>0?+p.wholesalePrice:+p.price):+p.price}
+function setSaleMode(mode){window._saleMode=mode==='wholesale'?'wholesale':'retail';let r=$('#retailModeBtn'),w=$('#wholesaleModeBtn');if(r)r.classList.toggle('active',window._saleMode==='retail');if(w)w.classList.toggle('active',window._saleMode==='wholesale');renderPOSProducts();renderCart()}
+function renderPOSProducts(){let q=String($('#posSearch')?.value||'').trim().toLowerCase(),sz=window._posSize||'all',approved5=['dishwashing','laundry gel','comfort','fabric softner','fabric softener','floor cleaner'],ps=posSellProducts().filter(p=>{let label=String(p.name||''),m=label.match(/\s+(1|4|5|10|20)L\s*$/i),shownSize=m?+m[1]:+(p.size||0),base=label.replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();if(+sz===5)return approved5.includes(base)&&+(p.size||0)===5;if(sz==='all')return allowedPackSizes(base).includes(+(p.size||0));return shownSize===+sz&&allowedPackSizes(base).includes(shownSize)}).filter(p=>!q||String(p.name).toLowerCase().includes(q));$('#posProducts').innerHTML=ps.length?ps.map(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim(),displaySize=(+sz===5?5:(String(p.name||'').match(/\s+(1|4|5|10|20)L\s*$/i)?+String(p.name).match(/\s+(1|4|5|10|20)L\s*$/i)[1]:+(p.size||0)));return `<button class="pos-product ${(+p.qty||0)<=0?'out':''}" onclick="posQuickAdd('${p.id}')"><div class="pos-prod-name">${base}</div><div class="pos-prod-meta"><span>${displaySize}L</span><b>${money(salePrice(p))}</b></div><small>Stock ${+p.qty||0}</small></button>`}).join(''):'<div class="pos-empty">No products for this selection</div>'}
+function posQuickAdd(pid){let p=db.products.find(x=>String(x.id)===String(pid));if(!p)return;if((+p.qty||0)<=0)return alert('This product is out of stock');cart[p.id]=(cart[p.id]||0)+1;renderCart()}
+function cartAdd(){let i=$('#sp')?.value,q=+$('#sq')?.value||1;if(!i)return;cart[i]=(cart[i]||0)+q;renderCart()}
+function cartQty(pid,d){let p=db.products.find(x=>String(x.id)===String(pid)),v=(cart[pid]||0)+d;if(v<=0)delete cart[pid];else if(p&&v<=p.qty)cart[pid]=v;else if(p)alert('Available only '+p.qty);renderCart()}
+function renderCart(){let entries=Object.entries(cart),total=0,count=0,h=entries.map(([i,q])=>{let p=db.products.find(x=>String(x.id)===String(i));if(!p)return'';let unit=salePrice(p);total+=unit*q;count+=q;return `<div class="pos-cart-row"><div><b>${p.name}</b><small>${money(unit)} × ${q}</small></div><div class="pos-qty"><button onclick="cartQty('${i}',-1)">−</button><b>${q}</b><button onclick="cartQty('${i}',1)">+</button></div><strong>${money(unit*q)}</strong></div>`}).join('');let el=$('#cart');if(!el)return;el.innerHTML=(h||'<div class="pos-empty">Cart is empty — tap a product to add it</div>')+`<div class="pos-total"><span>Total</span><b>${money(total)}</b></div><div class="pos-checkout"><input id="paid" type="number" step=".01" placeholder="Paid $" value="${entries.length?total.toFixed(2):''}"><button class="green" onclick="checkout()">Complete Sale</button></div>`;let c=$('#posCartCount');if(c)c.textContent=count+' Pack'}
+function checkout(){let entries=Object.entries(cart);if(!entries.length)return alert('Cart is empty');for(let[i,q]of entries){let p=db.products.find(x=>String(x.id)===String(i));if(!p||p.qty<q)return alert('Insufficient stock: '+(p?p.name:''))}let items=[],total=0;entries.forEach(([i,q])=>{let p=db.products.find(x=>String(x.id)===String(i));p.qty-=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'sale',productId:p.id,name:p.name,qty:-q,balance:p.qty});let unit=salePrice(p);items.push({productId:p.id,name:p.name,qty:+q,price:unit,cost:p.cost});total+=unit*q});let emp=(db.employees||[]).find(e=>String(e.id)===String($('#posEmployee')?.value||'')),inv={id:id(),date:today(),time:new Date().toLocaleTimeString(),items,total,paid:($('#posPayMethod')?.value==='Credit'?0:(+$('#paid').value||total)),employeeId:emp?.id||'',employeeName:emp?.name||'',commission:emp?total*(+emp.commission||0)/100:0,customerId:$('#posCustomer')?.value||'',customerName:(db.people||[]).find(p=>String(p.id)===String($('#posCustomer')?.value||''))?.name||'',paymentMethod:$('#posPayMethod')?.value||'Cash',saleMode:window._saleMode||'retail',displayNo:(db.invoices||[]).reduce((m,x)=>Math.max(m,+x.displayNo||0),0)+1};db.invoices.unshift(inv);if(inv.paid>0&&inv.paymentMethod!=='Credit')db.cashMoves.unshift({id:id(),date:today(),type:'sale',method:inv.paymentMethod,amount:inv.paid,ref:inv.id,note:'Invoice #'+invNo(inv)});cart={};save();invoiceView(inv.id)}
+function invoiceView(i){
+ let v=db.invoices.find(x=>String(x.id)===String(i));if(!v)return;
+ let due=Math.max(0,(+v.total||0)-(+v.paid||0)),items=v.items||[];
+ $('#app').innerHTML=`<div class="invoice-wrap">
+  <div class="invoice-paper">
+   <div class="invoice-brand"><div><div class="invoice-logo">DROPS</div><div class="invoice-sub">DETERGENTS</div></div><div class="invoice-title">Sales Invoice</div></div>
+   <div class="invoice-meta"><div><b>Invoice No.</b><span>#${String((db.invoices||[]).length-(db.invoices||[]).findIndex(x=>String(x.id)===String(v.id))).padStart(6,'0')}</span></div><div><b>Date</b><span>${String(v.date||'').split('-').reverse().join('/')} – ${String(v.time||'').slice(0,5)}</span></div></div>
+   <div class="invoice-party">${v.customerName?`<div><b>Customer:</b> ${v.customerName}</div>`:''}${v.employeeName?`<div><b>Distributor:</b> ${v.employeeName}</div>`:''}<div><b>Payment Method:</b> ${v.paymentMethod||'Cash'}</div></div>
+   <div class="invoice-table"><div class="invoice-row invoice-head"><span>Item</span><span>Quantity</span><span>Price</span><span>Total</span></div>
+   ${items.map(x=>`<div class="invoice-row"><span>${x.name}</span><span>${x.qty}</span><span>${money(x.price)}</span><span>${money((+x.price||0)*(+x.qty||0))}</span></div>`).join('')}</div>
+   <div class="invoice-totals"><div><span>Total</span><b>${money(v.total)}</b></div><div><span>Paid</span><b>${money(v.paid||0)}</b></div><div class="invoice-due"><span>Balance</span><b>${money(due)}</b></div></div>
+   <div class="invoice-thanks">Thank you for choosing Drops Detergents</div>
+  </div>
+  <div class="invoice-actions noPrint"><button onclick="go('sale')">＋ New Sale</button><button class="orange" onclick="print()">🖨 Print Invoice</button></div>
+ </div>`;
+}
+function invoices(){$('#app').innerHTML=`<div class="title">Invoices</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(\'${v.id}\')"><b>#${invNo(v)}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'No invoices'}</div>`}
+function rawCategoryOf(r){
+ if(r.category)return r.category;
+ let n=String(r.name||'').toLowerCase();
+ if(/gallon|bottle|cap|label|spray|pump|jar|plastic/.test(n))return 'Plastic & Packaging';
+ if(/carton|box|bag|sack/.test(n))return 'Bags & Cartons';
+ return 'Raw Materials';
+}
+function stockAlerts(){
+ const finished=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)<=5);
+ const materials=(db.raw||[]).filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10));
+ $('#app').innerHTML=`<div class="title">Stock Alerts</div>
+ <div class="panel"><h3>Finished Products</h3>${finished.length?finished.map(p=>`<div class="item" onclick="products()" style="cursor:pointer"><b>${p.name}</b><span class="pill">${+p.qty||0} Pack</span><div class="muted">Low / Out of Stock</div></div>`).join(''):'<div class="muted">No finished-product alerts</div>'}</div>
+ <div class="panel"><h3>Materials & Packaging</h3>${materials.length?materials.map(r=>`<div class="item" onclick="raw()" style="cursor:pointer"><b>${r.name}</b><span class="pill">${(+r.qty||0).toFixed(r.unit==='Piece'?0:3)} ${r.unit||'kg'}</span><div class="muted">Minimum: ${r.minStock!=null?+r.minStock:10}</div></div>`).join(''):'<div class="muted">No material or packaging alerts</div>'}</div>`;
+}
+function raw(){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
+ $('#app').innerHTML=`<div class="title">Materials Inventory</div>
+ <div class="panel"><b>Add New Item</b><div class="row" style="margin-top:8px"><select id="rCat">${cats.map(c=>`<option>${c}</option>`).join('')}</select><input id="rn" placeholder="Item name"><select id="rUnit"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="rc" type="number" step=".001" min="0" placeholder="Unit Cost $"><input id="rq" type="number" step=".001" min="0" placeholder="Opening Qty"><button onclick="addRaw()">Add</button></div></div>
+ ${cats.map(c=>`<div class="panel"><div class="title" style="font-size:19px">${c}</div>${(db.raw||[]).filter(r=>rawCategoryOf(r)===c).map(r=>`<div class="item"><b>${r.name}</b><span class="pill">${(+r.qty||0).toFixed(r.unit==='Piece'?0:3)} ${r.unit||'kg'}</span><div class="muted">${money(r.cost)}/${r.unit||'kg'} <button onclick="editRaw('${r.id}')">✏️ Edit</button><button onclick="editRawPrice('${r.id}')">💲 Edit Price</button></div></div>`).join('')||'<div class="muted">No items yet</div>'}</div>`).join('')}`;
+}
+function addRaw(){let n=String($('#rn')?.value||'').trim(),c=+($('#rc')?.value||0),q=+($('#rq')?.value||0),category=$('#rCat')?.value||'Raw Materials',unit=$('#rUnit')?.value||'kg';if(!n)return alert('Enter item name');if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase()))return alert('Item already exists');db.raw.push({id:id(),name:n,cost:Math.max(0,c),qty:Math.max(0,q),category,unit});save();raw()}
+
+function purchasePriceMaster(){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
+ const grouped={};cats.forEach(c=>grouped[c]=[]);
+ (db.raw||[]).forEach(r=>{let c=rawCategoryOf(r);if(!grouped[c])c='Raw Materials';grouped[c].push(r)});
+ $('#app').innerHTML=`<div class="title">Purchase Price Master</div>
+ <div class="panel"><div class="muted">Official purchase prices. Choose a box below to view, add and edit items.</div></div>
+ <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
+  ${cats.map((c,i)=>`<button class="${i===0?'green':''}" id="ppmTab${i}" onclick="showPriceMasterCategory(${i})" style="min-height:76px;font-weight:800">${c}<br><small>${grouped[c].length} items</small></button>`).join('')}
+ </div>
+ ${cats.map((c,i)=>`<div id="ppmBox${i}" class="panel" style="display:${i===0?'block':'none'}"><h3 style="margin-top:0">${c}</h3>
+ <div class="row" style="margin-bottom:10px"><input id="ppmName${i}" placeholder="New item name"><select id="ppmUnit${i}"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="ppmCost${i}" type="number" step=".001" min="0" placeholder="Unit Price $"><button class="green" onclick="addPriceMasterItem(${i})">+ Add Item</button></div>
+ ${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><input id="min_${r.id}" type="number" step=".001" min="0" value="${+r.minStock||0}" placeholder="Min Stock"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button><button onclick="showPriceHistory('${r.id}')">History</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}<div id="priceHistoryBox"></div>`;
+}
+function showPriceMasterCategory(i){
+ [0,1,2].forEach(n=>{let b=document.getElementById('ppmBox'+n),t=document.getElementById('ppmTab'+n);if(b)b.style.display=n===i?'block':'none';if(t)t.classList.toggle('green',n===i)});
+}
+function addPriceMasterItem(i){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'],name=String(document.getElementById('ppmName'+i)?.value||'').trim(),unit=document.getElementById('ppmUnit'+i)?.value||'kg',cost=+(document.getElementById('ppmCost'+i)?.value||0);
+ if(!name)return alert('Enter item name');
+ if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===name.toLowerCase()))return alert('Item already exists');
+ db.raw.push({id:id(),name,cost:Math.max(0,cost),qty:0,category:cats[i],unit});save();purchasePriceMaster();showPriceMasterCategory(i);
+}
+function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value,m=+document.getElementById('min_'+rid).value;if(!r||v<0||m<0)return;let old=+r.cost||0;if(v!==old)db.priceHistory.unshift({id:id(),rawId:r.id,name:r.name,date:today(),time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:v,source:'Price Master'});r.cost=v;r.minStock=m;save();alert('Price & minimum stock updated for '+r.name)}
+function showPriceHistory(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),h=(db.priceHistory||[]).filter(x=>String(x.rawId)===String(rid)).slice(0,10),el=document.getElementById('priceHistoryBox');if(!el||!r)return;el.innerHTML=`<div class="panel"><h3>${r.name} — Price History</h3>${h.length?h.map(x=>`<div class="item"><b>${money(x.oldPrice)} → ${money(x.newPrice)}</b><div class="muted">${x.date} • ${x.source||''}</div></div>`).join(''):'<div class="muted">No price changes yet</div>'}</div>`;el.scrollIntoView({behavior:'smooth'})}
+function purchases(){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
+ const suppliers=(db.people||[]).filter(p=>p.type==='Supplier');
+ $('#app').innerHTML=`<div class="title">Purchases</div>
+ <div class="panel">
+  <div class="row"><input id="puDate" type="date" value="${today()}"><select id="puSupplier"><option value="">Supplier / Not Specified</option>${suppliers.map(p=>`<option>${p.name}</option>`).join('')}</select></div>
+  <div class="row"><select id="puCat" onchange="purchaseCatChange()"><option value="">Select Category</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select><select id="puRaw" style="display:none"><option value="">Select Stock Material</option>${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select><input id="puDesc" placeholder="Description / What was purchased?"></div>
+  <div class="row"><input id="puQty" type="number" step=".001" min="0" placeholder="Quantity"><select id="puUnit"><option>kg</option><option>Piece</option><option>Carton</option><option>Bag</option><option>Liter</option><option>Ton</option><option>Service</option></select><input id="puPrice" type="number" step=".001" min="0" placeholder="Unit Price $"></div>
+  <div class="row"><select id="puPay"><option>Cash</option><option>Credit</option><option>Transfer</option><option>Cheque</option></select><input id="puInvoice" placeholder="Invoice No."><input id="puNote" placeholder="Notes"></div>
+  <button class="orange" style="width:100%;margin-top:8px" onclick="addPurchase()">Record Purchase</button>
+ </div>
+ <div class="panel"><div style="margin-bottom:10px"><b>Quick Purchase Report</b><div class="muted">Filter purchases by period and category</div></div><div class="row"><input id="puFrom" type="date" aria-label="From Date" title="From Date" onchange="renderPurchaseList()"><input id="puTo" type="date" aria-label="To Date" title="To Date" onchange="renderPurchaseList()"><select id="puFilterCat" onchange="renderPurchaseList()"><option value="">All Categories</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="purchaseList"></div></div>`;
+ purchaseCatChange();renderPurchaseList();
+}
+function purchaseCatChange(){
+ const c=$('#puCat')?.value||'',stock=['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(c);
+ if($('#puRaw')){$('#puRaw').style.display=stock?'':'none';$('#puRaw').onchange=purchaseItemPrice}
+ if($('#puPrice')){$('#puPrice').readOnly=stock;if(stock)purchaseItemPrice()}
+}
+function purchaseItemPrice(){
+ const r=db.raw.find(x=>String(x.id)===String($('#puRaw')?.value||''));
+ if(r&&$('#puPrice')){$('#puPrice').value=(+r.cost||0);$('#puDesc').value=r.name}
+}
+function addPurchase(){
+ const cat=$('#puCat').value,rawId=$('#puRaw').value,desc=$('#puDesc').value.trim(),q=+$('#puQty').value,price=+$('#puPrice').value;
+ if(!cat)return alert('Select Category');if(q<=0)return alert('Enter quantity');if(price<0)return alert('Invalid price');
+ let raw=null,name=desc;
+ if(['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(cat)&&rawId){raw=db.raw.find(r=>String(r.id)===String(rawId));if(raw)name=raw.name}
+ if(!name)return alert('Enter description or select material');
+ const total=q*price,p={id:id(),date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
+ db.purchases.unshift(p);
+ if(raw){let old=+raw.cost||0;if(price!==old){db.priceHistory.unshift({id:id(),rawId:raw.id,name:raw.name,date:p.date,time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:price,source:'Purchase',supplier:p.supplier||''});raw.cost=price}raw.qty=(+raw.qty||0)+q;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
+ save();purchases();
+}
+function renderPurchaseList(){
+ const from=$('#puFrom')?.value||'',to=$('#puTo')?.value||'',cat=$('#puFilterCat')?.value||'';
+ let list=(db.purchases||[]).filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)&&(!cat||x.category===cat));
+ const total=list.reduce((a,x)=>a+(x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0)),0);
+ $('#purchaseList').innerHTML=`<div class="item"><b>Total Purchases</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(x=>{let t=x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0);return `<div class="item"><b>${x.name}</b> <span class="pill">${x.category||'Raw Materials'}</span><span style="float:left"><b>${money(t)}</b></span><div class="muted">${x.date||''} • ${x.qty||0} ${x.unit||'kg'} × ${money(x.cost||0)}${x.supplier?' • '+x.supplier:''}${x.invoiceNo?' • Invoice '+x.invoiceNo:''}</div>${x.note?`<div class="muted">${x.note}</div>`:''}</div>`}).join(''):'<div class="muted">No purchases in this selection</div>'}`;
+}
+function buyRaw(){addPurchase()}
+function production(){
+ let formulaNames=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
+ formulaNames.forEach(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase()&&x.formulaMaster);if(!p)db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true})});
+ let recipeProducts=db.products.filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+ let recipeOpts=recipeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+ let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item"><div><b>${String(b.product).replace(/\\s+(1|4|5)L\\s*$/i,'')}</b><div class="muted">${b.liters} L</div></div><b>${money(b.cost)}</b></div>`).join('');
+ $('#app').innerHTML=`
+ <div class="production-page">
+  <div class="title">Production & Batches</div>
+  <div class="panel prod-card">
+   <div class="prod-card-head"><div class="prod-icon">⚙️</div><div><b>Run Batch</b><div class="muted">Select formula, batch quantity and pack size</div></div></div>
+   <div class="batch-fields">
+    <div class="batch-field"><label>Formula</label><select id="bp" onchange="syncPackOptions()">${recipeOpts}</select></div>
+    <div class="batch-field"><label>Batch Quantity</label><input id="bl" type="number" step=".1" placeholder="120 L"></div>
+    <div class="batch-field"><label>Pack Size</label><select id="packSize"></select></div>
+   </div>
+   <button class="orange produce-wide" onclick="produceAndPack()">⚙️ Produce & Pack</button>
+  </div>
+  <div class="panel prod-card">
+   <div class="prod-card-head"><div class="prod-icon">🧪</div><div><b>Formulas & Recipes</b><div class="muted">Create a new formula or edit an existing recipe</div></div></div><div class="row" style="margin-bottom:10px"><input id="newFormulaName" placeholder="New Formula Name"><button onclick="addFormulaMaster()">＋ Add Formula</button></div>
+   <div class="recipe-grid">
+    <div class="recipe-formula-manage"><select id="rp" onchange="renderRecipeEditor()">${recipeOpts}</select><button type="button" onclick="renameFormulaMaster()">✏️ Rename</button><button type="button" class="recipe-delete-formula" onclick="deleteFormulaMaster()">🗑️ Delete Formula</button></div>
+    <select id="rr">${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
+    <input id="rqpl" type="number" step="1" placeholder="grams per L">
+   </div>
+   <button class="recipe-save" onclick="recipeAdd()">Save Material</button><div id="recipeEditor" class="recipe-editor"></div>
+  </div>
+  <div class="panel prod-card"><div class="prod-card-head"><div class="prod-icon">📋</div><div><b>Recent Batches</b><div class="muted">Latest production records</div></div></div>${batches||'<div class="muted">No batches yet</div>'}</div>
+ </div>`;
+ setTimeout(()=>{renderRecipeEditor();syncPackOptions()},0);
+}function addFormulaMaster(){let n=String($('#newFormulaName')?.value||'').trim();if(!n)return alert('Enter formula name');if(db.products.some(p=>p.formulaMaster&&String(p.name).trim().toLowerCase()===n.toLowerCase()))return alert('Formula already exists');let p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true,customFormula:true};db.products.push(p);save();production();setTimeout(()=>{if($('#rp')){$('#rp').value=p.id;renderRecipeEditor()}},0)}
+function renameFormulaMaster(){let pid=$('#rp')?.value,p=db.products.find(x=>String(x.id)===String(pid)&&x.formulaMaster);if(!p)return;let n=prompt('New formula name',p.name);if(n===null)return;n=String(n).trim();if(!n)return alert('Name cannot be empty');if(db.products.some(x=>x!==p&&x.formulaMaster&&String(x.name).trim().toLowerCase()===n.toLowerCase()))return alert('A formula with this name already exists');let old=p.name;p.name=n;(db.batches||[]).forEach(b=>{if(String(b.productId)===String(p.id)&&b.product===old)b.product=n});save();production();setTimeout(()=>{if($('#rp')){$('#rp').value=p.id;renderRecipeEditor()}},0)}
+function deleteFormulaMaster(){let pid=$('#rp')?.value,p=db.products.find(x=>String(x.id)===String(pid)&&x.formulaMaster);if(!p)return;if(!confirm('Delete خلطة '+p.name+' and its recipes?'))return;db.recipes=db.recipes.filter(x=>String(x.productId)!==String(p.id));db.products=db.products.filter(x=>String(x.id)!==String(p.id));save();production()}
+
+function syncPackOptions(){let sel=$('#packSize'),bp=$('#bp');if(!sel||!bp)return;let p=db.products.find(x=>String(x.id)===String(bp.value)),sizes=allowedPackSizes(p?.name);sel.innerHTML='<option value="">No Packing</option>'+sizes.filter(x=>x!==1).sort((a,b)=>a-b).map(x=>'<option value="'+x+'">'+x+' L</option>').join('');if(sizes.includes(4))sel.value='4'}
+function recipeGram(q){let n=(+q||0)*1000;return Number.isInteger(Math.round(n*1000000)/1000000)?String(Math.round(n)):String(+n.toFixed(3))}function renderRecipeEditor(){let el=$('#recipeEditor'),pid=$('#rp')?.value;if(!el||!pid)return;let rec=db.recipes.filter(x=>String(x.productId)===String(pid));el.innerHTML=rec.length?`<div class="recipe-list-title">Current Recipe Ingredients</div>${rec.map(x=>{let r=db.raw.find(a=>String(a.id)===String(x.rawId));return `<div class="recipe-row"><b>${r?.name||'Material'}</b><div><input type="text" inputmode="numeric" value="${recipeGram(x.qtyPerLiter)}" onchange="recipeQtyEdit('${pid}','${x.rawId}',this.value)"><span> g/L</span></div><button onclick="recipeDelete('${pid}','${x.rawId}')">Delete</button></div>`}).join('')}`:'<div class="recipe-empty">No materials saved for this formula yet</div>'}
+function recipeQtyEdit(pid,rid,v){let x=db.recipes.find(a=>String(a.productId)===String(pid)&&String(a.rawId)===String(rid)),g=+v;if(!x||g<=0)return;x.qtyPerLiter=g/1000;save();renderRecipeEditor()}
+function recipeDelete(pid,rid){db.recipes=db.recipes.filter(a=>!(String(a.productId)===String(pid)&&String(a.rawId)===String(rid)));save();renderRecipeEditor()}
+function recipeAdd(){let p=$('#rp').value,r=$('#rr').value,g=+$('#rqpl').value,q=g/1000;p=db.products.find(x=>String(x.id)===String(p))?.id;r=db.raw.find(x=>String(x.id)===String(r))?.id;if(q<=0)return;db.recipes=db.recipes.filter(x=>!(x.productId===p&&x.rawId===r));db.recipes.push({productId:p,rawId:r,qtyPerLiter:q});save();renderRecipeEditor();alert('Material saved to recipe')}
+function produce(){let pid=$('#bp').value,L=+$('#bl').value,p=db.products.find(x=>String(x.id)===String(pid));if(p)pid=p.id;let rec=db.recipes.filter(x=>String(x.productId)===String(pid));if(!p||L<=0||!rec.length)return alert('Recipe is incomplete');for(let x of rec){let r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;if(!r||r.qty<need)return alert('Insufficient material: '+(r?r.name:'')+'\nRequired '+need.toFixed(3)+' kg\nAvailable '+(r?r.qty.toFixed(3):0)+' kg')}let cost=0,bid=id(),ts=new Date().toISOString();rec.forEach(x=>{let r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});db.batches.unshift({id:bid,date:today(),time:ts,productId:p.id,product:p.name,liters:L,remainingLiters:L,cost,status:'open'});save();alert('Batch saved and raw materials deducted\nCost '+money(cost)+'\nRemaining to Pack '+L+' L');production()}
+
+function produceAndPack(){
+ const pid=document.getElementById('bp').value,L=+document.getElementById('bl').value,size=+document.getElementById('packSize').value;
+ const p0=db.products.find(x=>String(x.id)===String(pid)),rec=db.recipes.filter(x=>String(x.productId)===String(p0?.id));
+ if(!p0||L<=0||!rec.length)return alert('Recipe is incomplete');
+ for(const x of rec){const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;if(!r||r.qty<need)return alert('Insufficient material: '+(r?r.name:'')+'\nRequired '+need.toFixed(3)+' kg\nAvailable '+(r?r.qty.toFixed(3):0)+' kg')}
+ let pack=null,label=null,q=0;
+ if(size){
+  q=Math.floor(L/size);
+  const aliases=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
+  pack=db.raw.find(r=>aliases.includes(String(r.name||'').trim().toLowerCase()));
+  label=db.raw.find(r=>['label sticker','label','sticker'].includes(String(r.name||'').trim().toLowerCase()));
+  if(!pack||pack.qty<q)return alert('Not enough empty containers: '+aliases[0]);
+  if(label&&label.qty<q)return alert('Not enough labels');
+ }
+ const bid=id(),ts=new Date().toISOString();let cost=0;
+ rec.forEach(x=>{const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=x.qtyPerLiter*L;r.qty-=need;cost+=need*r.cost;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost})});
+ const b={id:bid,date:today(),time:ts,productId:p0.id,product:p0.name,liters:L,remainingLiters:L,cost,status:'open'};db.batches.unshift(b);
+ if(size){let baseName=String(p0.name).replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();let fp=ensureFinishedProduct(baseName,size);pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost})};fp.qty+=q;b.remainingLiters=L-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed'};fp.cost=(cost/L*size)+pack.cost+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
+ save();alert(size?'Production and packing completed: '+q+' × '+size+'L':'Batch saved and materials deducted');production();
+}
+
+function employees(){
+ let rows=(db.employees||[]),salesFor=e=>(db.invoices||[]).filter(v=>!v.voided&&String(v.employeeId)===String(e.id));
+ $('#app').innerHTML=`<div class="title">Employees & Distributors</div>
+ <div class="panel"><div class="row"><input id="empName" placeholder="Name"><input id="empPhone" placeholder="Phone"><select id="empRole"><option>Distributor</option><option>Sales Employee</option><option>Employee</option></select><input id="empComm" type="number" min="0" step=".1" placeholder="Commission %"><button onclick="addEmployee()">Add</button></div></div>
+ <div class="panel">${rows.map(e=>{let iv=salesFor(e),sales=iv.reduce((a,v)=>a+(+v.total||0),0),comm=iv.reduce((a,v)=>a+(+v.commission||0),0),paid=(db.commissionPayments||[]).filter(x=>String(x.employeeId)===String(e.id)).reduce((a,x)=>a+(+x.amount||0),0);return `<div class="item"><b>${e.name}</b> <span class="pill">${e.role}</span><span style="float:left">${e.active===false?'Inactive':(+e.commission||0)+'%'}</span><div class="muted">${e.phone||''} • ${iv.length} Invoice • مSalesات ${money(sales)} • Commission ${money(comm)} • مدفوع ${money(paid)} • باقي ${money(Math.max(0,comm-paid))}</div><button onclick="payCommission('${e.id}')">💵 Pay Commission</button><button onclick="editEmployee('${e.id}')">✏️ Edit</button> <button onclick="toggleEmployee('${e.id}')">${e.active===false?'Activate':'Deactivate'}</button></div>`}).join('')||'No employees or distributors'}</div>`;
+}
+function addEmployee(){let n=$('#empName').value.trim();if(!n)return;db.employees.push({id:id(),name:n,phone:$('#empPhone').value.trim(),role:$('#empRole').value,commission:Math.max(0,+$('#empComm').value||0),active:true});save();employees()}
+function editEmployee(i){let e=db.employees.find(x=>String(x.id)===String(i));if(!e)return;let n=prompt('Name',e.name);if(n===null)return;let c=prompt('Commission %',e.commission||0);e.name=n.trim()||e.name;e.commission=Math.max(0,+c||0);save();employees()}
+function toggleEmployee(i){let e=db.employees.find(x=>String(x.id)===String(i));if(!e)return;e.active=e.active===false?true:false;save();employees()}
+
+function payCommission(i){let e=db.employees.find(x=>String(x.id)===String(i));if(!e)return;let iv=(db.invoices||[]).filter(v=>!v.voided&&String(v.employeeId)===String(i)),earned=iv.reduce((a,v)=>a+(+v.commission||0),0),paid=(db.commissionPayments||[]).filter(x=>String(x.employeeId)===String(i)).reduce((a,x)=>a+(+x.amount||0),0),due=Math.max(0,earned-paid),a=+prompt('Amount Due '+money(due),due.toFixed(2));if(a<=0)return;a=Math.min(a,due);db.commissionPayments.unshift({id:id(),employeeId:e.id,name:e.name,date:today(),amount:a});db.cashMoves.unshift({id:id(),date:today(),type:'commission',method:'Cash',amount:-a,note:'Commission '+e.name});save();employees()}
+
+function returnsPage(){
+ $('#app').innerHTML=`<div class="title">Returns / Void Invoice</div><div class="panel"><input id="retSearch" placeholder="Search invoice number or distributor" oninput="renderReturns()"></div><div id="returnList"></div>`;renderReturns()
+}
+function renderReturns(){let q=String($('#retSearch')?.value||'').toLowerCase(),list=(db.invoices||[]).filter(v=>!q||invNo(v).includes(q)||String(v.id).includes(q)||String(v.employeeName||'').toLowerCase().includes(q)).slice(0,100);$('#returnList').innerHTML=`<div class="panel">${list.map(v=>`<div class="item"><b>#${v.id} — ${v.date}</b><span style="float:left">${money(v.total)}</span><div class="muted">${v.employeeName||'Direct Sale'} • ${(v.items||[]).reduce((a,x)=>a+(+x.qty||0),0)} Pack</div>${v.voided?'<span class="pill">Voided '+(v.voidDate||'')+'</span>':`<button onclick="voidInvoice('${v.id}')">↩️ Void & Return to Stock</button>`}</div>`).join('')||'No invoices'}</div>`}
+function voidInvoice(i){let v=db.invoices.find(x=>String(x.id)===String(i));if(!v||v.voided)return;if(!confirm('Void invoice and return quantities to stock?'))return;(v.items||[]).forEach(it=>{let p=db.products.find(x=>String(x.id)===String(it.productId));if(p){p.qty=(+p.qty||0)+(+it.qty||0);db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'return',productId:p.id,name:p.name,qty:+it.qty||0,balance:p.qty,invoiceId:v.id})}});v.voided=true;v.voidDate=today();db.returns.unshift({id:id(),invoiceId:v.id,date:today(),amount:+v.total||0,employeeId:v.employeeId||''});save();returnsPage()}
+function receivablesPage(){
+ let open=(db.invoices||[]).filter(v=>!v.voided&&(+v.paid||0)<(+v.total||0)),total=open.reduce((a,v)=>a+((+v.total||0)-(+v.paid||0)),0);
+ $('#app').innerHTML=`<div class="title">Receivables & Collections</div><div class="panel"><div class="item"><b>Total Open Receivables</b><span style="float:left"><b>${money(total)}</b></span></div><input id="debtSearch" placeholder="Search invoice or distributor" oninput="renderDebts()"></div><div id="debtList"></div><div class="panel"><b>Recent Collections</b>${(db.collections||[]).slice(0,20).map(c=>`<div class="item">Invoice #${invNo((db.invoices||[]).find(v=>String(v.id)===String(c.invoiceId)))}<span style="float:left">${money(c.amount)}</span><div class="muted">${c.date} ${c.note||''}</div></div>`).join('')||'<div class="muted">No collections yet</div>'}</div>`;renderDebts()
+}
+function renderDebts(){let q=String($('#debtSearch')?.value||'').toLowerCase(),list=(db.invoices||[]).filter(v=>!v.voided&&(+v.paid||0)<(+v.total||0)&&(!q||String(v.id).includes(q)||String(v.employeeName||'').toLowerCase().includes(q)));$('#debtList').innerHTML=`<div class="panel">${list.map(v=>`<div class="item"><b>Invoice #${invNo(v)}</b><span style="float:left"><b>${money((+v.total||0)-(+v.paid||0))}</b></span><div class="muted">${v.date} • ${v.employeeName||'Direct Sale'} • Total ${money(v.total)} • Paid ${money(v.paid||0)}</div><div class="row"><input id="debt_${v.id}" type="number" min="0" step=".01" placeholder="Collection $"><button onclick="collectInvoice('${v.id}')">Collect</button></div></div>`).join('')||'<div class="muted">No open receivables</div>'}</div>`}
+function collectInvoice(i){let v=db.invoices.find(x=>String(x.id)===String(i)),a=+document.getElementById('debt_'+i)?.value;if(!v||a<=0)return;a=Math.min(a,(+v.total||0)-(+v.paid||0));v.paid=(+v.paid||0)+a;db.collections.unshift({id:id(),invoiceId:v.id,date:today(),amount:a,employeeId:v.employeeId||''});db.cashMoves.unshift({id:id(),date:today(),type:'collection',method:'Cash',amount:a,ref:v.id,note:'Collect Invoice #'+invNo(v)});save();receivablesPage()}
+
+function ensureRequired5L(){
+ const wanted=[['Dishwashing',['dishwashing']],['Fabric Softner',['fabric softner','fabric softener','comfort']],['Laundry Gel',['laundry gel','laundrey gel']],['Floor Cleaner',['floor cleaner']]];
+ wanted.forEach(([name,aliases])=>{let p=(db.products||[]).find(x=>!x.formulaMaster&&+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));if(!p){db.products.push({id:id(),name:name+' 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5})}else{p.name=name+' 5L';p.size=5}});
+ save();
+}
+function stocktake(){
+ ensureRequired5L();window._stocktakeSize=window._stocktakeSize||1;
+ $('#app').innerHTML=`<div class="title">Physical Stocktake</div><div class="panel"><div class="muted">Enter the actual physical quantity. The system records the difference as a stock adjustment.</div><select id="stType"><option value="finished">Finished Goods</option><option value="raw">Materials & Packaging</option></select></div><div class="pos-size-tabs"><button data-size="1" onclick="stocktakeSizeFilter(1,this)">1L</button><button data-size="4" onclick="stocktakeSizeFilter(4,this)">4L</button><button data-size="5" onclick="stocktakeSizeFilter(5,this)">5L</button><button data-size="10" onclick="stocktakeSizeFilter(10,this)">10L</button><button data-size="20" onclick="stocktakeSizeFilter(20,this)">20L</button></div><div class="panel"><b>Add New Finished Product</b><div class="row" style="margin-top:8px"><input id="stNewProduct" placeholder="Product name"><select id="stNewSize"><option value="1">1L</option><option value="4">4L</option><option value="5">5L</option><option value="10">10L</option><option value="20">20L</option></select><button onclick="addStocktakeProduct()">Add</button></div></div><div id="stocktakeProducts" class="panel"></div>`;
+ let sel=$('#stType');if(sel)sel.onchange=()=>rawStocktake();renderStocktakeProducts();
+}
+function stocktakeSizeFilter(sz,btn){window._stocktakeSize=sz;document.querySelectorAll('.pos-size-tabs button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');renderStocktakeProducts()}
+function renderStocktakeProducts(){
+ let sz=+window._stocktakeSize||1;document.querySelectorAll('.pos-size-tabs button').forEach(x=>x.classList.toggle('active',+x.dataset.size===sz));
+ let ps=(db.products||[]).filter(p=>!p.formulaMaster&&+(p.size||0)===sz);
+ let el=$('#stocktakeProducts');if(!el)return;el.innerHTML=ps.length?ps.map(p=>`<div class="item"><b>${String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim()} — ${sz}L</b><span class="pill">Recorded ${+p.qty||0}</span><div class="row"><input id="st_${p.id}" type="number" step="1" min="0" value="${+p.qty||0}"><button onclick="applyStocktake('product','${p.id}')">Confirm</button></div></div>`).join(''):'<div class="pos-empty">No products in this pack size</div>';
+}
+function addStocktakeProduct(){let n=String($('#stNewProduct')?.value||'').trim(),sz=+($('#stNewSize')?.value||0);if(!n||![1,4,5,10,20].includes(sz))return alert('Enter product name and pack size');let base=n.replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim(),exists=(db.products||[]).some(p=>!p.formulaMaster&&+(p.size||0)===sz&&String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()===base.toLowerCase());if(exists)return alert('Product already exists');db.products.push({id:id(),name:base+' '+sz+'L',price:0,wholesalePrice:0,cost:0,qty:0,size:sz});save();window._stocktakeSize=sz;stocktake()}
+function rawStocktake(){$('#app').innerHTML=`<div class="title">Materials & Packaging Stocktake</div><div class="panel"><b>Add New Material / Packaging</b><div class="row" style="margin-top:8px"><input id="stRawName" placeholder="Material name"><select id="stRawUnit"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option></select><input id="stRawCost" type="number" min="0" step=".001" placeholder="Unit cost $"><button onclick="addStocktakeRaw()">Add</button></div></div><div class="panel">${(db.raw||[]).map(p=>`<div class="item"><b>${p.name}</b><span class="pill">Recorded ${+p.qty||0}</span><div class="row"><input id="st_${p.id}" type="number" step=".001" min="0" value="${+p.qty||0}"><button onclick="applyStocktake('raw','${p.id}')">Confirm</button></div></div>`).join('')}</div>`}
+function addStocktakeRaw(){let n=String($('#stRawName')?.value||'').trim(),unit=$('#stRawUnit')?.value||'kg',cost=+($('#stRawCost')?.value||0);if(!n)return alert('Enter material name');if((db.raw||[]).some(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase()))return alert('Material already exists');db.raw.push({id:id(),name:n,cost:Math.max(0,cost),qty:0,unit});save();rawStocktake()}
+
+function applyStocktake(type,i){let arr=type==='raw'?db.raw:db.products,p=arr.find(x=>String(x.id)===String(i)),n=+document.getElementById('st_'+i)?.value;if(!p||n<0)return;let old=+p.qty||0,diff=n-old;p.qty=n;let mv={id:id(),date:today(),time:new Date().toISOString(),type:'stocktake',name:p.name,qty:diff,balance:n,note:'Physical Stocktake'};(type==='raw'?db.rawMoves:db.stockMoves).unshift(mv);db.adjustments.unshift(mv);save();type==='raw'?rawStocktake():stocktake()}
+function closingPage(){
+ let d=today(),month=d.slice(0,7);
+ $('#app').innerHTML=`<div class="title">📋 Main Reading / Daily Main Reading</div>
+ <div class="panel"><div class="row"><input id="readDate" type="date" value="${d}"><button onclick="renderMainReading()">View Day</button></div><div id="dailyReading"></div></div>
+ <div class="title">📊 Monthly Report</div>
+ <div class="panel"><div class="row"><input id="readMonth" type="month" value="${month}"><button onclick="renderMonthlyReading()">View Month</button></div><div id="monthlyReading"></div></div>
+ <div class="panel"><b>Recent Closings</b>${(db.closings||[]).slice(0,12).map(c=>`<div class="item">${c.type==='day'?'Daily':'Monthly'} — ${c.period}<span style="float:left">${money(c.net)}</span></div>`).join('')||'No closings yet'}</div>`;
+ renderMainReading();renderMonthlyReading();
+}
+function readingStats(inv,ex,moves){
+ let items=inv.flatMap(v=>v.items||[]),sales=inv.reduce((a,v)=>a+(+v.total||0),0),expenses=ex.reduce((a,e)=>a+(+e.amount||0),0),gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-(+i.cost||0))*(+i.qty||0),0),0),paid=inv.reduce((a,v)=>a+(+v.paid||0),0),debt=inv.reduce((a,v)=>a+Math.max(0,(+v.total||0)-(+v.paid||0)),0),cashIn=moves.filter(x=>(+x.amount||0)>0).reduce((a,x)=>a+(+x.amount||0),0),cashOut=Math.abs(moves.filter(x=>(+x.amount||0)<0).reduce((a,x)=>a+(+x.amount||0),0)),packs={};
+ items.forEach(i=>{let n=i.name||'منتج';packs[n]=(packs[n]||0)+(+i.qty||0)});
+ return {sales,expenses,gross,net:gross-expenses,paid,debt,cashIn,cashOut,count:inv.length,packs};
+}
+function readingHtml(st){
+ return `<div class="grid"><div class="card"><span>Sales</span><div class="kpi">${money(st.sales)}</div></div><div class="card"><span>Invoices</span><div class="kpi">${st.count}</div></div><div class="card"><span>Collected</span><div class="kpi">${money(st.paid)}</div></div><div class="card"><span>New Receivables</span><div class="kpi">${money(st.debt)}</div></div><div class="card"><span>Expenses</span><div class="kpi">${money(st.expenses)}</div></div><div class="card"><span>Net Profit</span><div class="kpi">${money(st.net)}</div></div><div class="card"><span>Cash In</span><div class="kpi">${money(st.cashIn)}</div></div><div class="card"><span>Cash Out</span><div class="kpi">${money(st.cashOut)}</div></div></div><div class="item"><b>Items Sold</b><div class="muted">${Object.entries(st.packs).map(([n,q])=>n+' × '+q).join(' • ')||'No sales'}</div></div>`;
+}
+function renderMainReading(){let d=$('#readDate')?.value||today(),inv=(db.invoices||[]).filter(v=>!v.voided&&v.date===d),ex=(db.expenses||[]).filter(e=>e.date===d),mv=(db.cashMoves||[]).filter(x=>x.date===d);$('#dailyReading').innerHTML=readingHtml(readingStats(inv,ex,mv))}
+function renderMonthlyReading(){let m=$('#readMonth')?.value||today().slice(0,7),inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.date).startsWith(m)),ex=(db.expenses||[]).filter(e=>String(e.date).startsWith(m)),mv=(db.cashMoves||[]).filter(x=>String(x.date).startsWith(m));$('#monthlyReading').innerHTML=readingHtml(readingStats(inv,ex,mv))}
+
+function saveClosing(type){let period=type==='day'?today():today().slice(0,7),inv=(db.invoices||[]).filter(v=>!v.voided&&(type==='day'?v.date===period:String(v.date).startsWith(period))),ex=(db.expenses||[]).filter(x=>type==='day'?x.date===period:String(x.date).startsWith(period)),sales=inv.reduce((a,x)=>a+(+x.total||0),0),expenses=ex.reduce((a,x)=>a+(+x.amount||0),0),gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-(+i.cost||0))*(+i.qty||0),0),0),net=gross-expenses;db.closings.unshift({id:id(),type,period,date:today(),sales,expenses,gross,net});save();closingPage()}
+function cashbox(){
+ let moves=db.cashMoves||[],todayMoves=moves.filter(x=>x.date===today()),tin=todayMoves.filter(x=>x.amount>0).reduce((a,x)=>a+(+x.amount||0),0),tout=Math.abs(todayMoves.filter(x=>x.amount<0).reduce((a,x)=>a+(+x.amount||0),0)),bal=moves.reduce((a,x)=>a+(+x.amount||0),0);
+ $('#app').innerHTML=`<div class="title">Cashbox / Cash Flow</div><div class="grid"><div class="kpi-card"><b>Today's Cash In</b><div class="kpi">${money(tin)}</div></div><div class="kpi-card"><b>Today's Cash Out</b><div class="kpi">${money(tout)}</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">${money(bal)}</div></div></div><div class="panel"><div class="row"><input id="cashDate" type="date" value="${today()}"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input id="cashNote" placeholder="Description"><button onclick="addCashMove()">Record</button></div></div><div class="panel"><b>Recent Transactions</b>${moves.slice(0,60).map(x=>`<div class="item"><b>${x.note||x.type}</b><span style="float:left">${x.amount>=0?'+':''}${money(x.amount)}</span><div class="muted">${x.date} • ${x.method||''}</div></div>`).join('')||'No transactions'}</div>`;
+}
+function addCashMove(){let a=+$('#cashAmount').value;if(a<=0)return;db.cashMoves.unshift({id:id(),date:$('#cashDate').value||today(),type:$('#cashType').value==='in'?'manual_in':'manual_out',method:$('#cashMethod').value,amount:$('#cashType').value==='in'?a:-a,note:$('#cashNote').value.trim()||'Manual Transaction'});save();cashbox()}
+function accountsPage(){
+ let ps=db.people||[];
+ $('#app').innerHTML=`<div class="title">Customer & Supplier Accounts</div><div class="panel"><input id="accSearch" placeholder="Search name or phone" oninput="renderAccounts()"><select id="accType" onchange="renderAccounts()"><option value="">All</option><option>Customer</option><option>Supplier</option></select></div><div id="accountsList"></div>`;renderAccounts()
+}
+function renderAccounts(){let q=String($('#accSearch')?.value||'').toLowerCase(),t=$('#accType')?.value||'',ps=(db.people||[]).filter(p=>(!t||p.type===t)&&(!q||String(p.name).toLowerCase().includes(q)||String(p.phone||'').includes(q)));$('#accountsList').innerHTML=`<div class="panel">${ps.map(p=>{let inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.customerId)===String(p.id)),sales=inv.reduce((a,v)=>a+(+v.total||0),0),debt=inv.reduce((a,v)=>a+Math.max(0,(+v.total||0)-(+v.paid||0)),0),pur=(db.purchases||[]).filter(x=>String(x.supplier||'').toLowerCase()===String(p.name).toLowerCase()),buys=pur.reduce((a,x)=>a+((+x.total||0)||(+x.qty||0)*(+x.cost||0)),0);return `<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div>${p.type==='Customer'? `<div>Sales: <b>${money(sales)}</b> • Balance Due: <b>${money(debt)}</b> • ${inv.length} Invoice</div>`:`<div>Purchases: <b>${money(buys)}</b> • ${pur.length} purchase</div>`}<button onclick="accountDetail('${p.id}')">Statement</button></div>`}).join('')||'No accounts'}</div>`}
+function accountDetail(i){let p=db.people.find(x=>String(x.id)===String(i));if(!p)return;let inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.customerId)===String(p.id));let pur=(db.purchases||[]).filter(x=>String(x.supplier||'').toLowerCase()===String(p.name).toLowerCase());$('#app').innerHTML=`<div class="title">Account Statement — ${p.name}</div><div class="panel"><b>${p.type}</b><div class="muted">${p.phone||''}</div></div><div class="panel"><b>Transactions</b>${p.type==='Customer'?inv.map(v=>`<div class="item">Invoice #${v.id}<span style="float:left">${money(v.total)}</span><div class="muted">${v.date} • مدفوع ${money(v.paid||0)} • باقي ${money(Math.max(0,v.total-(v.paid||0)))}</div></div>`).join(''):pur.map(x=>`<div class="item">${x.description||x.item||x.raw||'Purchase'}<span style="float:left">${money((+x.total||0)||(+x.qty||0)*(+x.cost||0))}</span><div class="muted">${x.date||''}</div></div>`).join('')}</div>`}
+function expenses(){
+ const cats=['Rent','Electricity','Employee Salaries','Labor','Transport & Fuel','Maintenance','Phone & Internet','Fees & Subscriptions','Administrative Expenses','Additional Expenses','Other'];
+ $('#app').innerHTML=`<div class="title">Factory Expenses</div>
+ <div class="panel"><div class="row"><input id="ed" type="date" value="${today()}"><select id="ec">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+ <div class="row"><input id="en" placeholder="Description — e.g. September rent"><input id="ea" type="number" step=".01" min="0" placeholder="Amount $"></div>
+ <div class="row"><select id="ep"><option>Cash</option><option>Transfer</option><option>Cheque</option><option>Credit</option></select><input id="enote" placeholder="Notes"></div>
+ <button class="orange" style="width:100%;margin-top:8px" onclick="addExp()">Record Expense</button></div>
+ <div class="panel"><div class="row"><input id="efrom" type="date" onchange="renderExpenseList()"><input id="eto" type="date" onchange="renderExpenseList()"><select id="efcat" onchange="renderExpenseList()"><option value="">All Expenses</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="expenseList"></div></div>`;
+ renderExpenseList();
+}
+function addExp(){let n=$('#en').value.trim(),a=+$('#ea').value,c=$('#ec').value;if(!n||a<=0)return alert('Enter description and amount');let e={id:id(),name:n,amount:a,category:c,date:$('#ed').value||today(),payment:$('#ep').value,note:$('#enote').value.trim()};db.expenses.unshift(e);if(e.payment!=='Credit')db.cashMoves.unshift({id:id(),date:e.date,type:'expense',method:e.payment,amount:-a,ref:e.id,note:e.name});save();expenses()}
+function renderExpenseList(){let from=$('#efrom')?.value||'',to=$('#eto')?.value||'',cat=$('#efcat')?.value||'',list=(db.expenses||[]).filter(e=>(!from||e.date>=from)&&(!to||e.date<=to)&&(!cat||e.category===cat)),total=list.reduce((a,e)=>a+(+e.amount||0),0);$('#expenseList').innerHTML=`<div class="item"><b>Total Expenses</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(e=>`<div class="item"><b>${e.name}</b> <span class="pill">${e.category||'Other'}</span><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date||''}${e.payment?' • '+e.payment:''}</div>${e.note?`<div class="muted">${e.note}</div>`:''}</div>`).join(''):'<div class="muted">No expenses in this selection</div>'}`}
+function people(){$('#app').innerHTML=`<div class="title">Customers & Suppliers</div><div class="panel"><div class="row"><input id="nn" placeholder="Name"><select id="nt"><option>Customer</option><option>Supplier</option></select><input id="np" placeholder="Phone"><button onclick="addPerson()">Add</button></div></div><div class="panel">${db.people.map(p=>`<div class="item"><b>${p.name}</b> <span class="pill">${p.type}</span><div class="muted">${p.phone||''}</div></div>`).join('')}</div>`}
+function addPerson(){let n=$('#nn').value.trim();if(!n)return;db.people.push({id:id(),name:n,type:$('#nt').value,phone:$('#np').value});save();people()}
+function reports(){
+ nav('reports');
+ const inv=(db.invoices||[]).filter(x=>!x.voided), ex=db.expenses||[], todayStr=today();
+ const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
+ const defaultFrom=dates[0]||todayStr, defaultTo=dates[dates.length-1]||todayStr;
+ $('#app').innerHTML=`<div class="title">Detailed Reports</div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 Expenses</button><button onclick="employees()">🧑‍💼 Distributors & Commissions</button></div></div>
+ <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${defaultTo}"><button onclick="renderDetailedReports()">View Period</button></div></div>
+ <div id="detailedReports"></div>`;
+ renderDetailedReports();
+}
+function renderDetailedReports(){
+ const from=$('#repFrom')?.value||today(),to=$('#repTo')?.value||today(),
+ inv=(db.invoices||[]).filter(x=>!x.voided&&x.date>=from&&x.date<=to),
+ ex=(db.expenses||[]).filter(x=>x.date>=from&&x.date<=to),
+ batches=(db.batches||[]).filter(x=>x.date>=from&&x.date<=to),
+ packs=(db.packings||[]).filter(x=>x.date>=from&&x.date<=to);
+ const sales=inv.reduce((a,x)=>a+(+x.total||0),0),expensesTotal=ex.reduce((a,x)=>a+(+x.amount||0),0),
+ gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-(+i.cost||0))*(+i.qty||0),0),0),
+ net=gross-expensesTotal,items=inv.flatMap(v=>(v.items||[]).map(i=>({...i,date:v.date,invoiceId:v.id}))),
+ units=items.reduce((a,i)=>a+(+i.qty||0),0),liters=items.reduce((a,i)=>a+(+i.qty||0)*(+i.size||+(String(i.name||'').match(/(1|4|5|10|20)L/i)?.[1])||0),0);
+ const byProduct={};items.forEach(i=>{let k=i.name||'منتج';if(!byProduct[k])byProduct[k]={qty:0,sales:0,profit:0};byProduct[k].qty+=+i.qty||0;byProduct[k].sales+=(+i.price||0)*(+i.qty||0);byProduct[k].profit+=((+i.price||0)-(+i.cost||0))*(+i.qty||0)});
+ const rawValue=(db.raw||[]).reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),finishedValue=(db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*(+p.cost||0),0);
+ const top=Object.entries(byProduct).sort((a,b)=>b[1].sales-a[1].sales);
+ $('#detailedReports').innerHTML=`
+ <div class="grid">
+  <div class="card" role="button" onclick="reportDrill('sales')"><span>Total Sales</span><div class="kpi">${money(sales)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('invoices')"><span>Invoice Count</span><div class="kpi">${inv.length}</div></div>
+  <div class="card" role="button" onclick="reportDrill('units')"><span>Total Packs Sold</span><div class="kpi">${units}</div></div>
+  <div class="card" role="button" onclick="reportDrill('liters')"><span>Bottle & Gallon Breakdown</span><div class="kpi">${units}</div></div>
+  <div class="card" role="button" onclick="reportDrill('gross')"><span>Gross Profit</span><div class="kpi">${money(gross)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('expenses')"><span>Expenses</span><div class="kpi">${money(expensesTotal)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('net')"><span>Net Profit</span><div class="kpi">${money(net)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('raw')"><span>Raw Materials Value</span><div class="kpi">${money(rawValue)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('finished')"><span>Finished Goods Value</span><div class="kpi">${money(finishedValue)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('batches')"><span>Batches</span><div class="kpi">${batches.length}</div></div>
+ </div>
+ <div class="panel"><b>Sales by Product</b>${top.length?top.map(([n,v])=>`<div class="item"><b>${n}</b><div class="muted">Quantity ${v.qty} • Sales ${money(v.sales)} • الربح ${money(v.profit)}</div></div>`).join(''):'<div class="muted">No sales in selected period</div>'}</div>
+ <div class="panel"><b>Invoice Details</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
+ <div class="panel" style="border-right:5px solid #ff7900"><div class="item"><b>💸 Total Expenses in Period</b><span style="float:left"><b>${money(expensesTotal)}</b></span></div></div><div class="panel"><b>Expense Details</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">No expenses</div>'}</div>
+ <div class="panel"><b>Production & Packing</b><div class="muted">طبخات: ${batches.length} • عمليات Pack: ${packs.length} • Literات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • Literات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
+}
+function reportDrill(type){
+ var rf=document.getElementById('repFrom'),rt=document.getElementById('repTo');
+ var from=rf?rf.value:(window._reportFrom||today());
+ var to=rt?rt.value:(window._reportTo||today());
+ window._reportFrom=from;window._reportTo=to;
+ var to=document.getElementById('repTo')?document.getElementById('repTo').value:today();
+ var inv=(db.invoices||[]).filter(function(v){return !v.voided&&v.date>=from&&v.date<=to});
+ var ex=(db.expenses||[]).filter(function(e){return e.date>=from&&e.date<=to});
+ var ba=(db.batches||[]).filter(function(e){return e.date>=from&&e.date<=to});
+ var items=[];inv.forEach(function(v){(v.items||[]).forEach(function(i){items.push(i)})});
+ var title='',rows=[];
+ if(type==='sales'||type==='invoices'){title=type==='sales'?'Sales Breakdown':'Invoice Breakdown';rows=inv.map(function(v){return '<div class="item" onclick="invoiceView(\''+v.id+'\')"><b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+'</div></div>'})}
+ if(type==='units'||type==='liters'){title='Packs Sold Breakdown';var m={};items.forEach(function(i){var n=i.name||'منتج',mt=String(n).match(/(1|4|5|10|20)L/i),sz=mt?Number(mt[1]):0;if(!m[n])m[n]={q:0,sz:sz};m[n].q+=Number(i.qty)||0});Object.keys(m).forEach(function(n){var v=m[n],unit=v.sz===1?'Bottle':'Gallon';rows.push('<div class="item"><b>'+n+'</b><span style="float:left">'+v.q+' '+unit+'</span></div>')})}
+ if(type==='gross'){title='Gross Profit Breakdown';rows=items.map(function(i){var p=((Number(i.price)||0)-(Number(i.cost)||0))*(Number(i.qty)||0);return '<div class="item"><b>'+i.name+' × '+i.qty+'</b><span style="float:left">'+money(p)+'</span><div class="muted">Sales '+money(i.price)+' • Cost '+money(i.cost)+'</div></div>'})}
+ if(type==='expenses'){title='تفصيل Expenses';rows=ex.map(function(e){return '<div class="item"><b>'+(e.name||e.category||'مصروف')+'</b><span style="float:left">'+money(e.amount)+'</span><div class="muted">'+e.date+'</div></div>'})}
+ if(type==='net'){title='Net Profit Breakdown';var g=items.reduce(function(a,i){return a+((Number(i.price)||0)-(Number(i.cost)||0))*(Number(i.qty)||0)},0),ee=ex.reduce(function(a,e){return a+(Number(e.amount)||0)},0);rows=['<div class="item"><b>Gross Profit</b><span style="float:left">'+money(g)+'</span></div>','<div class="item"><b>Expenses</b><span style="float:left">-'+money(ee)+'</span></div>','<div class="item"><b>Net</b><span style="float:left"><b>'+money(g-ee)+'</b></span></div>']}
+ if(type==='raw'){title='Raw Materials Value Breakdown';rows=(db.raw||[]).filter(function(r){return Number(r.qty)||0}).map(function(r){return '<div class="item"><b>'+r.name+'</b><span style="float:left">'+money((Number(r.qty)||0)*(Number(r.cost)||0))+'</span><div class="muted">'+(Number(r.qty)||0)+' × '+money(r.cost)+'</div></div>'})}
+ if(type==='finished'){title='Finished Goods Value Breakdown';rows=(db.products||[]).filter(function(p){return !p.formulaMaster&&(Number(p.qty)||0)}).map(function(p){return '<div class="item"><b>'+p.name+'</b><span style="float:left">'+money((Number(p.qty)||0)*(Number(p.cost)||0))+'</span><div class="muted">'+(Number(p.qty)||0)+' × '+money(p.cost)+'</div></div>'})}
+ if(type==='batches'){title='Batch Breakdown';rows=ba.map(function(x){return '<div class="item"><b>'+(x.product||x.name||'Batch')+'</b><span style="float:left">'+(Number(x.liters)||0)+' L</span><div class="muted">'+x.date+'</div></div>'})}
+ document.getElementById('app').innerHTML='<div class="title">'+title+'</div><div class="panel"><button onclick="reports()">← Back to Reports</button></div><div class="panel">'+(rows.join('')||'<div class="muted">No data in selected period</div>')+'</div>';
+}
+
+function editExpense(i){let e=db.expenses.find(x=>String(x.id)===String(i));if(!e)return;let a=prompt('Amount $',e.amount);if(a===null)return;let n=prompt('Description',e.name);if(n===null)return;e.amount=Math.max(0,+a||0);e.name=n.trim()||e.name;save();expenses()}
+function deleteExpense(i){if(!confirm('Delete expense?'))return;db.expenses=db.expenses.filter(x=>String(x.id)!==String(i));save();expenses()}
+
+function profitLossReport(){
+ const now=new Date(),ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+ $('#app').innerHTML=`<div class="title">Profit & Loss</div><div class="panel"><div class="row"><input id="plMonth" type="month" value="${ym}" onchange="renderProfitLoss()"><button onclick="reports()">Back to Reports</button></div></div><div id="plBody"></div>`;
+ renderProfitLoss();
+}
+function renderProfitLoss(){
+ const m=$('#plMonth')?.value||'',inv=(db.invoices||[]).filter(x=>!x.voided&&String(x.date||'').startsWith(m)),ex=(db.expenses||[]).filter(x=>String(x.date||'').startsWith(m));
+ const sales=inv.reduce((a,x)=>a+(+x.total||0),0);
+ const cogs=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+(+i.cost||0)*(+i.qty||0),0),0);
+ const gross=sales-cogs,expenses=ex.reduce((a,x)=>a+(+x.amount||0),0),net=gross-expenses;
+ const byExp={};ex.forEach(e=>{let k=e.category||e.name||'Other Expenses';byExp[k]=(byExp[k]||0)+(+e.amount||0)});
+ const margin=sales?net/sales*100:0;
+ $('#plBody').innerHTML=`<div class="grid"><div class="card"><span>Sales Revenue</span><div class="kpi">${money(sales)}</div></div><div class="card"><span>Cost of Goods Sold</span><div class="kpi">${money(cogs)}</div></div><div class="card"><span>Gross Profit</span><div class="kpi">${money(gross)}</div></div><div class="card"><span>Operating Expenses</span><div class="kpi">${money(expenses)}</div></div><div class="card"><span>Net Profit / Loss</span><div class="kpi">${money(net)}</div></div><div class="card"><span>Net Margin</span><div class="kpi">${margin.toFixed(1)}%</div></div></div>
+ <div class="panel"><b>تفصيل Expenses</b>${Object.keys(byExp).length?Object.entries(byExp).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="item">${n}<span style="float:left"><b>${money(v)}</b></span></div>`).join(''):'<div class="muted">No expenses recorded this month</div>'}</div>
+ <div class="panel"><div class="item"><b>Sales</b><span style="float:left">${money(sales)}</span></div><div class="item">− Cost of Goods Sold<span style="float:left">${money(cogs)}</span></div><div class="item"><b>= Gross Profit</b><span style="float:left"><b>${money(gross)}</b></span></div><div class="item">− Operating Expenses<span style="float:left">${money(expenses)}</span></div><div class="item"><b>= Net Profit / Loss</b><span style="float:left"><b>${money(net)}</b></span></div></div>`;
+}
+function settings(){
+ $('#app').innerHTML=`
+ <div class="backoffice-page">
+  <div class="title">Back Office</div>
+  <div class="bo-grid">
+   <button class="bo-card" onclick="packing()"><span>📦</span><b>Batch Packing</b></button>
+   <button class="bo-card" onclick="leftovers()"><span>🧴</span><b>Leftovers / 1 Liter</b></button>
+   <button class="bo-card" onclick="historyReport()"><span>🕘</span><b>Movement History</b></button>
+   <button class="bo-card" onclick="raw()"><span>🧪</span><b>Raw Materials</b></button>
+   <button class="bo-card" onclick="production()"><span>🏭</span><b>Production & Recipes</b></button>
+   <button class="bo-card" onclick="purchasePriceMaster()"><span>💲</span><b>Price Master</b></button>
+   <button class="bo-card bo-danger" onclick="resetTrial()"><span>🧹</span><b>Reset Trial Data</b></button>
+  </div>
+  <div class="title bo-section-title">Settings & Backup</div>
+  <div class="panel bo-settings">
+   <div class="bo-setting-row"><div><b>USD/LBP Rate</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('Saved')">Save</button></div>
+   <div class="muted" style="margin-bottom:8px">Full backup includes stock, prices, recipes, purchases, sales and settings.</div><div class="bo-backup-row"><button onclick="backup()">⬇️ Export Full Backup</button><label class="bo-file">📁 Choose Backup<input type="file" id="restore" accept=".json,application/json"></label><button class="orange" onclick="restoreDB()">Restore Backup</button></div>
+  </div>
+ </div>`;
+}
+
+
+function leftovers(){
+ const masters=db.products.filter(p=>p.formulaMaster&&String(p.name||'').trim().toLowerCase()!=='car').sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+ $('#app').innerHTML=`<div class="title">Leftovers / 1L Packing</div>
+ <div class="panel"><div class="muted">Select the product and enter the number of 1L bottles packed from leftovers. They are added directly to finished stock without deducting raw materials again.</div></div>
+ <div class="leftover-grid">${masters.map(p=>{let fp=db.products.find(x=>String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()===String(p.name).trim().toLowerCase()&&+(x.size||0)===1),stock=fp?+fp.qty||0:0;return `<div class="panel leftover-card"><b>${p.name}</b><div class="muted">Current 1L stock: ${stock}</div><div class="row" style="margin-top:8px"><input id="lfq_${p.id}" type="number" min="1" step="1" placeholder="Bottle Count"><button onclick="quickLeftover1L('${p.id}')">＋ Add to Stock</button></div></div>`}).join('')}</div>`;
+}
+function quickLeftover1L(pid){
+ const base=db.products.find(x=>String(x.id)===String(pid)&&x.formulaMaster),q=+document.getElementById('lfq_'+pid)?.value;
+ if(!base||!Number.isInteger(q)||q<1)return alert('Enter bottle count');
+ const bottle=db.raw.find(x=>String(x.name).toLowerCase()==='bottle 1l');
+ if(!bottle||(+bottle.qty||0)<q)return alert('Not enough empty 1L bottles');
+ let p=ensureFinishedProduct(base.name,1);
+ bottle.qty-=q;p.qty=(+p.qty||0)+q;
+ db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'leftover_packaging_use',rawId:bottle.id,name:bottle.name,qty:-q,balance:bottle.qty,cost:bottle.cost});
+ const mv={id:id(),date:today(),time:new Date().toISOString(),type:'leftover_1l_manual',productId:p.id,name:p.name,qty:q,liters:q,balance:p.qty,unitCost:p.cost||0};
+ db.packings.unshift(mv);db.stockMoves.unshift(mv);save();leftovers();
+}
+function packLeftover1L(bid){const b=db.batches.find(x=>String(x.id)===String(bid));if(!b)return;const base=db.products.find(x=>String(x.id)===String(b.productId));if(!base||String(base.name).toLowerCase()==='car')return;const q=+document.getElementById('lf'+b.id)?.value;if(!q)return;quickLeftover1L(base.id)}
+
+function packing(){
+ let open=db.batches.filter(b=>(b.remainingLiters??b.liters)>0);
+ $('#app').innerHTML='<div class="title">Batch Packing</div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b> — Batch '+b.liters+' L<br><span class="muted">Remaining '+(b.remainingLiters??b.liters).toFixed(2)+' L • '+b.date+'</span><div class="row" style="margin-top:8px"><select id="pkp'+b.id+'">'+db.products.map(p=>'<option value="'+p.id+'">'+p.name+' ('+(p.size||1)+'L)</option>').join('')+'</select><input id="pkq'+b.id+'" type="number" min="1" placeholder="Pack Count"><button onclick="packBatch('+b.id+')">Pack</button></div></div>').join('')||'No open batches')+'</div>';
+}
+function packBatch(bid){
+ let b=db.batches.find(x=>String(x.id)===String(bid)),
+     p=db.products.find(x=>String(x.id)===String(document.getElementById('pkp'+bid).value)),
+     q=+document.getElementById('pkq'+bid).value;
+ if(!b||!p||q<=0)return;
+ let size=+(p.size||1),liters=q*size,remain=b.remainingLiters??b.liters;
+ if(liters>remain+0.0001)return alert('Quantity exceeds remaining liters: '+remain.toFixed(2)+' L');
+ let packName=size===20?'Gallon 20L':size===10?'Gallon 10L':size===5?'Gallon 5L':size===4?'Gallon 4L':size===1?'Bottle 1L':'';
+ let pack=packName?db.raw.find(r=>String(r.name).toLowerCase()===packName.toLowerCase()):null;
+ let label=(size===4||size===5)?db.raw.find(r=>String(r.name).toLowerCase()==='label sticker'):null;
+ if(pack && pack.qty<q)return alert('Not enough empty containers: '+packName+'\nRequired '+q+'\nAvailable '+pack.qty);
+ if(label && label.qty<q)return alert('Not enough labels\nRequired '+q+'\nAvailable '+label.qty);
+ if(pack){pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});}
+ if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost});}
+ p.qty+=q;b.remainingLiters=remain-liters;if(b.remainingLiters<0.0001){b.remainingLiters=0;b.status='closed'}
+ let liquidUnitCost=b.liters?b.cost*(liters/b.liters)/q:0,unitCost=liquidUnitCost+(pack?pack.cost:0)+(label?label.cost:0);
+ p.cost=unitCost;
+ let mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,liters,balance:p.qty,unitCost};
+ db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
+ save();alert('Packing completed: '+q+' × '+size+'L\nAdded to finished goods stock\nand deducted '+q+' empty container'+(label?' + '+q+' label':'') );packing();
+}
+function historyReport(){
+ let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
+ let all=[
+  ...db.rawMoves.map(x=>({...x,kind:'Raw Materials'})),
+  ...db.stockMoves.map(x=>({...x,kind:'Finished Stock'})),
+  ...db.purchases.map(x=>({...x,kind:'Purchases',time:x.time||x.date})),
+  ...db.batches.map(x=>({...x,kind:'Batch',time:x.time||x.date,qty:x.liters,name:x.product})),
+  ...db.expenses.map(x=>({...x,kind:'مصروف',time:x.time||x.date,qty:x.amount}))
+ ].filter(x=>x.date>=from&&x.date<=to).sort((a,b)=>String(b.time||b.date).localeCompare(String(a.time||a.date)));
+ $('#app').innerHTML='<div class="title">Movement History</div><div class="panel"><div class="row"><input id="histFrom" type="date" value="'+from+'"><input id="histTo" type="date" value="'+to+'"><button onclick="historyReport()">View</button></div></div><div class="panel">'+(all.map(x=>'<div class="item"><b>'+x.kind+'</b> — '+(x.name||'')+'<span style="float:left">'+(x.qty!==undefined?x.qty:'')+'</span><div class="muted">'+x.date+' • '+(x.type||'')+'</div></div>').join('')||'No movements in selected period')+'</div>';
+}
+
+
+
+function addRawMaterial(returnTo='raw'){
+ const name=prompt('New Material Name'); if(!name||!name.trim())return;
+ if(db.raw.some(r=>String(r.name).trim().toLowerCase()===name.trim().toLowerCase()))return alert('Material already exists');
+ const cost=prompt('Price per kg in USD','0'); if(cost===null)return;
+ const qty=prompt('Current quantity in kg','0'); if(qty===null)return;
+ const r={id:id(),name:name.trim(),cost:Math.max(0,+cost||0),qty:Math.max(0,+qty||0),unit:'kg'};
+ db.raw.push(r);
+ if(r.qty)db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'stock_in',rawId:r.id,name:r.name,qty:r.qty,balance:r.qty,cost:r.cost});
+ save(); if(returnTo==='production')production(); else raw();
+}
+
+
+function editRawPrice(rid){
+ const r=db.raw.find(x=>String(x.id)===String(rid));if(!r)return;
+ const v=prompt('New price per kg / unit ($)',(+r.cost||0).toFixed(3));
+ if(v===null)return;const n=+v;if(n<0||!Number.isFinite(n))return alert('Invalid price');
+ const old=+r.cost||0;r.cost=n;
+ db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'price_edit',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:n,oldCost:old});
+ save();raw();
+}
+
+function editRaw(rid){
+ let r=db.raw.find(x=>String(x.id)===String(rid)); if(!r)return;
+ let name=prompt('Material Name',r.name); if(name===null)return;
+ let cost=prompt('Price',r.cost); if(cost===null)return;
+ let qty=prompt('Current Quantity',r.qty); if(qty===null)return;
+ r.name=name.trim()||r.name;r.cost=+cost||0;r.qty=+qty||0;
+ db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'edit',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:r.cost});
+ save();raw();
+}
+function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions and quantities will be cleared. Recipes, products, purchase prices, price history, customers, suppliers and employees will be kept.'))return;if(!confirm('Final confirmation: clear trial stock and transactions now?'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];db.settings.lastBusinessDate=today();save();alert('GO-LIVE reset completed. Master data and price history were kept. Enter physical stock before starting sales.');home();}
+
+function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
+function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
+const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
+if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
+
+const LAUNDRY_RAW=[
+ ['soda',1.5],['parmatol',3],['fragrance laundry',18],['colour200',2.5],['water 10l',0.07]
+];
+if(!db._laundryRawSeed1){LAUNDRY_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._laundryRawSeed1=true;save();}
+function seedLaundryRecipe(){
+ if(db._laundryRecipeSeed1)return;
+ const spec=[['tayloz',2],['selfonic',40],['soda',7],['n70',40],['semasol',10],['anti foem',1.5],['parmatol',1],['fragrance laundry',4],['kapsul',2],['colour200',1],['salt',25],['water 10l',1]];
+ let p=db.products.find(x=>String(x.name).toLowerCase().includes('laundry'));
+ if(!p)return;
+ spec.forEach(([n,g])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r&&!db.recipes.some(z=>z.productId===p.id&&z.rawId===r.id))db.recipes.push({id:id(),productId:p.id,rawId:r.id,qtyPerLiter:g/1000});});
+ db._laundryRecipeSeed1=true;save();
+}
+seedLaundryRecipe();
+
+
+const LAUNDRY_RAW_SEED=[['soda',1.5],['parmatol',3],['fragrance',18],['colour200',2.5],['water 10l',0.07]];
+LAUNDRY_RAW_SEED.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});
+if(!db._laundryRecipeSeed1){
+ const lp=db.products.find(p=>/laundry/i.test(p.name));
+ const spec=[['tayloz',.002],['selfonic',.040],['soda',.007],['n70',.040],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
+ if(lp){db.recipes=db.recipes.filter(x=>x.productId!==lp.id);spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});}
+ db._laundryRecipeSeed1=true;save();
+}
+
+
+if(!db._laundryTestStock1){
+ const testStock={'tayloz':10,'selfonic':25,'soda':10,'n70':25,'semasol':10,'anti foem':5,'parmatol':5,'fragrance':10,'kapsul':10,'colour200':5,'salt':20};
+ Object.entries(testStock).forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r){r.qty=q;db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'test_stock_in',rawId:r.id,name:r.name,qty:q,balance:r.qty,cost:r.cost});}});
+ db._laundryTestStock1=true;save();
+}
+
+
+if(!db._laundryRecipeUpdate2){
+ const lp=db.products.find(p=>/laundry/i.test(p.name));
+ if(lp){
+   const sf=db.raw.find(r=>String(r.name).toLowerCase()==='selfonic');
+   const n70=db.raw.find(r=>String(r.name).toLowerCase()==='n70');
+   if(sf){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===sf.id);if(x)x.qtyPerLiter=.050;else db.recipes.push({id:id(),productId:lp.id,rawId:sf.id,qtyPerLiter:.050});}
+   if(n70){let x=db.recipes.find(z=>z.productId===lp.id&&z.rawId===n70.id);if(x)x.qtyPerLiter=.020;else db.recipes.push({id:id(),productId:lp.id,rawId:n70.id,qtyPerLiter:.020});}
+ }
+ db._laundryRecipeUpdate2=true;save();
+}
+
+
+if(!db._laundryRecipeFix3){
+ const spec=[['tayloz',.002],['selfonic',.050],['soda',.007],['n70',.020],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
+ db.products.filter(p=>/laundry|washing/i.test(p.name)).forEach(lp=>{
+   db.recipes=db.recipes.filter(z=>z.productId!==lp.id);
+   spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});
+ });
+ db._laundryRecipeFix3=true;save();
+}
+
+
+if(!db._packagingSeed1){
+ [['Gallon 5L',0.34],['Gallon 4L',0.45],['Bottle 1L',0.15]].forEach(([name,cost])=>{
+   if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'piece',category:'packaging'});
+ });
+ db._packagingSeed1=true;save();
+}
+
+
+if(!db._labelSeed1){
+ if(!db.raw.some(r=>String(r.name).toLowerCase()==='label sticker'))db.raw.push({id:id(),name:'Label Sticker',qty:0,cost:0.10,unit:'piece',category:'packaging'});
+ db._labelSeed1=true;save();
+}
+
+if(!db._pkgDemo){[['Gallon 5L',100],['Gallon 4L',100],['Bottle 1L',100],['Label Sticker',200]].forEach(([n,q])=>{let x=db.raw.find(v=>String(v.name).toLowerCase()===n.toLowerCase());if(x)x.qty=Math.max(+x.qty||0,q)});db._pkgDemo=true;save();}
+
+if(!db._bulk5LProducts1){
+ ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
+   if(!db.products.some(p=>String(p.name).toLowerCase()===((base+' 5L').toLowerCase())))db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
+ });
+ db._bulk5LProducts1=true;save();
+}
+
+if(!db._ensure5LStockProducts2){
+ ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
+   if(!db.products.some(p=>String(p.name).toLowerCase()===(base+' 5L').toLowerCase()))
+     db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
+ });
+ db._ensure5LStockProducts2=true;save();
+}
+if(!db._price5LTest1){
+ const prices={'Dishwashing 5L':3.20,'Laundry Gel 5L':3.61,'Hand Soap 5L':3.89,'Floor Cleaner 5L':2.78};
+ Object.entries(prices).forEach(([n,v])=>{const p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(p&&!(+p.price>0))p.price=v;});
+ db._price5LTest1=true;save();
+}
+if(!db._price5LTrial2){
+ db.products.filter(p=>+(p.size||0)===5).forEach(p=>{p.price=5;});
+ db._price5LTrial2=true;save();
+}
+if(!db._rebuildFinishedBalances1){
+ const sums={};
+ (db.stockMoves||[]).forEach(m=>{if(['production_pack','leftover_1l'].includes(m.type))sums[String(m.productId)]=(sums[String(m.productId)]||0)+(+m.qty||0);if(m.type==='sale')sums[String(m.productId)]=(sums[String(m.productId)]||0)-Math.abs(+m.qty||0);});
+ db.products.forEach(p=>{if(Object.prototype.hasOwnProperty.call(sums,String(p.id)))p.qty=Math.max(+p.qty||0,sums[String(p.id)]);});
+ db._rebuildFinishedBalances1=true;save();
+}
+if(!db._allRawDemoStock1){
+ db.raw.forEach(x=>{
+   const isPiece=String(x.unit||'').toLowerCase()==='piece'||String(x.category||'').toLowerCase()==='packaging';
+   const target=isPiece?1000:500;
+   const old=+x.qty||0;
+   if(old<target){
+     x.qty=target;
+     db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'test_stock_in',rawId:x.id,name:x.name,qty:target-old,balance:target,cost:+x.cost||0});
+   }
+ });
+ db._allRawDemoStock1=true;save();
+}
+if(!db._allFormulaMasters1){
+ const names=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
+ names.forEach(n=>{if(!db.products.some(p=>String(p.name).toLowerCase()===n.toLowerCase()))db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true});});
+ db._allFormulaMasters1=true;save();
+}
+function refreshFx(){let e=document.getElementById('headerFx');if(e)e.textContent=(+db.settings.usdLbp||0).toLocaleString('en-US')}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');refreshFx();
+let _restoreView=String(location.hash||'').replace(/^#/,'')||'home';try{if(_restoreView==='home')_restoreView=sessionStorage.getItem('dropsCurrentView')||'home'}catch(e){};const _validViews=['home','sale','products','reports','raw','production','purchases','expenses','cashbox','stocktake','closingPage','accountsPage','invoices','people','settings','employees','returnsPage','receivablesPage'];if(!_validViews.includes(_restoreView))_restoreView='home';if(_restoreView!=='home')go(_restoreView,true);else home();
+</script><script>
+window.goHome=function(){
+  if(currentView==='home') return;
+  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};history.replaceState({dropsView:'home'},'',location.pathname+location.search+'#home');
+  document.body.classList.add('home-view');
+  home();
+  history.pushState({dropsView:'home'},'',location.href);
+};
+window.addEventListener('popstate',function(e){
+ const v=e.state&&e.state.dropsView;
+ if(currentView!=='home'){ currentView='home';document.body.classList.add('home-view');nav('home');home();history.pushState({dropsView:'home'},'',location.href);return; }
+ if(v&&v!=='home') go(v,true);
+ else history.pushState({dropsView:'home'},'',location.href);
+});
+history.replaceState({dropsView:currentView||'home'},'',location.href);
+
+/* EXCEL RECIPE IMPORT v54 */
+(function(){
+ if(db._excelRecipes2025v1)return;
+ const prices={"amoniac":2.2,"anti foem":5.5,"antra":12,"b.s":2.5,"bb4":1.75,"candel b":5,"citrec acid":2.07,"clore 12%":0.55,"flakes":1.5,"flash hcl 30kg":1.17,"formalin":1.31,"glycerin":3.7,"ipa":1.2,"kd":2.77,"n70":2.29,"oil balsam":2.5,"pg":3.5,"phosphoric acid":2.5,"pq7":2.55,"pvp":2.75,"rw":4,"salt":3,"selfonic":2.95,"selikon":3,"semasol":3.72,"spirtol 1":2.06,"tayloz":6,"twin 80":6.52,"kapsul":26};
+ const alias={"anti foam":"anti foem","k d":"kd","candel wax":"candel b","balsam water":"oil balsam","clore":"clore 12%","acid":"flash hcl 30kg","phesforic acid":"phosphoric acid","glecryin":"glycerin","glecryn":"glycerin","spertol 1":"spirtol 1"};
+ const specs={
+ "Dishwashing":[["tayloz",2],["Selfonic",50],["Soda",7],["N70",50],["PP4",10],["K D",5],["parmatol",1],["Fragrance",1.5],["Colour200",1],["Salt",20],["Water 10l",1]],
+ "Hand Soap":[["N70",80],["PP4",20],["K D",20],["b.s",2],["parmatol",1],["Fragrance",4],["Colour200",1],["Salt",20],["Water 10l",1]],
+ "Laundry Gel":[["tayloz",2],["Selfonic",40],["Soda",7],["N70",40],["semasol",10],["anti foam",1.5],["parmatol",1],["Fragrance",4],["kapsul",2],["Colour200",1],["Salt",25],["Water 10l",1]],
+ "Comfort":[["candel wax",20],["balsam water",15],["parmatol",1],["Fragrance",5],["color",.2],["Water 10l",1]],
+ "Floor Cleaner":[["Selfonic",5],["Soda",1],["N70",10],["ipa",10],["parmatol",5],["Fragrance",5],["Colour200",1],["semasol",2.5],["Water 10l",1]],
+ "Pine Oil":[["RW",45],["Colour200",1],["Water 10l",1]],
+ "Javel":[["clore",1],["fragrance",1],["Water 10l",3]],
+ "Flash":[["acid",1],["phesforic acid",10],["semasol",5],["fragrance",1],["antra",2],["Water 10l",2.3]],
+ "Easy":[["N70",1],["ipa",10],["amoniac",2.5],["parmatol",1],["Fragrance",1],["Colour200",1],["Water 10l",1]],
+ "Rambo":[["n70",10],["citrec acid",10],["ipa",20],["pvp",25],["costic",25],["Colour200",1],["Water 10l",1]],
+ "Shampoo":[["n70",120],["kd",30],["bb4",30],["pq7",10],["glecryin",3],["parmatol",1],["Fragrance",4],["Colour200",1],["Salt",20],["Water 10l",1]],
+ "Balsam":[["candel wax",30],["balsam water",20],["parmatol",1],["Fragrance",3],["glecryn",1],["color",.2],["Water 10l",1]],
+ "Fresher":[["twin 80",20],["spertol 1",20],["Fragrance",20],["Water 10l",1]],
+ "Tab":[["stpp",8],["n70",50],["np9",40],["pvp",5],["ipa",1],["parmatol",1],["Fragrance",2],["Colour200",1],["Water 10l",1]],
+ "Car":[["Selfonic",35],["Soda",5],["N70",70],["PP4",15],["parmatol",1.5],["Fragrance",1.5],["Colour200",1],["Water 10l",1]]
+ };
+ const norm=x=>String(x||'').trim().toLowerCase();
+ function rawFor(name){
+   let key=alias[norm(name)]||norm(name);
+   let x=db.raw.find(a=>norm(a.name)===key);
+   if(!x){x={id:id(),name:key,qty:0,cost:prices[key]||0,unit:'kg'};db.raw.push(x)}
+   if(prices[key]!=null)x.cost=prices[key];
+   return x;
+ }
+ Object.entries(prices).forEach(([n,c])=>{let x=rawFor(n);x.cost=c});
+ Object.entries(specs).forEach(([pn,items])=>{
+   let p=db.products.find(x=>norm(x.name)===norm(pn)&&(+x.size||0)===0) || db.products.find(x=>norm(x.name).replace(/\s+(1|4|5)l$/,'')===norm(pn));
+   if(!p){p={id:id(),name:pn,price:0,cost:0,qty:0,size:0,formulaMaster:true};db.products.push(p)}
+   db.recipes=db.recipes.filter(x=>String(x.productId)!==String(p.id));
+   items.forEach(([rn,g])=>{let rr=rawFor(rn);db.recipes.push({id:id(),productId:p.id,rawId:rr.id,qtyPerLiter:g/1000})});
+ });
+ db._excelRecipes2025v1=true;save();
+})();
+
+
+/* PINE OIL RW FIX v59 */
+(function(){if(db._pineOilRwFix59)return;const n=x=>String(x||'').trim().toLowerCase();let p=db.products.find(x=>n(x.name).replace(/\s+(1|4|5)l$/,'')==='pine oil');let rw=db.raw.find(x=>n(x.name)==='rw');if(p&&rw){let old=db.recipes.find(x=>String(x.productId)===String(p.id)&&n(db.raw.find(r=>String(r.id)===String(x.rawId))?.name)==='pine oil');let existing=db.recipes.find(x=>String(x.productId)===String(p.id)&&String(x.rawId)===String(rw.id));if(old){if(existing)existing.qtyPerLiter=old.qtyPerLiter;else db.recipes.push({id:id(),productId:p.id,rawId:rw.id,qtyPerLiter:old.qtyPerLiter});db.recipes=db.recipes.filter(x=>x!==old)}}db._pineOilRwFix59=true;save()})();
+
+/* FINISHED STOCK MASTER v61 */
+(function(){if(db._finishedStockMaster61)return;["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"].forEach(n=>[1,4,5].forEach(sz=>ensureFinishedProduct(n,sz)));db._finishedStockMaster61=true;save()})();
+
+/* TRIAL RAW STOCK 50KG v63 */
+(function(){if(db._trialRaw50kg63)return;const packaging=/^(gallon 5l|gallon 4l|bottle 1l|label sticker)$/i;db.raw.forEach(r=>{if(!packaging.test(String(r.name||'').trim()))r.qty=Math.max(+r.qty||0,50)});let color=db.raw.find(r=>/^(color|colour|colour200|prepared color)$/i.test(String(r.name||'').trim()));if(!color){color={id:id(),name:'Color',cost:0,qty:50,unit:'kg'};db.raw.push(color)}else color.qty=Math.max(+color.qty||0,50);db._trialRaw50kg63=true;save()})();
+
+/* TRIAL PACKAGING 1000PCS v64 */
+(function(){if(db._trialPackaging1000v64)return;["Gallon 5L","Gallon 4L","Bottle 1L","Label Sticker"].forEach(n=>{let r=db.raw.find(x=>String(x.name||'').trim().toLowerCase()===n.toLowerCase());if(r)r.qty=Math.max(+r.qty||0,1000);else db.raw.push({id:id(),name:n,cost:0,qty:1000,unit:'pcs'})});db._trialPackaging1000v64=true;save()})();
+
+/* FIX FINISHED PRODUCT NAMES v67 */
+(function(){if(db._fixFinishedNames67)return;db.products.forEach(p=>{let sz=+(p.size||0);if([1,4,5].includes(sz)){let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();p.name=base+' '+sz+'L'}});db._fixFinishedNames67=true;save()})();
+
+/* REMOVE INVALID 5L v68 */
+(function(){if(db._removeInvalid5L68)return;const bad=['flash','javel','pine oil','shampoo','easy'];db.products=db.products.filter(p=>!(+(p.size||0)===5&&bad.includes(String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase())));db._removeInvalid5L68=true;save()})();
+
+/* CAR PACKAGING RULE v69 */
+(function(){if(db._carPackaging69)return;db.products=db.products.filter(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();return !(base==='car'&&[1,4,5].includes(+(p.size||0)))});[10,20].forEach(sz=>ensureFinishedProduct('Car',sz));[['Gallon 10L',1000],['Gallon 20L',1000]].forEach(([n,q])=>{let x=db.raw.find(r=>String(r.name||'').trim().toLowerCase()===n.toLowerCase());if(x)x.qty=Math.max(+x.qty||0,q);else db.raw.push({id:id(),name:n,cost:0,qty:q,unit:'pcs'})});db._carPackaging69=true;save()})();
+
+/* POS SIZE CLEANUP v70 */
+(function(){if(db._posSizeCleanup70)return;const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();let map={};db.products.forEach(p=>{let sz=+(p.size||0);if(![1,4,5,10,20].includes(sz))return;let base=baseOf(p.name),key=base.toLowerCase()+'|'+sz;p.name=base+' '+sz+'L';if(!map[key])map[key]=p;else{let keep=map[key],drop=p;keep.qty=(+keep.qty||0)+(+drop.qty||0);if(!keep.price&&drop.price)keep.price=drop.price;if(!keep.cost&&drop.cost)keep.cost=drop.cost;db.stockMoves.forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=keep.id});db.products=db.products.filter(x=>x!==drop)}});db._posSizeCleanup70=true;save()})();
+
+/* POS CLEAN ZERO LEGACY v73 */
+(function(){if(db._posCleanZeroLegacy73)return;const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();db.products=db.products.filter(p=>{let b=baseOf(p.name),sz=+(p.size||0);if(b==='car'&&[1,4,5].includes(sz))return false;return true});db._posCleanZeroLegacy73=true;save()})();
+
+/* CLEAN INVALID 5L POS v73 */
+(function(){if(db._cleanInvalid5L73)return;const no5=['flash','javel','pine oil','shampoo','easy','car'];db.products=db.products.filter(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();return !(+(p.size||0)===5&&no5.includes(base))});db._cleanInvalid5L73=true;save()})();
+
+/* POS CLEAN EMPTY DUPES v74 */
+(function(){if(db._posCleanEmptyDupes74)return;let d1=db.products.find(p=>String(p.name||'').trim().toLowerCase()==='dishwashing 1l'&&+(p.size||0)===5);if(d1){let d5=db.products.find(p=>String(p.name||'').trim().toLowerCase()==='dishwashing 5l'&&p!==d1);if(d5){d5.qty=(+d5.qty||0)+(+d1.qty||0);if(!d5.price&&d1.price)d5.price=d1.price;if(!d5.cost&&d1.cost)d5.cost=d1.cost;db.stockMoves.forEach(m=>{if(String(m.productId)===String(d1.id))m.productId=d5.id});db.products=db.products.filter(p=>p!==d1)}else d1.name='Dishwashing 5L'}db._posCleanEmptyDupes74=true;save()})();
+
+/* POS DUPLICATE CLEANUP v74 */
+(function(){if(db._posDuplicateCleanup74)return;const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();let groups={};db.products.filter(p=>[1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster).forEach(p=>{let k=baseOf(p.name).toLowerCase()+'|'+(+p.size||0);(groups[k]||(groups[k]=[])).push(p)});Object.values(groups).forEach(g=>{if(g.length<2)return;g.sort((a,b)=>(+b.qty||0)-(+a.qty||0));let keep=g[0];g.slice(1).forEach(drop=>{keep.qty=(+keep.qty||0)+(+drop.qty||0);if(!keep.price&&drop.price)keep.price=drop.price;if(!keep.cost&&drop.cost)keep.cost=drop.cost;[db.stockMoves,db.packings].forEach(arr=>arr.forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=keep.id}));db.products=db.products.filter(x=>x!==drop)});keep.name=baseOf(keep.name)+' '+(+keep.size)+'L'});db._posDuplicateCleanup74=true;save()})();
+
+/* EXACT SIZE CATALOG v76 */
+(function(){if(db._exactSizeCatalog76)return;const names=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab"];names.forEach(n=>[1,4].forEach(sz=>ensureFinishedProduct(n,sz)));["Dishwashing","Laundry Gel","Comfort","Floor Cleaner"].forEach(n=>ensureFinishedProduct(n,5));[10,20].forEach(sz=>ensureFinishedProduct("Car",sz));db.products=db.products.filter(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim(),sz=+(p.size||0);if(![1,4,5,10,20].includes(sz)||p.formulaMaster)return true;return allowedPackSizes(base).includes(sz)});db._exactSizeCatalog76=true;save()})();
+
+/* CANONICAL SIZE FIX v77 */
+(function(){if(db._canonicalSizeFix77)return;db.products.forEach(p=>{let sz=+(p.size||0);if([1,4,5,10,20].includes(sz)&&!p.formulaMaster){let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();p.name=base+' '+sz+'L'}});db._canonicalSizeFix77=true;save()})();
+
+/* DISHWASHING 5L HARD CLEAN v78 */
+(function(){if(db._dishwashing5HardClean78)return;const baseOf=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();let ds=db.products.filter(p=>baseOf(p.name)==='dishwashing'&&+(p.size||0)===5);if(ds.length){let keep=ds.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];keep.name='Dishwashing 5L';ds.filter(x=>x!==keep).forEach(drop=>{keep.qty=(+keep.qty||0)+(+drop.qty||0);[db.stockMoves,db.packings].forEach(arr=>arr.forEach(m=>{if(String(m.productId)===String(drop.id))m.productId=keep.id}));db.products=db.products.filter(x=>x!==drop)})}db._dishwashing5HardClean78=true;save()})();
+
+/* ENSURE REQUIRED 5L STOCKTAKE PRODUCTS v116 */
+(function(){
+ if(db._ensureRequired5L116)return;
+ const wanted=['Dishwashing','Fabric Softner','Laundry Gel','Floor Cleaner'];
+ wanted.forEach(name=>{
+   const aliases=name==='Fabric Softner'?['fabric softner','fabric softener','comfort']:[name.toLowerCase()];
+   let p=db.products.find(x=>+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));
+   if(p){p.name=name+' 5L';p.size=5}
+   else db.products.push({id:id(),name:name+' 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5});
+ });
+ db._ensureRequired5L116=true;save();
+})();
+
+/* REMOVE BAD DISHWASHING 1L-AS-5L RECORD v121 */
+(function(){
+ if(db._removeBadDish1As5v121)return;
+ const bad=(db.products||[]).filter(p=>!p.formulaMaster&&+(p.size||0)===5&&/^dishwashing\s+1l$/i.test(String(p.name||'').trim()));
+ bad.forEach(p=>{
+   db.products=db.products.filter(x=>String(x.id)!==String(p.id));
+   db.stockMoves=(db.stockMoves||[]).filter(x=>String(x.productId||'')!==String(p.id));
+ });
+ db._removeBadDish1As5v121=true;save();
+})();
+
+/* MATERIAL CATEGORIES v122 */
+(function(){if(db._materialCategories122)return;(db.raw||[]).forEach(r=>{if(!r.category)r.category=rawCategoryOf(r);if(!r.unit)r.unit=r.category==='Raw Materials'?'kg':'Piece'});db._materialCategories122=true;save()})();
+
+/* PLASTIC PACKAGING MASTER v134 */
+(function(){
+ if(db._plasticPackaging134)return;
+ const items=[
+  {name:'4L Gallon',cost:0.45},
+  {name:'5L Gallon',cost:0.35},
+  {name:'1L Bottle',cost:0.16}
+ ];
+ items.forEach(a=>{
+  let r=(db.raw||[]).find(x=>String(x.name||'').trim().toLowerCase()===a.name.toLowerCase());
+  if(!r)db.raw.push({id:id(),name:a.name,cost:a.cost,qty:0,category:'Plastic & Packaging',unit:'Piece'});
+  else{r.category='Plastic & Packaging';r.unit='Piece';if(!(+(r.cost||0)>0))r.cost=a.cost}
+ });
+ db._plasticPackaging134=true;save()
+})();
+
+/* TRIAL ALL FINISHED PRICE 5 v79 */
+(function(){if(db._trialAllFinishedPrice5v79)return;db.products.forEach(p=>{if([1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster)p.price=5});db._trialAllFinishedPrice5v79=true;save()})();
+</script>
+<style id="qa-fixes-20260924">
+.ppm-add,.ppm-edit{display:grid;gap:8px;align-items:center}.ppm-add{grid-template-columns:1.25fr .8fr 1fr 1fr}.ppm-edit{grid-template-columns:1.2fr 1fr .85fr auto auto}.ppm-edit input,.ppm-add input,.ppm-add select{width:100%;min-width:0}.tx-line{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.tx-meta{margin-top:4px}.status-void{background:#fff1f2;color:#be123c}.report-production{direction:ltr;text-align:left}
+@media(max-width:520px){.ppm-add{grid-template-columns:1fr 1fr}.ppm-edit{grid-template-columns:1fr 1fr}.ppm-edit .ppm-name{grid-column:1/-1}.ppm-edit button{width:100%}}
+</style>
+<script>
+/* QA FIX PACK — 2026-09-24 */
+function invNo(v){
+ if(!v)return'------';
+ if(v.displayNo)return String(v.displayNo).padStart(6,'0');
+ const all=(db.invoices||[]).slice().reverse(),n=all.findIndex(x=>String(x.id)===String(v.id))+1;
+ return String(Math.max(1,n)).padStart(6,'0');
+}
+function txTime(x){let t=String(x?.time||'');if(!t)return'';if(t.includes('T')){let d=new Date(t);if(!isNaN(d))return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}return t.slice(0,5)}
+(function qaMigrate(){
+ let changed=false;
+ (db.invoices||[]).slice().reverse().forEach((v,i)=>{if(!v.displayNo){v.displayNo=i+1;changed=true}});
+ (db.expenses||[]).forEach(e=>{if(e.payment&&e.payment!=='Credit'&&!(db.cashMoves||[]).some(m=>String(m.ref)===String(e.id)&&m.type==='expense')){db.cashMoves.unshift({id:id(),date:e.date||today(),time:e.time||new Date().toISOString(),type:'expense',method:e.payment,amount:-Math.abs(+e.amount||0),ref:e.id,note:e.name||'Expense'});changed=true}});
+ if(changed)save();
+})();
+const _qaGoHome=window.goHome;
+window.goHome=function(){
+ const title=document.querySelector('#app .title')?.textContent||'';
+ if(currentView==='settings'&&title&&title!=='Back Office'){settings();return}
+ _qaGoHome();
+};
+function purchasePriceMaster(){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'],grouped={};cats.forEach(c=>grouped[c]=[]);
+ (db.raw||[]).forEach(r=>{let c=rawCategoryOf(r);if(!grouped[c])c='Raw Materials';grouped[c].push(r)});
+ $('#app').innerHTML='<div class="title">Purchase Price Master</div><div class="panel"><div class="muted">Official purchase prices. Choose a category to view, add and edit items.</div></div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px">'+cats.map((c,i)=>'<button class="'+(i===0?'green':'')+'" id="ppmTab'+i+'" onclick="showPriceMasterCategory('+i+')" style="min-height:76px">'+c+'<br><small>'+grouped[c].length+' items</small></button>').join('')+'</div>'+cats.map((c,i)=>'<div id="ppmBox'+i+'" class="panel" style="display:'+(i===0?'block':'none')+'"><h3>'+c+'</h3><div class="ppm-add"><input id="ppmName'+i+'" placeholder="New item"><select id="ppmUnit'+i+'"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="ppmCost'+i+'" type="number" step=".001" min="0" placeholder="Unit Price $"><button class="green" onclick="addPriceMasterItem('+i+')">+ Add Item</button></div>'+grouped[c].map(r=>'<div class="item ppm-edit"><b class="ppm-name">'+r.name+'</b><input id="mp_'+r.id+'" type="number" step=".001" min="0" value="'+(+r.cost||0)+'" aria-label="Unit Price"><input id="min_'+r.id+'" type="number" step=".001" min="0" value="'+(+r.minStock||0)+'" aria-label="Minimum Stock"><button onclick="saveMasterPrice(\''+r.id+'\')">Save</button><button onclick="showPriceHistory(\''+r.id+'\')">History</button><div class="muted ppm-name">Unit: '+(r.unit||'kg')+' • first field = unit price, second = minimum stock</div></div>').join('')+'</div>').join('')+'<div id="priceHistoryBox"></div>';
+}
+function cashbox(){
+ let moves=db.cashMoves||[],tm=moves.filter(x=>x.date===today()),tin=tm.filter(x=>x.amount>0).reduce((a,x)=>a+(+x.amount||0),0),tout=Math.abs(tm.filter(x=>x.amount<0).reduce((a,x)=>a+(+x.amount||0),0)),bal=moves.reduce((a,x)=>a+(+x.amount||0),0);
+ $('#app').innerHTML='<div class="title">Cashbox / Cash Flow</div><div class="grid"><div class="kpi-card"><b>Today\\'s Cash In</b><div class="kpi">'+money(tin)+'</div></div><div class="kpi-card"><b>Today\\'s Cash Out</b><div class="kpi">'+money(tout)+'</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">'+money(bal)+'</div></div></div><div class="panel"><div class="row"><input id="cashDate" type="date" value="'+today()+'"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input id="cashNote" placeholder="Description"><button onclick="addCashMove()">Record</button></div></div><div class="panel"><b>Recent Transactions</b>'+moves.slice(0,60).map(x=>{let v=(db.invoices||[]).find(z=>String(z.id)===String(x.ref)),note=x.type==='sale'&&v?'Invoice #'+invNo(v):x.type==='collection'&&v?'Collect Invoice #'+invNo(v):x.note||x.type;return '<div class="item"><div class="tx-line"><b>'+note+'</b><b>'+(x.amount>=0?'+':'')+money(x.amount)+'</b></div><div class="muted tx-meta">'+x.date+(txTime(x)?' • '+txTime(x):'')+' • '+(x.method||'')+'</div></div>'}).join('')+'</div>';
+}
+function renderReturns(){let q=String($('#retSearch')?.value||'').toLowerCase(),list=(db.invoices||[]).filter(v=>!q||invNo(v).includes(q)||String(v.employeeName||'').toLowerCase().includes(q)).slice(0,100);$('#returnList').innerHTML='<div class="panel">'+list.map(v=>'<div class="item"><b>#'+invNo(v)+' — '+v.date+(txTime(v)?' • '+txTime(v):'')+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+(v.saleMode==='wholesale'?'Wholesale':'Retail')+' • '+(v.employeeName||'Direct Sale')+' • '+(v.items||[]).reduce((a,x)=>a+(+x.qty||0),0)+' Pack</div>'+(v.voided?'<span class="pill status-void">VOID • '+(v.voidDate||'')+(v.voidTime?' '+v.voidTime:'')+'</span>':'<button onclick="voidInvoice(\\''+v.id+'\\')">↩️ Void & Return to Stock</button>')+'</div>').join('')+'</div>'}
+function voidInvoice(i){
+ let v=db.invoices.find(x=>String(x.id)===String(i));if(!v||v.voided)return;if(!confirm('Void invoice and return quantities to stock?'))return;
+ (v.items||[]).forEach(it=>{let p=db.products.find(x=>String(x.id)===String(it.productId));if(p){p.qty=(+p.qty||0)+(+it.qty||0);db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'return',productId:p.id,name:p.name,qty:+it.qty||0,balance:p.qty,invoiceId:v.id})}});
+ const received=Math.max(0,+v.paid||0);
+ if(received>0)db.cashMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'void_refund',method:v.paymentMethod||'Cash',amount:-received,ref:v.id,note:'Void Invoice #'+invNo(v)});
+ v.voided=true;v.voidDate=today();v.voidTime=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});db.returns.unshift({id:id(),invoiceId:v.id,date:today(),time:new Date().toISOString(),amount:+v.total||0,employeeId:v.employeeId||''});save();returnsPage()
+}
+function invoiceView(i){
+ let v=db.invoices.find(x=>String(x.id)===String(i));if(!v)return;let due=Math.max(0,(+v.total||0)-(+v.paid||0)),items=v.items||[];
+ $('#app').innerHTML='<div class="invoice-wrap"><div class="invoice-paper"><div class="invoice-brand"><div><div class="invoice-logo">DROPS</div><div class="invoice-sub">DETERGENTS</div></div><div class="invoice-title">Sales Invoice</div></div><div class="invoice-meta"><div><b>Invoice No.</b><span>#'+invNo(v)+'</span></div><div><b>Date</b><span>'+String(v.date||'').split('-').reverse().join('/')+' – '+txTime(v)+'</span></div></div><div class="invoice-party">'+(v.customerName?'<div><b>Customer:</b> '+v.customerName+'</div>':'')+(v.employeeName?'<div><b>Distributor:</b> '+v.employeeName+'</div>':'')+'<div><b>Sale Type:</b> '+(v.saleMode==='wholesale'?'Wholesale':'Retail')+'</div><div><b>Payment Method:</b> '+(v.paymentMethod||'Cash')+'</div>'+(v.voided?'<div><b>STATUS: VOID</b></div>':'')+'</div><div class="invoice-table"><div class="invoice-row invoice-head"><span>Item</span><span>Quantity</span><span>Price</span><span>Total</span></div>'+items.map(x=>'<div class="invoice-row"><span>'+x.name+'</span><span>'+x.qty+'</span><span>'+money(x.price)+'</span><span>'+money((+x.price||0)*(+x.qty||0))+'</span></div>').join('')+'</div><div class="invoice-totals"><div><span>Total</span><b>'+money(v.total)+'</b></div><div><span>Paid</span><b>'+money(v.paid||0)+'</b></div><div class="invoice-due"><span>Balance</span><b>'+money(due)+'</b></div></div></div><div class="invoice-actions noPrint"><button onclick="go(\\'sale\\')">＋ New Sale</button><button class="orange" onclick="print()">🖨 Print Invoice</button></div></div>';
+}
+function accountDetail(i){let p=db.people.find(x=>String(x.id)===String(i));if(!p)return;let inv=(db.invoices||[]).filter(v=>!v.voided&&String(v.customerId)===String(p.id)),pur=(db.purchases||[]).filter(x=>String(x.supplier||'').toLowerCase()===String(p.name).toLowerCase());$('#app').innerHTML='<div class="title">Account Statement — '+p.name+'</div><div class="panel"><b>'+p.type+'</b><div class="muted">'+(p.phone||'')+'</div></div><div class="panel"><b>Transactions</b>'+(p.type==='Customer'?inv.map(v=>'<div class="item"><div class="tx-line"><b>Invoice #'+invNo(v)+'</b><span>'+money(v.total)+'</span></div><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+' • '+(v.saleMode==='wholesale'?'Wholesale':'Retail')+' • Paid '+money(v.paid||0)+' • Balance '+money(Math.max(0,v.total-(v.paid||0)))+'</div></div>').join(''):pur.map(x=>'<div class="item">'+(x.description||x.item||x.raw||x.name||'Purchase')+'<span style="float:left">'+money((+x.total||0)||(+x.qty||0)*(+x.cost||0))+'</span><div class="muted">'+(x.date||'')+'</div></div>').join(''))+'</div>'}
 function renderDetailedReports(){
  const from=$('#repFrom')?.value||today(),to=$('#repTo')?.value||today(),inv=(db.invoices||[]).filter(x=>!x.voided&&x.date>=from&&x.date<=to),ex=(db.expenses||[]).filter(x=>x.date>=from&&x.date<=to),batches=(db.batches||[]).filter(x=>x.date>=from&&x.date<=to),packs=(db.packings||[]).filter(x=>x.date>=from&&x.date<=to);
  const sales=inv.reduce((a,x)=>a+(+x.total||0),0),expensesTotal=ex.reduce((a,x)=>a+(+x.amount||0),0),gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-(+i.cost||0))*(+i.qty||0),0),0),net=gross-expensesTotal,items=inv.flatMap(v=>(v.items||[]).map(i=>({...i,date:v.date,invoiceId:v.id}))),units=items.reduce((a,i)=>a+(+i.qty||0),0);
