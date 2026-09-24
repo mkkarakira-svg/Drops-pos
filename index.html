@@ -384,7 +384,7 @@ function posSellProducts(){return db.products.filter(p=>{let base=String(p.name|
 function posSizeFilter(sz,btn){window._posSize=sz;document.querySelectorAll('.pos-size-tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderPOSProducts()}
 function salePrice(p){return window._saleMode==='wholesale'?(+(p.wholesalePrice||0)>0?+p.wholesalePrice:+p.price):+p.price}
 function setSaleMode(mode){window._saleMode=mode==='wholesale'?'wholesale':'retail';let r=$('#retailModeBtn'),w=$('#wholesaleModeBtn');if(r)r.classList.toggle('active',window._saleMode==='retail');if(w)w.classList.toggle('active',window._saleMode==='wholesale');renderPOSProducts();renderCart()}
-function renderPOSProducts(){let q=String($('#posSearch')?.value||'').trim().toLowerCase(),sz=window._posSize||'all',approved5=['dishwashing','laundry gel','comfort','fabric softner','fabric softener','floor cleaner'],ps=posSellProducts().filter(p=>{let label=String(p.name||''),m=label.match(/\s+(1|4|5|10|20)L\s*$/i),shownSize=m?+m[1]:+(p.size||0),base=label.replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();if(+sz===5)return approved5.includes(base)&&+(p.size||0)===5;if(sz==='all')return allowedPackSizes(base).includes(+(p.size||0));return shownSize===+sz&&allowedPackSizes(base).includes(shownSize)}).filter(p=>!q||String(p.name).toLowerCase().includes(q));$('#posProducts').innerHTML=ps.length?ps.map(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim(),displaySize=(+sz===5?5:(String(p.name||'').match(/\s+(1|4|5|10|20)L\s*$/i)?+String(p.name).match(/\s+(1|4|5|10|20)L\s*$/i)[1]:+(p.size||0)));return `<button class="pos-product ${(+p.qty||0)<=0?'out':''}" onclick="posQuickAdd('${p.id}')"><div class="pos-prod-name">${base}</div><div class="pos-prod-meta"><span>${displaySize}L</span><b>${money(salePrice(p))}</b></div><small>Stock ${+p.qty||0}</small></button>`}).join(''):'<div class="pos-empty">No products for this selection</div>'}
+function renderPOSProducts(){let q=String($('#posSearch')?.value||'').trim().toLowerCase(),sz=window._posSize||'all',approved5=['dishwashing','laundry gel','comfort','fabric softner','fabric softener','floor cleaner'],ps=posSellProducts().filter(p=>{let label=String(p.name||''),m=label.match(/\s+(1|4|5|10|20)L\s*$/i),shownSize=m?+m[1]:+(p.size||0),base=label.replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();if(+sz===5)return approved5.includes(base)&&+(p.size||0)===5;if(sz==='all')return allowedPackSizes(base).includes(+(p.size||0));return shownSize===+sz&&allowedPackSizes(base).includes(shownSize)}).filter(p=>!q||String(p.name).toLowerCase().includes(q));$('#posProducts').innerHTML=ps.length?ps.map(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim(),displaySize=(+sz===5?5:(String(p.name||'').match(/\s+(1|4|5|10|20)L\s*$/i)?+String(p.name).match(/\s+(1|4|5|10|20)L\s*$/i)[1]:+(p.size||0)));return `<button type="button" class="pos-product ${(+p.qty||0)<=0?'out':''}" data-pos-product-id="${p.id}"><div class="pos-prod-name">${base}</div><div class="pos-prod-meta"><span>${displaySize}L</span><b>${money(salePrice(p))}</b></div><small>Stock ${+p.qty||0}</small></button>`}).join(''):'<div class="pos-empty">No products for this selection</div>'}
 function posQuickAdd(pid){let p=db.products.find(x=>String(x.id)===String(pid));if(!p)return;if((+p.qty||0)<=0)return alert('This product is out of stock');cart[p.id]=(cart[p.id]||0)+1;renderCart()}
 function cartAdd(){let i=$('#sp')?.value,q=+$('#sq')?.value||1;if(!i)return;cart[i]=(cart[i]||0)+q;renderCart()}
 function cartQty(pid,d){let p=db.products.find(x=>String(x.id)===String(pid)),v=(cart[pid]||0)+d;if(v<=0)delete cart[pid];else if(p&&v<=p.qty)cart[pid]=v;else if(p)alert('Available only '+p.qty);renderCart()}
@@ -1331,5 +1331,20 @@ function voidInvoice(i){
  v.voided=true;v.voidDate=today();v.voidTime=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
  db.returns.unshift({id:id(),invoiceId:v.id,date:today(),time:new Date().toISOString(),amount:+v.total||0,employeeId:v.employeeId||''});save();returnsPage();
 }
+</script>
+
+<script>
+/* Stable POS product tap handler */
+document.addEventListener('click',function(e){
+ var b=e.target.closest&&e.target.closest('[data-pos-product-id]');
+ if(!b)return;
+ e.preventDefault();
+ var pid=b.getAttribute('data-pos-product-id');
+ var p=(db.products||[]).find(function(x){return String(x.id)===String(pid)});
+ if(!p)return;
+ if((+p.qty||0)<=0){alert('This product is out of stock');return;}
+ cart[pid]=(cart[pid]||0)+1;
+ renderCart();
+});
 </script>
 </body></html>
