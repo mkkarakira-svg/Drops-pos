@@ -2338,6 +2338,16 @@ function openInvoiceCount(){
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div id="invoiceBreakHost"></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
  document.getElementById('invoiceBreakHost').appendChild(copy);
+ const rows=[...copy.querySelectorAll('.item')];
+ const reportInvoices=(db.invoices||[]).filter(v=>!v.voided).slice().reverse();
+ rows.forEach((row,i)=>{
+   row.style.cursor='pointer';
+   row.addEventListener('click',function(e){
+     e.preventDefault(); e.stopPropagation();
+     const v=reportInvoices[i];
+     if(v) invoiceView(String(v.id));
+   },true);
+ });
 }
 const _reportsOriginal=reports;
 reports=function(){
