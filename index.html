@@ -2426,20 +2426,4 @@ document.addEventListener('click',function(e){
 })();
 </script>
 
-<script>
-/* RECEIVABLES MINIMAL STABLE VIEW */
-window.receivablesPage=function(){
- var app=document.getElementById('app'); if(!app)return;
- var list=(db.invoices||[]).filter(function(v){return !v.voided && Number(v.paid||0)<Number(v.total||0);});
- var total=list.reduce(function(s,v){return s+(Number(v.total||0)-Number(v.paid||0));},0);
- var html='<div class="title">Receivables & Collections</div>';
- html+='<div class="panel"><div class="item"><b>Total Open Receivables</b><span style="float:left"><b>'+money(total)+'</b></span></div></div>';
- html+='<div class="panel"><b>Open Invoices</b>';
- if(!list.length) html+='<div class="muted">No open receivables</div>';
- list.forEach(function(v){
-   html+='<div class="item"><b>Invoice #'+invNo(v)+'</b><span style="float:left"><b>'+money(Number(v.total||0)-Number(v.paid||0))+'</b></span><div class="muted">'+String(v.date||'')+' • '+String(v.employeeName||'Direct Sale')+'</div></div>';
- });
- html+='</div>';
- app.innerHTML=html;
-};
-</script></body></html>
+</body></html>
