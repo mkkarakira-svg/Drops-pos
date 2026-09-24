@@ -2410,22 +2410,19 @@ window.invoiceView=function(i){
 <script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
- const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
- if(!src){alert('Invoice list not ready');return;}
- const copy=src.cloneNode(true);
- const app=document.getElementById('app');
- app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div id="invoiceBreakHost"></div>';
- document.getElementById('invoiceBreakBack').onclick=reports;
- document.getElementById('invoiceBreakHost').appendChild(copy);
- /* Rebind cloned invoice rows: cloneNode does not preserve JS event listeners. */
- var rows=copy.querySelectorAll('.item');
  var list=(db.invoices||[]).filter(function(x){return !x.voided;});
- rows.forEach(function(row,idx){
-   var v=list[idx];
-   if(!v)return;
+ var app=document.getElementById('app');
+ app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b><div id="invoiceBreakRows"></div></div>';
+ document.getElementById('invoiceBreakBack').onclick=reports;
+ var host=document.getElementById('invoiceBreakRows');
+ list.forEach(function(v){
+   var row=document.createElement('div');
+   row.className='item';
    row.style.cursor='pointer';
    row.style.touchAction='manipulation';
-   row.onclick=function(e){e.preventDefault();e.stopPropagation();invoiceView(v.id);};
+   row.innerHTML='<b>'+String(v.date||'')+' — '+money(v.total)+'</b><div class="muted">'+(v.items||[]).map(function(i){return (i.name||'Product')+' × '+(+i.qty||0)}).join(' • ')+'</div>';
+   row.addEventListener('click',function(){ window.invoiceView(v.id); });
+   host.appendChild(row);
  });
 }
 const _reportsOriginal=reports;
