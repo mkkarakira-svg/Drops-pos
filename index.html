@@ -2346,16 +2346,21 @@ function openInvoiceCount(){
 const _reportsOriginal=reports;
 reports=function(){
  _reportsOriginal();
- window._invoiceBreakFrom=document.getElementById('repFrom')?.value||today();
- window._invoiceBreakTo=document.getElementById('repTo')?.value||today();
  const box=document.getElementById('detailedReports');
  if(!box)return;
  const cards=box.querySelectorAll('.grid .card');
  if(cards.length>1){
-   const old=cards[1], fresh=old.cloneNode(true);
-   fresh.style.cursor='pointer'; fresh.style.touchAction='manipulation';
-   fresh.onclick=openInvoiceCount;
-   old.parentNode.replaceChild(fresh,old);
+   cards[1].style.cursor='pointer';
+   cards[1].style.touchAction='manipulation';
  }
-};</script>
+};
+document.addEventListener('click',function(e){
+ const card=e.target.closest&&e.target.closest('#detailedReports .grid .card');
+ if(!card)return;
+ const cards=[...document.querySelectorAll('#detailedReports .grid .card')];
+ if(cards.indexOf(card)===1){
+   e.preventDefault(); e.stopPropagation();
+   openInvoiceCount();
+ }
+},true);</script>
 </body></html>
