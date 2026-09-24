@@ -2333,30 +2333,11 @@ function renderDetailedReports(){
 function openInvoiceCount(){
  const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
  if(!src){alert('Invoice list not ready');return;}
- const sourceRows=[...src.querySelectorAll('.item')];
- const prepared=sourceRows.map(r=>{
-   const oc=r.getAttribute('onclick')||'';
-   const m=oc.match(/invoiceView\(['"]?([^'")]+)['"]?\)/);
-   return {html:r.innerHTML,id:m?m[1]:''};
- });
+ const copy=src.cloneNode(true);
  const app=document.getElementById('app');
- app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b><div id="invoiceBreakHost"></div></div>';
+ app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div id="invoiceBreakHost"></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
- const host=document.getElementById('invoiceBreakHost');
- prepared.forEach((r,i)=>{
-   const row=document.createElement('div'); row.className='item'; row.style.cursor='pointer'; row.innerHTML=r.html;
-   const v=(db.invoices||[]).find(x=>String(x.id)===String(r.id));
-   if(v){
-     const b=row.querySelector('b'); if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
-     const meta=row.querySelector('.muted'); if(meta)meta.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
-     row.onclick=function(){ invoiceView(String(v.id)); };
-   } else {
-     const candidates=(db.invoices||[]).filter(x=>!x.voided).slice().reverse();
-     const fallback=candidates[i];
-     if(fallback)row.onclick=function(){ invoiceView(String(fallback.id)); };
-   }
-   host.appendChild(row);
- });
+ document.getElementById('invoiceBreakHost').appendChild(copy);
 }
 const _reportsOriginal=reports;
 reports=function(){
@@ -2378,21 +2359,4 @@ document.addEventListener('click',function(e){
    openInvoiceCount();
  }
 },true);</script>
-
-<script>
-/* SIMPLE INVOICE BACK FIX */
-(function(){
- const baseInvoiceView=invoiceView;
- invoiceView=function(i){
-   baseInvoiceView(i);
-   const actions=document.querySelector('.invoice-actions');
-   if(actions){
-     const back=document.createElement('button');
-     back.textContent='← Back to Invoice List';
-     back.onclick=function(){ reports(); setTimeout(openInvoiceCount,0); };
-     actions.insertBefore(back,actions.firstChild);
-   }
- };
-})();
-</script>
 </body></html>
