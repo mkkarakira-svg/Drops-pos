@@ -2331,28 +2331,13 @@ function renderDetailedReports(){
 <script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
- const reportBox=document.getElementById('detailedReports');
- const panels=reportBox?[...reportBox.querySelectorAll('.panel')]:[];
- const src=panels.find(p=>p.textContent.includes('Invoice Details'));
- const sourceRows=src?[...src.querySelectorAll('.item')]:[];
+ const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
+ if(!src){alert('Invoice list not ready');return;}
+ const copy=src.cloneNode(true);
  const app=document.getElementById('app');
- app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b><div id="invoiceBreakList"></div></div>';
+ app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div id="invoiceBreakHost"></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
- const box=document.getElementById('invoiceBreakList');
- const visible=(db.invoices||[]).filter(v=>!v.voided).slice().reverse();
- sourceRows.forEach((srcRow,i)=>{
-   const row=srcRow.cloneNode(true); row.style.cursor='pointer';
-   const v=visible[i];
-   if(v){
-     const b=row.querySelector('b');
-     if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
-     const m=row.querySelector('.muted');
-     if(m)m.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
-     row.onclick=function(){invoiceView(String(v.id));};
-   }
-   box.appendChild(row);
- });
- if(!sourceRows.length)box.innerHTML='<div class="muted">No invoices found</div>';
+ document.getElementById('invoiceBreakHost').appendChild(copy);
 }
 const _reportsOriginal=reports;
 reports=function(){
