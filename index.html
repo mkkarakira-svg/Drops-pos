@@ -406,7 +406,7 @@ function invoiceView(i){
   <div class="invoice-actions noPrint"><button onclick="go('sale')">＋ New Sale</button><button class="orange" onclick="print()">🖨 Print Invoice</button></div>
  </div>`;
 }
-function invoices(){$('#app').innerHTML=`<div class="title">Invoices</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(${v.id})"><b>#${invNo(v)}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'No invoices'}</div>`}
+function invoices(){$('#app').innerHTML=`<div class="title">Invoices</div><div class="panel">${db.invoices.map(v=>`<div class="item" onclick="invoiceView(\'${v.id}\')"><b>#${invNo(v)}</b> — ${v.date}<span style="float:left">${money(v.total)}</span></div>`).join('')||'No invoices'}</div>`}
 function rawCategoryOf(r){
  if(r.category)return r.category;
  let n=String(r.name||'').toLowerCase();
@@ -696,7 +696,7 @@ function reportDrill(type){
  var ba=(db.batches||[]).filter(function(e){return e.date>=from&&e.date<=to});
  var items=[];inv.forEach(function(v){(v.items||[]).forEach(function(i){items.push(i)})});
  var title='',rows=[];
- if(type==='sales'||type==='invoices'){title=type==='sales'?'Sales Breakdown':'Invoice Breakdown';rows=inv.map(function(v){return '<div class="item" onclick="invoiceView('+v.id+')"><b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+'</div></div>'})}
+ if(type==='sales'||type==='invoices'){title=type==='sales'?'Sales Breakdown':'Invoice Breakdown';rows=inv.map(function(v){return '<div class="item" onclick="invoiceView(\''+v.id+'\')"><b>Invoice #'+invNo(v)+'</b><span style="float:left">'+money(v.total)+'</span><div class="muted">'+v.date+'</div></div>'})}
  if(type==='units'||type==='liters'){title='Packs Sold Breakdown';var m={};items.forEach(function(i){var n=i.name||'منتج',mt=String(n).match(/(1|4|5|10|20)L/i),sz=mt?Number(mt[1]):0;if(!m[n])m[n]={q:0,sz:sz};m[n].q+=Number(i.qty)||0});Object.keys(m).forEach(function(n){var v=m[n],unit=v.sz===1?'Bottle':'Gallon';rows.push('<div class="item"><b>'+n+'</b><span style="float:left">'+v.q+' '+unit+'</span></div>')})}
  if(type==='gross'){title='Gross Profit Breakdown';rows=items.map(function(i){var p=((Number(i.price)||0)-(Number(i.cost)||0))*(Number(i.qty)||0);return '<div class="item"><b>'+i.name+' × '+i.qty+'</b><span style="float:left">'+money(p)+'</span><div class="muted">Sales '+money(i.price)+' • Cost '+money(i.cost)+'</div></div>'})}
  if(type==='expenses'){title='تفصيل Expenses';rows=ex.map(function(e){return '<div class="item"><b>'+(e.name||e.category||'مصروف')+'</b><span style="float:left">'+money(e.amount)+'</span><div class="muted">'+e.date+'</div></div>'})}
