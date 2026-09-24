@@ -2447,34 +2447,30 @@ document.addEventListener('click',function(e){
 </script>
 
 <script>
-/* CASHBOX DISPLAY NORMALIZER */
+/* CASHBOX SAFE DISPLAY PATCH */
 (function(){
- const _cashboxDisplay=cashbox;
+ const original=cashbox;
  cashbox=function(){
-   _cashboxDisplay();
-   const invs=db.invoices||[];
+   original();
    const moves=(db.cashMoves||[]).slice(0,60);
-   const rows=[...document.querySelectorAll('#app .panel .item')];
+   const rows=[...document.querySelectorAll('#app .item')].slice(-moves.length);
    rows.forEach(function(row,i){
      const x=moves[i]; if(!x)return;
      const raw=String(x.note||'');
-     let v=invs.find(z=>String(z.id)===String(x.ref));
-     if(!v){
-       const nums=raw.match(/\d{10,}/g)||[];
-       for(const n of nums){v=invs.find(z=>String(z.id)===String(n));if(v)break;}
-     }
+     const ref=String(x.ref||'');
+     const nums=(raw+' '+ref).match(/\d{10,}/g)||[];
+     let v=null;
+     for(const n of nums){v=(db.invoices||[]).find(z=>String(z.id)===n);if(v)break;}
+     if(!v&&ref)v=(db.invoices||[]).find(z=>String(z.id)===ref);
      if(!v)return;
-     const bs=row.querySelectorAll('b');
-     const label=(x.type==='collection'||/collect/i.test(raw))?'Collect Invoice #':'Invoice #';
-     if(bs.length>=2){
-       bs[0].textContent=label+invNo(v);
-     }else if(bs.length===1){
-       bs[0].textContent=label+invNo(v);
-     }
+     const oldNum=nums[0]||ref;
+     const newLabel=((x.type==='collection'||/collect/i.test(raw))?'Collect Invoice #':'Invoice #')+invNo(v);
+     row.innerHTML=row.innerHTML.replace(new RegExp('(Collect\\s+)?Invoice\\s*#?'+oldNum,'i'),newLabel)
+       .replace(new RegExp('فاتورة\\s*#?'+oldNum,'i'),newLabel);
      const meta=row.querySelector('.muted');
-     if(meta){
+     if(meta&&!/\d{1,2}:\d{2}/.test(meta.textContent)){
        const t=txTime(x)||txTime(v);
-       meta.textContent=(x.date||v.date||'')+(t?' • '+t:'')+' • '+(x.method||v.paymentMethod||'');
+       if(t)meta.textContent=(x.date||v.date||'')+' • '+t+' • '+(x.method||v.paymentMethod||'');
      }
    });
  };
