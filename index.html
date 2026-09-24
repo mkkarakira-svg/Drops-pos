@@ -2446,4 +2446,37 @@ document.addEventListener('click',function(e){
 })();
 </script>
 
-</body></html>
+<script>
+/* CASHBOX DISPLAY NORMALIZER */
+(function(){
+ const _cashboxDisplay=cashbox;
+ cashbox=function(){
+   _cashboxDisplay();
+   const invs=db.invoices||[];
+   const moves=(db.cashMoves||[]).slice(0,60);
+   const rows=[...document.querySelectorAll('#app .panel .item')];
+   rows.forEach(function(row,i){
+     const x=moves[i]; if(!x)return;
+     const raw=String(x.note||'');
+     let v=invs.find(z=>String(z.id)===String(x.ref));
+     if(!v){
+       const nums=raw.match(/\d{10,}/g)||[];
+       for(const n of nums){v=invs.find(z=>String(z.id)===String(n));if(v)break;}
+     }
+     if(!v)return;
+     const bs=row.querySelectorAll('b');
+     const label=(x.type==='collection'||/collect/i.test(raw))?'Collect Invoice #':'Invoice #';
+     if(bs.length>=2){
+       bs[0].textContent=label+invNo(v);
+     }else if(bs.length===1){
+       bs[0].textContent=label+invNo(v);
+     }
+     const meta=row.querySelector('.muted');
+     if(meta){
+       const t=txTime(x)||txTime(v);
+       meta.textContent=(x.date||v.date||'')+(t?' • '+t:'')+' • '+(x.method||v.paymentMethod||'');
+     }
+   });
+ };
+})();
+</script></body></html>
