@@ -1117,6 +1117,16 @@ history.replaceState({dropsView:currentView||'home'},'',location.href);
 @media(max-width:520px){.ppm-add{grid-template-columns:1fr 1fr}.ppm-edit{grid-template-columns:1fr 1fr}.ppm-edit .ppm-name{grid-column:1/-1}.ppm-edit button{width:100%}}
 </style>
 <script>
+/* STABLE HELPERS — loaded before legacy QA block */
+function invNo(v){
+ if(!v)return '------';
+ if(v.displayNo)return String(v.displayNo).padStart(6,'0');
+ var all=(db.invoices||[]).slice().reverse();
+ var n=all.findIndex(function(x){return String(x.id)===String(v.id)})+1;
+ return String(Math.max(1,n)).padStart(6,'0');
+}
+</script>
+<script>
 /* QA FIX PACK — 2026-09-24 */
 function invNo(v){
  if(!v)return'------';
