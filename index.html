@@ -2376,4 +2376,28 @@ document.addEventListener('click',function(e){
    openInvoiceCount();
  }
 },true);</script>
+<script>
+/* CONTEXTUAL BACK FIX */
+(function(){
+ const oldInvoiceView=invoiceView;
+ invoiceView=function(i){
+   window._dropsSubpage='invoice';
+   oldInvoiceView(i);
+ };
+ const oldOpenInvoiceCount=openInvoiceCount;
+ openInvoiceCount=function(){
+   window._dropsSubpage='invoiceBreakdown';
+   oldOpenInvoiceCount();
+ };
+ window.addEventListener('popstate',function(e){
+   if(window._dropsSubpage==='invoice'){
+     window._dropsSubpage='invoiceBreakdown';
+     setTimeout(openInvoiceCount,0);
+   }else if(window._dropsSubpage==='invoiceBreakdown'){
+     window._dropsSubpage='';
+     setTimeout(reports,0);
+   }
+ },true);
+})();
+</script>
 </body></html>
