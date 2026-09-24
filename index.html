@@ -2425,21 +2425,5 @@ document.addEventListener('click',function(e){
  };
 })();
 </script>
-<script>
-/* CASHBOX LEGACY REFERENCE DISPLAY FIX */
-(function(){
- cashbox=function(){
-  let moves=db.cashMoves||[],tm=moves.filter(x=>x.date===today()),tin=tm.filter(x=>x.amount>0).reduce((a,x)=>a+(+x.amount||0),0),tout=Math.abs(tm.filter(x=>x.amount<0).reduce((a,x)=>a+(+x.amount||0),0)),bal=moves.reduce((a,x)=>a+(+x.amount||0),0);
-  function linkedInvoice(x){
-   let v=(db.invoices||[]).find(z=>String(z.id)===String(x.ref));
-   if(!v){
-    const m=String(x.note||'').match(/Invoice\s*#(\d+)/i);
-    if(m)v=(db.invoices||[]).find(z=>String(z.id)===String(m[1]));
-   }
-   return v;
-  }
-  $('#app').innerHTML='<div class="title">Cashbox / Cash Flow</div><div class="grid"><div class="kpi-card"><b>Today\'s Cash In</b><div class="kpi">'+money(tin)+'</div></div><div class="kpi-card"><b>Today\'s Cash Out</b><div class="kpi">'+money(tout)+'</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">'+money(bal)+'</div></div></div><div class="panel"><div class="row"><input id="cashDate" type="date" value="'+today()+'"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input id="cashNote" placeholder="Description"><button onclick="addCashMove()">Record</button></div></div><div class="panel"><b>Recent Transactions</b>'+moves.slice(0,60).map(x=>{let v=linkedInvoice(x),note=v?(x.type==='collection'?'Collect Invoice #':'Invoice #')+invNo(v):(x.note||x.type);return '<div class="item"><div class="tx-line"><b>'+note+'</b><b>'+(x.amount>=0?'+':'')+money(x.amount)+'</b></div><div class="muted tx-meta">'+x.date+(txTime(x)?' • '+txTime(x):'')+' • '+(x.method||'')+'</div></div>'}).join('')+'</div>';
- };
-})();
-</script>
+
 </body></html>
