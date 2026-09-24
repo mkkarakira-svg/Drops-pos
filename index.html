@@ -257,8 +257,12 @@ html,body{min-height:100%;}
 nav.nav{box-sizing:border-box!important;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;height:calc(86px + env(safe-area-inset-bottom,0px))!important;min-height:calc(86px + env(safe-area-inset-bottom,0px))!important;z-index:9999!important;}
 @supports(padding:max(0px)){nav.nav{padding-bottom:max(18px,env(safe-area-inset-bottom,0px))!important;height:auto!important;min-height:92px!important;}}
 </style>
+<style id="bottom-nav-lift-v425">
+nav.nav{bottom:18px!important;margin-bottom:18px!important;}
+body{padding-bottom:18px!important;}
+</style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.2.4</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.2.5</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
