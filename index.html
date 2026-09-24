@@ -2334,24 +2334,26 @@ function openInvoiceCount(){
  const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
  if(!src){alert('Invoice list not ready');return;}
  const sourceRows=[...src.querySelectorAll('.item')];
+ const prepared=sourceRows.map(r=>{
+   const oc=r.getAttribute('onclick')||'';
+   const m=oc.match(/invoiceView\(['"]?([^'")]+)['"]?\)/);
+   return {html:r.innerHTML,id:m?m[1]:''};
+ });
  const app=document.getElementById('app');
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel"><b>Invoice Details</b><div id="invoiceBreakHost"></div></div>';
  document.getElementById('invoiceBreakBack').onclick=reports;
  const host=document.getElementById('invoiceBreakHost');
- sourceRows.forEach((sourceRow,i)=>{
-   const row=sourceRow.cloneNode(true);
-   row.style.cursor='pointer';
-   const originalClick=sourceRow.getAttribute('onclick')||'';
-   const m=originalClick.match(/invoiceView\(['"]?([^'")]+)['"]?\)/);
-   if(m){
-     const invoiceId=m[1];
-     row.removeAttribute('onclick');
-     row.addEventListener('click',function(){ invoiceView(invoiceId); });
-     const v=(db.invoices||[]).find(x=>String(x.id)===String(invoiceId));
-     if(v){
-       const b=row.querySelector('b'); if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
-       const meta=row.querySelector('.muted'); if(meta)meta.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
-     }
+ prepared.forEach((r,i)=>{
+   const row=document.createElement('div'); row.className='item'; row.style.cursor='pointer'; row.innerHTML=r.html;
+   const v=(db.invoices||[]).find(x=>String(x.id)===String(r.id));
+   if(v){
+     const b=row.querySelector('b'); if(b)b.textContent='Invoice #'+invNo(v)+' — '+money(v.total);
+     const meta=row.querySelector('.muted'); if(meta)meta.innerHTML=(v.date||'')+(txTime(v)?' • '+txTime(v):'')+'<br>'+(v.items||[]).map(x=>x.name+' × '+(+x.qty||0)).join(' • ');
+     row.onclick=function(){ invoiceView(String(v.id)); };
+   } else {
+     const candidates=(db.invoices||[]).filter(x=>!x.voided).slice().reverse();
+     const fallback=candidates[i];
+     if(fallback)row.onclick=function(){ invoiceView(String(fallback.id)); };
    }
    host.appendChild(row);
  });
