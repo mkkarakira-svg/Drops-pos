@@ -808,9 +808,11 @@ function historyReport(){
   ...db.stockMoves.map(x=>({...x,kind:'Finished Stock'})),
   ...db.purchases.map(x=>({...x,kind:'Purchases',time:x.time||x.date})),
   ...db.batches.map(x=>({...x,kind:'Batch',time:x.time||x.date,qty:x.liters,name:x.product})),
-  ...db.expenses.map(x=>({...x,kind:'مصروف',time:x.time||x.date,qty:x.amount}))
+  ...db.expenses.map(x=>({...x,kind:'Expense',time:x.time||x.date,qty:x.amount}))
  ].filter(x=>x.date>=from&&x.date<=to).sort((a,b)=>String(b.time||b.date).localeCompare(String(a.time||a.date)));
- $('#app').innerHTML='<div class="title">Movement History</div><div class="panel"><div class="row"><input id="histFrom" type="date" value="'+from+'"><input id="histTo" type="date" value="'+to+'"><button onclick="historyReport()">View</button></div></div><div class="panel">'+(all.map(x=>'<div class="item"><b>'+x.kind+'</b> — '+(x.name||'')+'<span style="float:left">'+(x.qty!==undefined?x.qty:'')+'</span><div class="muted">'+x.date+' • '+(x.type||'')+'</div></div>').join('')||'No movements in selected period')+'</div>';
+ function prettyType(t){return ({sale:'Sale',return:'Return',production_pack:'Production / Packing',stock_in:'Stock In',price_edit:'Price Edit',purchase:'Purchase'}[t]||String(t||'').replaceAll('_',' '))}
+ function prettyDate(d){let a=String(d||'').split('-');return a.length===3?a[2]+'/'+a[1]+'/'+a[0]:String(d||'')}
+ $('#app').innerHTML='<div class="title">Movement History</div><div class="panel"><div class="row"><input id="histFrom" type="date" value="'+from+'"><input id="histTo" type="date" value="'+to+'"><button onclick="historyReport()">View</button></div></div><div class="panel">'+(all.map(x=>'<div class="item"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><b>'+x.kind+'</b> — '+(x.name||'')+'</div><b style="white-space:nowrap">'+(x.qty!==undefined?((+x.qty>0?'+':'')+x.qty):'')+'</b></div><div class="muted">'+prettyDate(x.date)+(txTime(x)?' • '+txTime(x):'')+(x.type?' • '+prettyType(x.type):'')+'</div></div>').join('')||'No movements in selected period')+'</div>';
 }
 
 
