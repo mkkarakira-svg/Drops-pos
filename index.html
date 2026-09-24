@@ -1167,4 +1167,20 @@ function renderDetailedReports(){
  $('#detailedReports').innerHTML='<div class="grid"><div class="card"><span>Total Sales</span><div class="kpi">'+money(sales)+'</div></div><div class="card"><span>Invoice Count</span><div class="kpi">'+inv.length+'</div></div><div class="card"><span>Total Packs Sold</span><div class="kpi">'+units+'</div></div><div class="card"><span>Gross Profit</span><div class="kpi">'+money(gross)+'</div></div><div class="card"><span>Expenses</span><div class="kpi">'+money(expensesTotal)+'</div></div><div class="card"><span>Net Profit</span><div class="kpi">'+money(net)+'</div></div><div class="card"><span>Raw Materials Value</span><div class="kpi">'+money(rawValue)+'</div></div><div class="card"><span>Finished Goods Value</span><div class="kpi">'+money(finishedValue)+'</div></div><div class="card"><span>Batches</span><div class="kpi">'+batches.length+'</div></div></div><div class="panel"><b>Sales by Product</b>'+top.map(([n,v])=>'<div class="item"><b>'+n+'</b><div class="muted">Quantity '+v.qty+' • Sales '+money(v.sales)+' • Profit '+money(v.profit)+'</div></div>').join('')+'</div><div class="panel"><b>Invoice Details</b>'+inv.slice().reverse().map(v=>'<div class="item" onclick="invoiceView(\\''+v.id+'\\')"><div class="tx-line"><b>Invoice #'+invNo(v)+' • '+money(v.total)+'</b><span class="pill">'+(v.saleMode==='wholesale'?'Wholesale':'Retail')+'</span></div><div class="muted">'+v.date+(txTime(v)?' • '+txTime(v):'')+' • '+(v.items||[]).map(i=>i.name+' × '+(+i.qty||0)).join(' • ')+'</div></div>').join('')+'</div><div class="panel"><b>Total Expenses in Period</b><span style="float:right"><b>'+money(expensesTotal)+'</b></span>'+ex.map(e=>'<div class="item"><b>'+e.name+'</b><span style="float:right">'+money(e.amount)+'</span><div class="muted">'+e.date+' • '+(e.payment||'')+'</div></div>').join('')+'</div><div class="panel report-production"><b>Production & Packing</b><div class="muted">Batches: '+batches.length+' • Packing operations: '+packs.length+' • Produced: '+batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)+' L • Packed: '+packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)+' L</div></div>';
 }
 </script>
+<script>
+/* REPORT KPI CLICK FIX — 2026-09-24 */
+(function(){
+ const oldRender=renderDetailedReports;
+ renderDetailedReports=function(){
+  oldRender();
+  const cards=document.querySelectorAll('#detailedReports .grid .card');
+  const types=['sales','invoices','units','liters','gross','expenses','net','raw','finished','batches'];
+  cards.forEach((card,i)=>{
+   if(!types[i])return;
+   card.style.cursor='pointer';
+   card.onclick=function(){ reportDrill(types[i]); };
+  });
+ };
+})();
+</script>
 </body></html>
