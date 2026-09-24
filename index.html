@@ -1340,4 +1340,11 @@ function voidInvoice(i){
 </script>
 
 
-</body></html>
+<script>
+/* FINAL PRICE MASTER VIEW */
+window.purchasePriceMaster=function(){
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'],g={};cats.forEach(x=>g[x]=[]);
+ (db.raw||[]).forEach(r=>{let x=rawCategoryOf(r);if(!g[x])x='Raw Materials';g[x].push(r)});
+ document.getElementById('app').innerHTML='<div class="title">Purchase Price Master</div><div class="panel"><div class="muted">Official purchase prices. Choose a category to view, add and edit items.</div></div><div class="ppm-tabs">'+cats.map((x,i)=>'<button class="'+(i===0?'green':'')+'" id="ppmTab'+i+'" onclick="showPriceMasterCategory('+i+')">'+x+'<br><small>'+g[x].length+' items</small></button>').join('')+'</div>'+cats.map((x,i)=>'<div id="ppmBox'+i+'" class="panel" style="display:'+(i===0?'block':'none')+'"><h3>'+x+'</h3><div class="ppm-add"><input id="ppmName'+i+'" placeholder="New item"><select id="ppmUnit'+i+'"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="ppmCost'+i+'" type="number" step=".001" min="0" placeholder="Purchase Price $"><button class="green" onclick="addPriceMasterItem('+i+')">+ Add Item</button></div>'+g[x].map(r=>'<div class="item ppm-card"><b class="ppm-name">'+r.name+'</b><div class="ppm-fields"><label><span>Purchase Price $ / '+(r.unit||'kg')+'</span><input id="mp_'+r.id+'" type="number" step=".001" min="0" value="'+(+r.cost||0)+'"></label><label><span>Minimum Stock ('+(r.unit||'kg')+')</span><input id="min_'+r.id+'" type="number" step=".001" min="0" value="'+(+r.minStock||0)+'"></label></div><div class="ppm-actions"><button onclick="saveMasterPrice(\''+r.id+'\')">Save</button><button onclick="showPriceHistory(\''+r.id+'\')">History</button></div></div>').join('')+'</div>').join('')+'<div id="priceHistoryBox"></div>';
+};
+</script></body></html>
