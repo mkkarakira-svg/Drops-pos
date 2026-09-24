@@ -2366,6 +2366,39 @@ function renderDetailedReports(){
 }
 </script>
 <script>
+/* CASHBOX CANONICAL OVERRIDE — isolated from legacy QA block */
+window.cashbox=function(){
+ var moves=db.cashMoves||[], tm=moves.filter(function(x){return x.date===today()});
+ var tin=tm.filter(function(x){return +x.amount>0}).reduce(function(a,x){return a+(+x.amount||0)},0);
+ var tout=Math.abs(tm.filter(function(x){return +x.amount<0}).reduce(function(a,x){return a+(+x.amount||0)},0));
+ var bal=moves.reduce(function(a,x){return a+(+x.amount||0)},0);
+ function invoiceFor(x){
+   var key=String(x.ref||x.invoiceId||'');
+   var v=(db.invoices||[]).find(function(z){return String(z.id)===key});
+   if(!v){
+     var m=String(x.note||'').match(/\d{10,}/);
+     if(m)v=(db.invoices||[]).find(function(z){return String(z.id)===m[0]});
+   }
+   return v;
+ }
+ function noteFor(x){
+   var v=invoiceFor(x);
+   if(v){
+     if(x.type==='collection')return 'Collect Invoice #'+invNo(v);
+     if(x.type==='void_refund')return 'Void Invoice #'+invNo(v);
+     if(x.type==='sale')return 'Invoice #'+invNo(v);
+     var n=String(x.note||x.type||'Transaction');
+     if(/invoice/i.test(n))return n.replace(/Invoice\s*#?\s*\d+/i,'Invoice #'+invNo(v));
+   }
+   return String(x.note||x.type||'Transaction');
+ }
+ var rows=moves.slice(0,60).map(function(x){
+   return '<div class="cash-tx"><div class="cash-tx-top"><div class="cash-tx-note">'+noteFor(x)+'</div><div class="cash-tx-amount">'+(+x.amount>=0?'+':'')+money(x.amount)+'</div></div><div class="cash-tx-meta">'+(x.date||'')+(typeof txTime==='function'&&txTime(x)?' • '+txTime(x):'')+(x.method?' • '+x.method:'')+'</div></div>';
+ }).join('');
+ document.getElementById('app').innerHTML='<div class="title">Cashbox / Cash Flow</div><div class="grid"><div class="kpi-card"><b>Today\'s Cash In</b><div class="kpi">'+money(tin)+'</div></div><div class="kpi-card"><b>Today\'s Cash Out</b><div class="kpi">'+money(tout)+'</div></div><div class="kpi-card"><b>Recorded Balance</b><div class="kpi">'+money(bal)+'</div></div></div><div class="panel"><div class="cash-entry-grid"><input id="cashDate" type="date" value="'+today()+'"><select id="cashType"><option value="in">Deposit / In</option><option value="out">Withdrawal / Out</option></select><select id="cashMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option></select><input id="cashAmount" type="number" min="0" step=".01" placeholder="Amount $"><input class="cash-wide" id="cashNote" placeholder="Description"><button class="cash-wide" onclick="addCashMove()">Record Transaction</button></div></div><div class="panel"><b>Recent Transactions</b>'+rows+'</div>';
+};
+</script>
+<script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
  const src=[...document.querySelectorAll('#detailedReports .panel')].find(p=>p.textContent.includes('Invoice Details'));
