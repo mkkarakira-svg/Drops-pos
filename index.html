@@ -2331,8 +2331,8 @@ function renderDetailedReports(){
 <script>
 /* REPORTS FINAL CLICK FIX v2 */
 function openInvoiceCount(){
- const from=document.getElementById('repFrom')?.value||today();
- const to=document.getElementById('repTo')?.value||today();
+ const from=window._invoiceBreakFrom||document.getElementById('repFrom')?.value||today();
+ const to=window._invoiceBreakTo||document.getElementById('repTo')?.value||today();
  const list=(db.invoices||[]).filter(v=>!v.voided&&v.date>=from&&v.date<=to);
  const app=document.getElementById('app');
  app.innerHTML='<div class="title">Invoice Breakdown</div><div class="panel"><button id="invoiceBreakBack">← Back to Reports</button></div><div class="panel" id="invoiceBreakList"></div>';
@@ -2348,6 +2348,8 @@ function openInvoiceCount(){
 const _reportsOriginal=reports;
 reports=function(){
  _reportsOriginal();
+ window._invoiceBreakFrom=document.getElementById('repFrom')?.value||today();
+ window._invoiceBreakTo=document.getElementById('repTo')?.value||today();
  const box=document.getElementById('detailedReports');
  if(!box)return;
  const cards=box.querySelectorAll('.grid .card');
