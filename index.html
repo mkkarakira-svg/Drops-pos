@@ -370,7 +370,7 @@ function finishedFamilies(){const names=["Dishwashing","Hand Soap","Laundry Gel"
  db._finishedGoodsReconcile143=true;save();
 })();
 
-function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?(+p.qty||0)*(+p.cost||0):0),0),0))}</b></div></div><div id="plist"></div>`;renderProducts()}
+function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="panel"><button style="width:100%;font-size:17px;font-weight:800" onclick="openingFinishedStock()">➕ Opening Stock / رصيد افتتاحي</button><div class="muted" style="margin-top:7px">Adds existing finished goods only — does not consume raw materials.</div></div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?(+p.qty||0)*(+p.cost||0):0),0),0))}</b></div></div><div id="plist"></div>`;renderProducts()}
 function renderProducts(){
  const el=$('#plist');if(!el)return;
  const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
@@ -387,6 +387,20 @@ function renderProducts(){
    return `<div class="stock-size"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small></div>`;
   }).join('')}</div></div>`;
  }).join('');
+}
+function openingFinishedStock(){
+ const families=finishedFamilies().map(f=>f.name);
+ const base=prompt('Product name:\n'+families.join(' / '));if(base===null)return;
+ const match=families.find(x=>x.toLowerCase()===String(base).trim().toLowerCase());if(!match)return alert('Choose a product name exactly as shown.');
+ const allowed=allowedPackSizes(match);
+ const sz=Number(prompt('Size in liters: '+allowed.join(' / ')));if(!allowed.includes(sz))return alert('Invalid size for '+match);
+ const q=Number(prompt('Opening quantity (packs):','0'));if(!Number.isFinite(q)||q<0)return alert('Invalid quantity');
+ const p=ensureFinishedProduct(match,sz);
+ const old=+p.qty||0;p.qty=q;
+ db.stockMoves=db.stockMoves||[];db.adjustments=db.adjustments||[];
+ db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'opening_stock',productId:p.id,name:p.name,qty:q-old,balance:q});
+ db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q-old,note:'Opening finished goods stock'});
+ save();products();
 }
 function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
 function stockIn(i){let p=db.products.find(x=>x.id===i),q=+$('#q'+i)?.value;if(q>0){p.qty+=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'adjustment_in',productId:p.id,name:p.name,qty:q,balance:p.qty});db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,note:'Manual stock in'});save();renderProducts()}}
