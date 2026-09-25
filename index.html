@@ -384,9 +384,18 @@ function renderProducts(){
    const ms=db.products.filter(p=>!p.formulaMaster&&base(p.name)===f.name.toLowerCase()&&+(p.size||0)===sz);
    const p=ms.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];
    const q=qtyFor(f.name,sz),c=p?+p.cost||0:0,r=p?+p.price||0:0,w=p?+p.wholesalePrice||0:0,margin=r>0?((r-c)/r*100):0;
-   return `<div class="stock-size"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small></div>`;
+   return `<div class="stock-size" onclick="setOpeningStock('${f.name.replace(/'/g,"\\'")}',${sz})" style="cursor:pointer"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small><small style="font-weight:800">Tap to set opening stock</small></div>`;
   }).join('')}</div></div>`;
  }).join('');
+}
+function setOpeningStock(base,sz){
+ const p=ensureFinishedProduct(base,+sz),current=+p.qty||0;
+ const v=prompt(base+' '+sz+'L — Opening quantity',String(current));if(v===null)return;
+ const q=Number(v);if(!Number.isFinite(q)||q<0||!Number.isInteger(q))return alert('Enter a valid number of packs');
+ const diff=q-current;p.qty=q;db.stockMoves=db.stockMoves||[];db.adjustments=db.adjustments||[];
+ db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'opening_stock',productId:p.id,name:p.name,qty:diff,balance:q});
+ db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:diff,note:'Opening finished goods stock'});
+ save();products();
 }
 function openingFinishedStock(){
  const families=finishedFamilies().map(f=>f.name);
