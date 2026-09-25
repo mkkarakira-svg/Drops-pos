@@ -262,7 +262,7 @@ nav.nav{bottom:18px!important;margin-bottom:18px!important;}
 body{padding-bottom:170px!important;}\n.wrap{padding-bottom:170px!important;}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.2.8</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.2.9</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -392,7 +392,7 @@ function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=
 function stockIn(i){let p=db.products.find(x=>x.id===i),q=+$('#q'+i)?.value;if(q>0){p.qty+=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'adjustment_in',productId:p.id,name:p.name,qty:q,balance:p.qty});db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,note:'Manual stock in'});save();renderProducts()}}
 function editP(i){let p=db.products.find(x=>x.id===i),pr=prompt('Selling Price',p.price),q=prompt('Quantity',p.qty);if(pr!==null)p.price=+pr;if(q!==null)p.qty=+q;save();renderProducts()}
 function sale(){nav('sale');window.cart={};window._saleMode='retail';$('#app').innerHTML=`<div class="title">Point of Sale</div><div class="panel"><div class="row"><button id="retailModeBtn" class="sale-mode active" onclick="setSaleMode('retail')">🛒 Retail</button><button id="wholesaleModeBtn" class="sale-mode" onclick="setSaleMode('wholesale')">📦 Wholesale</button></div><small>Default mode: Retail — Wholesale applies to this invoice only</small></div><div class="panel pos-distributor"><div class="row"><button type="button" onclick="toggleDistributor()">🧑‍💼 Add Distributor</button><select id="posEmployee" style="display:none"><option value="" selected>No Distributor</option>${(db.employees||[]).filter(e=>e.active!==false&&(e.role==='Distributor'||e.role==='Sales Employee')).map(e=>`<option value="${e.id}">${e.name} — ${+e.commission||0}%</option>`).join('')}</select></div></div><div class="panel"><select id="posCustomer"><option value="">Cash Customer / No Account</option>${(db.people||[]).filter(p=>p.type==='Customer').map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select><select id="posPayMethod"><option>Cash</option><option>Transfer</option><option>Cheque</option><option>Credit</option></select></div><div class="pos-search"><input id="posSearch" placeholder="🔎 Search product..." oninput="renderPOSProducts()"></div><div class="pos-size-tabs"><button data-size="all" onclick="posSizeFilter('all',this)">All</button><button data-size="1" onclick="posSizeFilter(1,this)">1L</button><button data-size="4" onclick="posSizeFilter(4,this)">4L</button><button class="active" data-size="5" onclick="posSizeFilter(5,this)">5L</button><button data-size="10" onclick="posSizeFilter(10,this)">10L</button><button data-size="20" onclick="posSizeFilter(20,this)">20L</button></div><div id="posProducts" class="pos-products"></div><div class="pos-cart panel"><div class="pos-cart-head"><b>🛒 Cart</b><span id="posCartCount">0 Pack</span></div><div id="cart"></div></div>`;window._posSize=5;ensurePOSFabricSoftener5L();renderPOSProducts();renderCart()}
-function ensurePOSFabricSoftener5L(){let aliases=['fabric softner','fabric softener','comfort'];let p=(db.products||[]).find(x=>!x.formulaMaster&&+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));if(!p){db.products.push({id:id(),name:'Fabric Softner 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5});save()}else{p.name='Fabric Softner 5L';p.size=5;save()}}
+function ensurePOSFabricSoftener5L(){let aliases=['fabric softner','fabric softener','comfort'];let p=(db.products||[]).find(x=>!x.formulaMaster&&+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));if(!p){db.products.push({id:id(),name:'Comfort 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5});save()}else{p.name='Comfort 5L';p.size=5;save()}}
 function toggleDistributor(){let e=$('#posEmployee');if(!e)return;let show=e.style.display==='none';e.style.display=show?'block':'none';if(!show)e.value=''}
 function posSellProducts(){return db.products.filter(p=>{let base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();return [1,4,5,10,20].includes(+(p.size||0))&&!p.formulaMaster&&allowedPackSizes(base).includes(+(p.size||0))})}
 function posSizeFilter(sz,btn){window._posSize=sz;document.querySelectorAll('.pos-size-tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderPOSProducts()}
@@ -597,7 +597,7 @@ function renderDebts(){let q=String($('#debtSearch')?.value||'').toLowerCase(),l
 function collectInvoice(i){let v=db.invoices.find(x=>String(x.id)===String(i)),a=+document.getElementById('debt_'+i)?.value;if(!v||a<=0)return;a=Math.min(a,(+v.total||0)-(+v.paid||0));v.paid=(+v.paid||0)+a;db.collections.unshift({id:id(),invoiceId:v.id,date:today(),amount:a,employeeId:v.employeeId||''});db.cashMoves.unshift({id:id(),date:today(),type:'collection',method:'Cash',amount:a,ref:v.id,note:'Collect Invoice #'+invNo(v)});save();receivablesPage()}
 
 function ensureRequired5L(){
- const wanted=[['Dishwashing',['dishwashing']],['Fabric Softner',['fabric softner','fabric softener','comfort']],['Laundry Gel',['laundry gel','laundrey gel']],['Floor Cleaner',['floor cleaner']]];
+ const wanted=[['Dishwashing',['dishwashing']],['Comfort',['fabric softner','fabric softener','comfort']],['Laundry Gel',['laundry gel','laundrey gel']],['Floor Cleaner',['floor cleaner']]];
  wanted.forEach(([name,aliases])=>{let p=(db.products||[]).find(x=>!x.formulaMaster&&+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));if(!p){db.products.push({id:id(),name:name+' 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5})}else{p.name=name+' 5L';p.size=5}});
  save();
 }
@@ -1087,9 +1087,9 @@ history.replaceState({dropsView:currentView||'home'},'',location.href);
 /* ENSURE REQUIRED 5L STOCKTAKE PRODUCTS v116 */
 (function(){
  if(db._ensureRequired5L116)return;
- const wanted=['Dishwashing','Fabric Softner','Laundry Gel','Floor Cleaner'];
+ const wanted=['Dishwashing','Comfort','Laundry Gel','Floor Cleaner'];
  wanted.forEach(name=>{
-   const aliases=name==='Fabric Softner'?['fabric softner','fabric softener','comfort']:[name.toLowerCase()];
+   const aliases=name==='Comfort'?['fabric softner','fabric softener','comfort']:[name.toLowerCase()];
    let p=db.products.find(x=>+(x.size||0)===5&&aliases.includes(String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()));
    if(p){p.name=name+' 5L';p.size=5}
    else db.products.push({id:id(),name:name+' 5L',price:5,wholesalePrice:0,cost:0,qty:0,size:5});
@@ -1375,16 +1375,27 @@ window.purchasePriceMaster=function(){
  };
 })();
 </script>
-</body></html>
-<script>
-/* SINGLE VOID MASTER v4.2.8 */
+
+<script id="drops-final-master-v429">
+function dropsDisplayName(n){return String(n||'').replace(/Fabric Softner|Fabric Softener/gi,'Comfort')}
 window.voidInvoice=function(i){
  var v=(db.invoices||[]).find(function(x){return String(x.id)===String(i)}); if(!v||v.voided)return;
  if(!confirm('Void invoice and return quantities to stock?'))return;
- (v.items||[]).forEach(function(it){var p=(db.products||[]).find(function(x){return String(x.id)===String(it.productId)});if(p){p.qty=(+p.qty||0)+(+it.qty||0);db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'return',productId:p.id,name:p.name,qty:+it.qty||0,balance:p.qty,invoiceId:v.id})}});
- var received=Math.max(0,+v.paid||0);
+ (v.items||[]).forEach(function(it){var p=(db.products||[]).find(function(x){return String(x.id)===String(it.productId)});if(p){p.qty=(+p.qty||0)+(+it.qty||0);db.stockMoves=db.stockMoves||[];db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'return',productId:p.id,name:dropsDisplayName(p.name),qty:+it.qty||0,balance:p.qty,invoiceId:v.id})}});
+ var received=Math.max(0,+v.paid||0); db.cashMoves=db.cashMoves||[];
  if(received>0)db.cashMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'void_refund',method:v.paymentMethod||'Cash',amount:-received,ref:v.id,note:'Void Invoice #'+invNo(v)});
  v.voided=true;v.voidDate=today();v.voidTime=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
- db.returns.unshift({id:id(),invoiceId:v.id,date:today(),time:new Date().toISOString(),amount:+v.total||0,employeeId:v.employeeId||''});save();returnsPage();
+ db.returns=db.returns||[];db.returns.unshift({id:id(),invoiceId:v.id,date:today(),time:new Date().toISOString(),amount:+v.total||0,employeeId:v.employeeId||''});save();returnsPage();
 };
+(function(){
+ (db.products||[]).forEach(function(p){p.name=dropsDisplayName(p.name)});
+ (db.stockMoves||[]).forEach(function(x){x.name=dropsDisplayName(x.name)});
+ (db.invoices||[]).forEach(function(v){(v.items||[]).forEach(function(x){x.name=dropsDisplayName(x.name)})});
+ save();
+})();
 </script>
+<style id="drops-final-layout-v429">
+#detailedReports,.report-production,.cash-tx,.invoice-paper{direction:ltr!important;text-align:left!important}
+#detailedReports .muted,.report-production .muted{unicode-bidi:plaintext;line-height:1.55}
+</style>
+</body></html>
