@@ -1398,4 +1398,49 @@ window.voidInvoice=function(i){
 #detailedReports,.report-production,.cash-tx,.invoice-paper{direction:ltr!important;text-align:left!important}
 #detailedReports .muted,.report-production .muted{unicode-bidi:plaintext;line-height:1.55}
 </style>
-</body></html>
+<script id="drops-raw-master-fix-v430">
+(function(){
+ const norm=s=>String(s||'').trim().toLowerCase();
+ const groups=[
+  {keep:'Soda (Caustic Flakes)', aliases:['flakes','soda','costic','costică','caustic','caustic soda','soda (caustic flakes)']},
+  {keep:'Fragrance', aliases:['fragrance','fragrance laundry']},
+  {keep:'BB4', aliases:['bb4','pp4']},
+  {keep:'Semasol', aliases:['semasol','np9']},
+  {keep:'Colour200', aliases:['colour200','color','colour']}
+ ];
+ function mergeGroup(g){
+  const hits=(db.raw||[]).filter(r=>g.aliases.includes(norm(r.name)));
+  if(!hits.length)return;
+  let keep=hits.find(r=>norm(r.name)===norm(g.keep))||hits[0];
+  keep.name=g.keep;
+  hits.forEach(r=>{
+   if(r===keep)return;
+   keep.qty=(+keep.qty||0)+(+r.qty||0);
+   if((+keep.cost||0)<=0 && (+r.cost||0)>0)keep.cost=+r.cost;
+   (db.recipes||[]).forEach(x=>{if(String(x.rawId)===String(r.id))x.rawId=keep.id});
+   (db.rawMoves||[]).forEach(x=>{if(String(x.rawId)===String(r.id))x.rawId=keep.id});
+  });
+  const remove=new Set(hits.filter(r=>r!==keep).map(r=>String(r.id)));
+  db.raw=(db.raw||[]).filter(r=>!remove.has(String(r.id)));
+  const seen=new Set();
+  db.recipes=(db.recipes||[]).filter(x=>{const k=String(x.productId)+'|'+String(x.rawId);if(seen.has(k))return false;seen.add(k);return true});
+ }
+ if(!db._rawAliasCleanup430){groups.forEach(mergeGroup);db._rawAliasCleanup430=true;save();}
+ window.editRaw=function(rid){
+  const r=(db.raw||[]).find(x=>String(x.id)===String(rid));if(!r)return alert('Material not found. Please reopen Raw Materials.');
+  const name=prompt('Material Name',r.name);if(name===null)return;
+  const qty=prompt('Current Quantity',(+r.qty||0).toFixed(r.unit==='Piece'?0:3));if(qty===null)return;
+  const q=Number(qty);if(!Number.isFinite(q)||q<0)return alert('Invalid quantity');
+  r.name=String(name).trim()||r.name;r.qty=q;
+  db.rawMoves=db.rawMoves||[];db.rawMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'stock_adjustment',rawId:r.id,name:r.name,qty:0,balance:r.qty,cost:+r.cost||0});
+  save();raw();
+ };
+ const oldAdd=window.addRaw||addRaw;
+ window.addRaw=function(){
+  const n=String($('#rn')?.value||'').trim();if(!n)return alert('Enter item name');
+  const canonical=groups.find(g=>g.aliases.includes(norm(n)));
+  if(canonical && (db.raw||[]).some(r=>norm(r.name)===norm(canonical.keep)))return alert('This material already exists as '+canonical.keep);
+  return oldAdd();
+ };
+})();
+</script></body></html>
