@@ -1426,6 +1426,18 @@ window.voidInvoice=function(i){
   db.recipes=(db.recipes||[]).filter(x=>{const k=String(x.productId)+'|'+String(x.rawId);if(seen.has(k))return false;seen.add(k);return true});
  }
  if(!db._rawAliasCleanup430){groups.forEach(mergeGroup);db._rawAliasCleanup430=true;save();}
+ // Repair legacy duplicate raw IDs without touching stock quantities.
+ (function(){
+   const seen=new Set();
+   (db.raw||[]).forEach(r=>{
+     const old=String(r.id??'');
+     if(!old || seen.has(old)){
+       r.id=id();
+     }
+     seen.add(String(r.id));
+   });
+   save();
+ })();
  window.editRaw=function(rid){
   const r=(db.raw||[]).find(x=>String(x.id)===String(rid));if(!r)return alert('Material not found. Please reopen Raw Materials.');
   const name=prompt('Material Name',r.name);if(name===null)return;
