@@ -316,7 +316,7 @@ function home(){
  let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
  exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
  profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
- stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
+ stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.filter(r=>rawCategoryOf(r)==='Raw Materials').reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
  buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0),cashBalance=(db.cashMoves||[]).reduce((a,x)=>a+(x.type==='withdrawal'||x.type==='expense'?-Math.abs(+x.amount||0):Math.abs(+x.amount||0)),0),lastBatch=(db.batches||[])[0];
  $('#app').innerHTML=`
  <div class="kpi-grid">
