@@ -1479,4 +1479,17 @@ window.voidInvoice=function(i){
   return oldAdd();
  };
 })();
-</script></body></html>
+</script><script id="drops-price-fix-431">
+(function(){
+  // Price corrections only. Never change stock quantities.
+  if(db && !db._priceFix431){
+    (db.raw||[]).forEach(r=>{
+      const n=String(r.name||'').trim().toLowerCase();
+      if(n==='salt') r.cost=0.12;
+    });
+    db._priceFix431=true;
+    save();
+  }
+})();
+</script>
+</body></html>
