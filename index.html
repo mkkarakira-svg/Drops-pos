@@ -316,7 +316,7 @@ function home(){
  let d=db.invoices.filter(x=>x.date===today()&&!x.voided),sales=d.reduce((a,x)=>a+x.total,0),
  exp=db.expenses.filter(x=>x.date===today()).reduce((a,x)=>a+x.amount,0),
  profit=d.reduce((a,v)=>a+v.items.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0),0)-exp,
- stock=db.products.reduce((a,p)=>a+p.qty*p.cost,0),rawStock=db.raw.filter(r=>rawCategoryOf(r)==='Raw Materials').reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
+ stock=dropsFinishedStockValue(),rawStock=db.raw.filter(r=>rawCategoryOf(r)==='Raw Materials').reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),low=db.products.filter(p=>p.qty<=5).length,
  buys=(db.purchases||[]).filter(x=>x.date===today()).reduce((a,x)=>a+(+x.qty||0)*(+x.cost||0),0),cashBalance=(db.cashMoves||[]).reduce((a,x)=>a+(x.type==='withdrawal'||x.type==='expense'?-Math.abs(+x.amount||0):Math.abs(+x.amount||0)),0),lastBatch=(db.batches||[])[0];
  $('#app').innerHTML=`
  <div class="kpi-grid">
@@ -370,7 +370,7 @@ function finishedFamilies(){const names=["Dishwashing","Hand Soap","Laundry Gel"
  db._finishedGoodsReconcile143=true;save();
 })();
 
-function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="panel"><button style="width:100%;font-size:17px;font-weight:800" onclick="openingFinishedStock()">➕ Opening Stock / رصيد افتتاحي</button><div class="muted" style="margin-top:7px">Adds existing finished goods only — does not consume raw materials.</div></div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?(+p.qty||0)*(+p.cost||0):0),0),0))}</b></div></div><div id="plist"></div>`;renderProducts()}
+function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="panel"><button style="width:100%;font-size:17px;font-weight:800" onclick="openingFinishedStock()">➕ Opening Stock / رصيد افتتاحي</button><div class="muted" style="margin-top:7px">Adds existing finished goods only — does not consume raw materials.</div></div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(dropsFinishedStockValue())}</b></div></div><div id="plist"></div>`;renderProducts()}
 function renderProducts(){
  const el=$('#plist');if(!el)return;
  const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
@@ -1479,7 +1479,28 @@ window.voidInvoice=function(i){
   return oldAdd();
  };
 })();
-</script><script id="drops-price-fix-431">
+</script>
+<script id="drops-inventory-value-fix-v432">
+/* Inventory valuation only. Does not change quantities, prices, recipes, or stock data. */
+function dropsFinishedUnitCost(p){
+ if(!p||p.formulaMaster)return 0;
+ const size=+(p.size||((String(p.name||'').match(/(1|4|5|10|20)L/i)||[])[1])||0); if(!size)return +p.cost||0;
+ const base=String(p.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
+ const master=(db.products||[]).find(x=>x.formulaMaster&&String(x.name||'').trim().toLowerCase()===base);
+ if(!master)return +p.cost||0;
+ const rec=(db.recipes||[]).filter(x=>String(x.productId)===String(master.id));
+ if(!rec.length)return +p.cost||0;
+ let perL=rec.reduce((sum,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return sum+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
+ let pack=0;
+ const aliases=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
+ const c=(db.raw||[]).find(r=>aliases.includes(String(r.name||'').trim().toLowerCase())); if(c)pack+=+c.cost||0;
+ const label=(db.raw||[]).find(r=>['label sticker','label','sticker'].includes(String(r.name||'').trim().toLowerCase())); if(label)pack+=+label.cost||0;
+ return perL*size+pack;
+}
+function dropsFinishedStockValue(){return (db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*dropsFinishedUnitCost(p),0)}
+setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&&typeof home==='function')home()},50);
+</script>
+<script id="drops-price-fix-431">
 (function(){
   // Price corrections only. Never change stock quantities.
   if(db && !db._priceFix431){
