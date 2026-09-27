@@ -398,9 +398,12 @@ function setOpeningStock(base,sz){
  save();products();
 }
 function openingFinishedStock(){
- const rows=finishedFamilies().map(f=>'<div class="stock-family"><div class="stock-family-name">'+f.name+'</div><div class="stock-sizes">'+allowedPackSizes(f.name).map(sz=>'<div class="stock-size" role="button" onclick="setOpeningStock(\\''+f.name.replace(/'/g,"\\\\'")+'\\','+sz+')"><span>'+sz+'L</span><b>Set stock</b><small>Tap to enter quantity</small></div>').join('')+'</div></div>').join('');
+ const rows=finishedFamilies().map(f=>{
+   const sizes=allowedPackSizes(f.name).map(sz=>`<div class="stock-size" role="button" onclick='setOpeningStock(${JSON.stringify(f.name)},${sz})'><span>${sz}L</span><b>Set stock</b><small>Tap to enter quantity</small></div>`).join('');
+   return `<div class="stock-family"><div class="stock-family-name">${f.name}</div><div class="stock-sizes">${sizes}</div></div>`;
+ }).join('');
  nav('products');
- $('#app').innerHTML='<div class="title">Opening Finished Stock</div><div class="panel"><button onclick="products()">← Back to Finished Goods</button><div class="muted" style="margin-top:8px">Choose product and pack size. Only the selected finished quantity is changed; raw materials are not consumed.</div></div>'+rows;
+ $('#app').innerHTML=`<div class="title">Opening Finished Stock</div><div class="panel"><button onclick="products()">← Back to Finished Goods</button><div class="muted" style="margin-top:8px">Choose product and pack size. Only the selected finished quantity is changed; raw materials are not consumed.</div></div>${rows}`;
 }
 
 function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
