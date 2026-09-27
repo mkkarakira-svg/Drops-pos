@@ -1486,7 +1486,9 @@ function dropsFinishedUnitCost(p){
  if(!p||p.formulaMaster)return 0;
  const size=+(p.size||((String(p.name||'').match(/(1|4|5|10|20)L/i)||[])[1])||0); if(!size)return +p.cost||0;
  const base=String(p.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
- const master=(db.products||[]).find(x=>x.formulaMaster&&String(x.name||'').trim().toLowerCase()===base);
+ const normName=n=>String(n||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
+ const candidates=(db.products||[]).filter(x=>normName(x.name)===base);
+ const master=candidates.find(x=>(db.recipes||[]).some(r=>String(r.productId)===String(x.id)));
  if(!master)return +p.cost||0;
  const rec=(db.recipes||[]).filter(x=>String(x.productId)===String(master.id));
  if(!rec.length)return +p.cost||0;
