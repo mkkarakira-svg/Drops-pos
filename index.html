@@ -1488,9 +1488,9 @@ function dropsFinishedUnitCost(p){
  const base=String(p.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
  const normName=n=>String(n||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
  const candidates=(db.products||[]).filter(x=>normName(x.name)===base);
- const master=candidates.find(x=>(db.recipes||[]).some(r=>String(r.productId)===String(x.id)));
- if(!master)return +p.cost||0;
- const rec=(db.recipes||[]).filter(x=>String(x.productId)===String(master.id));
+ const masters=candidates.filter(x=>(db.recipes||[]).some(r=>String(r.productId)===String(x.id)));
+ if(!masters.length)return +p.cost||0;
+ const rec=masters.flatMap(m=>(db.recipes||[]).filter(x=>String(x.productId)===String(m.id)));
  if(!rec.length)return +p.cost||0;
  let perL=rec.reduce((sum,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return sum+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
  let pack=0;
@@ -1516,14 +1516,5 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
 })();
 </script>
 
-<script id="drops-inventory-debug-v434">
-function dropsInventoryDebug(){
- const rawRows=(db.raw||[]).filter(r=>rawCategoryOf(r)==='Raw Materials').map(r=>({name:r.name,qty:+r.qty||0,cost:+r.cost||0,value:(+r.qty||0)*(+r.cost||0)}));
- const prodRows=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)>0).map(p=>({name:p.name,qty:+p.qty||0,storedCost:+p.cost||0,calcCost:(typeof dropsFinishedUnitCost==='function'?dropsFinishedUnitCost(p):0)}));
- const rawTotal=rawRows.reduce((a,r)=>a+r.value,0),finishedTotal=prodRows.reduce((a,p)=>a+p.qty*p.calcCost,0);
- const lines=['RAW TOTAL '+money(rawTotal),'FINISHED TOTAL '+money(finishedTotal),'','RAW:'].concat(rawRows.map(r=>r.name+' | '+r.qty+' x '+r.cost+' = '+money(r.value)),['','FINISHED:'],prodRows.map(p=>p.name+' | qty '+p.qty+' | stored '+money(p.storedCost)+' | calc '+money(p.calcCost)));
- alert(lines.join('\\n'));
-}
-(function(){const old=window.settings||settings;window.settings=function(){old();const a=document.getElementById('app');if(a&&!document.getElementById('invDebugBtn')){const b=document.createElement('button');b.id='invDebugBtn';b.textContent='🔎 Inventory Calculation Check';b.style='width:100%;margin:10px 0';b.onclick=dropsInventoryDebug;a.prepend(b)}}})();
-</script>
+
 </body></html>
