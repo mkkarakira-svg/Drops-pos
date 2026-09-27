@@ -1538,4 +1538,23 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
 </script>
 
 
+<script>
+/* REPORT INVENTORY VALUE OVERRIDE v4.4.1 — display only, no data mutation */
+(function(){
+ const old=window.renderDetailedReports;
+ window.renderDetailedReports=function(){
+   if(typeof old==='function') old();
+   const cards=[...document.querySelectorAll('#detailedReports .card')];
+   const raw=(db.raw||[]).filter(r=>rawCategoryOf(r)==='Raw Materials').reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0);
+   const fin=dropsFinishedStockValue();
+   cards.forEach(c=>{
+     const t=(c.querySelector('span')?.textContent||'').trim();
+     const k=c.querySelector('.kpi');
+     if(!k)return;
+     if(t==='Raw Materials Value') k.textContent=money(raw);
+     if(t==='Finished Goods Value') k.textContent=money(fin);
+   });
+ };
+})();
+</script>
 </body></html>
