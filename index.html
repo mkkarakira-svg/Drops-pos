@@ -1514,7 +1514,7 @@ function dropsFinishedStockValue(){return (db.products||[]).filter(p=>!p.formula
 function finishedValueAudit(){
  const rows=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)>0).map(p=>{const c=dropsFinishedUnitCost(p),q=+p.qty||0;return {name:p.name,q,c,v:q*c}}).sort((a,b)=>a.name.localeCompare(b.name));
  const total=rows.reduce((a,r)=>a+r.v,0);
- alert(rows.map(r=>r.name+' | '+r.q+' × '+money(r.c)+' = '+money(r.v)).join('\\n')+'\\n\\nTOTAL = '+money(total));
+ alert(rows.map(r=>r.name+' | '+r.q+' × '+money(r.c)+' = '+money(r.v)).join('\n')+'\n\nTOTAL = '+money(total));
 }
 setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&&typeof home==='function')home()},50);
 </script>
