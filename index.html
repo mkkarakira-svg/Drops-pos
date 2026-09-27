@@ -370,7 +370,7 @@ function finishedFamilies(){const names=["Dishwashing","Hand Soap","Laundry Gel"
  db._finishedGoodsReconcile143=true;save();
 })();
 
-function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="panel"><button style="width:100%;font-size:17px;font-weight:800" onclick="openingFinishedStock()">➕ Opening Stock / رصيد افتتاحي</button><div class="muted" style="margin-top:7px">Adds existing finished goods only — does not consume raw materials.</div></div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(dropsFinishedStockValue())}</b></div></div><div id="plist"></div>`;renderProducts()}
+function products(){nav('products');$('#app').innerHTML=`<div class="title">Finished Goods Stock</div><div class="panel"><button style="width:100%;font-size:17px;font-weight:800" onclick="openingFinishedStock()">➕ Opening Stock / رصيد افتتاحي</button><div class="muted" style="margin-top:7px">Adds existing finished goods only — does not consume raw materials.</div></div><div class="stock-summary"><div><span>Total Packs</span><b>${finishedFamilies().reduce((a,f)=>a+f.items.reduce((s,p)=>s+(p?+p.qty||0:0),0),0)}</b></div><div><span>Stock Value</span><b>${money(dropsFinishedStockValue())}</b></div></div><div class="panel"><button style="width:100%;font-weight:800" onclick="finishedValueAudit()">🧾 Finished Value Audit</button><div class="muted" style="margin-top:6px">Read-only audit — does not change stock, prices or recipes.</div></div><div id="plist"></div>`;renderProducts()}
 function renderProducts(){
  const el=$('#plist');if(!el)return;
  const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
@@ -1515,6 +1515,12 @@ function dropsFinishedUnitCost(p){
  return perL*size+pack;
 }
 function dropsFinishedStockValue(){return (db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*dropsFinishedUnitCost(p),0)}
+
+function finishedValueAudit(){
+ const rows=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)>0).map(p=>{const c=dropsFinishedUnitCost(p),q=+p.qty||0;return {name:p.name,q,c,v:q*c}}).sort((a,b)=>a.name.localeCompare(b.name));
+ const total=rows.reduce((a,r)=>a+r.v,0);
+ alert(rows.map(r=>r.name+' | '+r.q+' × '+money(r.c)+' = '+money(r.v)).join('\\n')+'\\n\\nTOTAL = '+money(total));
+}
 setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&&typeof home==='function')home()},50);
 </script>
 <script id="drops-price-fix-431">
