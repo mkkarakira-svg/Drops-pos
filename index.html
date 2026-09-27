@@ -1485,7 +1485,7 @@ function dropsFinishedUnitCost(p){
  if(!p||p.formulaMaster)return 0;
  const parseSize=v=>{const m=String(v==null?'':v).match(/(1|4|5|10|20)/);return m?+m[1]:0};
  const size=parseSize(p.size)||parseSize(p.name); if(!size)return +p.cost||0;
- const base=String(p.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
+ const base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
  const formulas={
   'dishwashing':[['tayloz',.002],['selfonic',.05],['soda (caustic flakes)',.007],['n70',.05],['bb4',.01],['kd',.005],['parmatol',.001],['fragrance',.0015],['colour200',.001],['salt',.02],['water 10l',.001]],
   'hand soap':[['n70',.08],['bb4',.02],['kd',.02],['b.s',.002],['parmatol',.001],['fragrance',.004],['colour200',.001],['salt',.02],['water 10l',.001]],
@@ -1504,7 +1504,7 @@ function dropsFinishedUnitCost(p){
  const formula=formulas[base];
  let perL=formula?formula.reduce((t,x)=>t+x[1]*rawCost(x[0]),0):0;
  if(!formula){
-   const owners=(db.products||[]).filter(x=>String(x.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase()===base);
+   const owners=(db.products||[]).filter(x=>String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()===base);
    const rec=(db.recipes||[]).filter(r=>owners.some(o=>String(o.id)===String(r.productId)));
    perL=rec.reduce((t,x)=>{const r=(db.raw||[]).find(q=>String(q.id)===String(x.rawId));return t+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
  }
