@@ -401,14 +401,17 @@ function openingFinishedStock(){
  const families=finishedFamilies().map(f=>f.name);
  const base=prompt('Product name:\n'+families.join(' / '));if(base===null)return;
  const match=families.find(x=>x.toLowerCase()===String(base).trim().toLowerCase());if(!match)return alert('Choose a product name exactly as shown.');
- const allowed=allowedPackSizes(match);
- const sz=Number(prompt('Size in liters: '+allowed.join(' / ')));if(!allowed.includes(sz))return alert('Invalid size for '+match);
- const q=Number(prompt('Opening quantity (packs):','0'));if(!Number.isFinite(q)||q<0)return alert('Invalid quantity');
+ const allowed=allowedPackSizes(match).map(Number);
+ const input=prompt('Size in liters: '+allowed.join(' / '));if(input===null)return;
+ const m=String(input).trim().match(/^(1|4|5|10|20)\\s*(?:l|liter|liters)?$/i);
+ const sz=m?Number(m[1]):NaN;
+ if(!Number.isFinite(sz)||!allowed.some(x=>Number(x)===sz))return alert('Invalid size for '+match+'. Allowed: '+allowed.join(' / ')+' L');
+ const q=Number(prompt('Opening quantity (packs):','0'));if(!Number.isFinite(q)||q<0||!Number.isInteger(q))return alert('Invalid quantity');
  const p=ensureFinishedProduct(match,sz);
- const old=+p.qty||0;p.qty=q;
+ const previous=+p.qty||0;p.qty=q;
  db.stockMoves=db.stockMoves||[];db.adjustments=db.adjustments||[];
- db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'opening_stock',productId:p.id,name:p.name,qty:q-old,balance:q});
- db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q-old,note:'Opening finished goods stock'});
+ db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'opening_stock',productId:p.id,name:p.name,qty:q-previous,balance:q});
+ db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q-previous,note:'Opening finished goods stock'});
  save();products();
 }
 function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
