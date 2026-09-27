@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         if (savedInstanceState == null) {
-            webView.loadUrl(APP_URL + "?appv=4.4.4");
+            webView.loadUrl(APP_URL + "?appv=4.4.5");
         } else {
             webView.restoreState(savedInstanceState);
         }
