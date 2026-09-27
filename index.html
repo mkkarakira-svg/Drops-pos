@@ -780,7 +780,6 @@ function settings(){
    <button class="bo-card" onclick="raw()"><span>🧪</span><b>Raw Materials</b></button>
    <button class="bo-card" onclick="production()"><span>🏭</span><b>Production & Recipes</b></button>
    <button class="bo-card" onclick="purchasePriceMaster()"><span>💲</span><b>Price Master</b></button>
-   <button class="bo-card bo-danger" onclick="resetTrial()"><span>🧹</span><b>Reset Trial Data</b></button>
   </div>
   <div class="title bo-section-title">Settings & Backup</div>
   <div class="panel bo-settings">
@@ -1484,19 +1483,35 @@ window.voidInvoice=function(i){
 /* Inventory valuation only. Does not change quantities, prices, recipes, or stock data. */
 function dropsFinishedUnitCost(p){
  if(!p||p.formulaMaster)return 0;
- const size=+(p.size||((String(p.name||'').match(/(1|4|5|10|20)L/i)||[])[1])||0); if(!size)return +p.cost||0;
+ const parseSize=v=>{const m=String(v==null?'':v).match(/(1|4|5|10|20)/);return m?+m[1]:0};
+ const size=parseSize(p.size)||parseSize(p.name); if(!size)return +p.cost||0;
  const base=String(p.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
- const normName=n=>String(n||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase();
- const candidates=(db.products||[]).filter(x=>normName(x.name)===base);
- const masters=candidates.filter(x=>(db.recipes||[]).some(r=>String(r.productId)===String(x.id)));
- if(!masters.length)return +p.cost||0;
- const rec=masters.flatMap(m=>(db.recipes||[]).filter(x=>String(x.productId)===String(m.id)));
- if(!rec.length)return +p.cost||0;
- let perL=rec.reduce((sum,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return sum+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
+ const formulas={
+  'dishwashing':[['tayloz',.002],['selfonic',.05],['soda (caustic flakes)',.007],['n70',.05],['bb4',.01],['kd',.005],['parmatol',.001],['fragrance',.0015],['colour200',.001],['salt',.02],['water 10l',.001]],
+  'hand soap':[['n70',.08],['bb4',.02],['kd',.02],['b.s',.002],['parmatol',.001],['fragrance',.004],['colour200',.001],['salt',.02],['water 10l',.001]],
+  'laundry gel':[['tayloz',.002],['selfonic',.04],['soda (caustic flakes)',.007],['n70',.04],['semasol',.01],['anti foam',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025],['water 10l',.001]],
+  'comfort':[['candel b',.02],['oil balsam',.015],['parmatol',.001],['fragrance',.005],['colour200',.0002],['water 10l',.001]],
+  'floor cleaner':[['selfonic',.005],['soda (caustic flakes)',.001],['n70',.01],['ipa',.01],['parmatol',.005],['fragrance',.005],['colour200',.001],['semasol',.0025],['water 10l',.001]],
+  'pine oil':[['rw',.045],['colour200',.001],['water 10l',.001]],
+  'javel':[['clore 12%',.001],['fragrance',.001],['water 10l',.003]],
+  'flash':[['flash hcl 30kg',.001],['phosphoric acid',.01],['semasol',.005],['fragrance',.001],['antra',.002],['water 10l',.0023]],
+  'rambo':[['n70',.01],['citric acid',.01],['ipa',.02],['pvp',.025],['soda (caustic flakes)',.025],['colour200',.001],['water 10l',.001]],
+  'shampoo':[['n70',.12],['kd',.03],['bb4',.03],['pq7',.01],['glycerin',.003],['parmatol',.001],['fragrance',.004],['colour200',.001],['salt',.02],['water 10l',.001]],
+  'tab':[['stpp',.008],['n70',.05],['semasol',.04],['pvp',.005],['ipa',.001],['parmatol',.001],['fragrance',.002],['colour200',.001],['water 10l',.001]]
+ };
+ const norm=n=>String(n||'').trim().toLowerCase();
+ const rawCost=n=>{const r=(db.raw||[]).find(x=>norm(x.name)===norm(n));return r?(+r.cost||0):0};
+ const formula=formulas[base];
+ let perL=formula?formula.reduce((t,x)=>t+x[1]*rawCost(x[0]),0):0;
+ if(!formula){
+   const owners=(db.products||[]).filter(x=>String(x.name||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim().toLowerCase()===base);
+   const rec=(db.recipes||[]).filter(r=>owners.some(o=>String(o.id)===String(r.productId)));
+   perL=rec.reduce((t,x)=>{const r=(db.raw||[]).find(q=>String(q.id)===String(x.rawId));return t+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
+ }
  let pack=0;
- const aliases=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
- const c=(db.raw||[]).find(r=>aliases.includes(String(r.name||'').trim().toLowerCase())); if(c)pack+=+c.cost||0;
- const label=(db.raw||[]).find(r=>['label sticker','label','sticker'].includes(String(r.name||'').trim().toLowerCase())); if(label)pack+=+label.cost||0;
+ const names=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
+ const c=(db.raw||[]).find(r=>names.includes(norm(r.name)));if(c)pack+=+c.cost||0;
+ const label=(db.raw||[]).find(r=>['label sticker','label','sticker'].includes(norm(r.name)));if(label)pack+=+label.cost||0;
  return perL*size+pack;
 }
 function dropsFinishedStockValue(){return (db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*dropsFinishedUnitCost(p),0)}
