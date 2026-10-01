@@ -776,6 +776,8 @@ function settings(){
    <button class="bo-card" onclick="production()"><span>🏭</span><b>Production & Recipes</b></button>
    <button class="bo-card" onclick="purchasePriceMaster()"><span>💲</span><b>Price Master</b></button>
   </div>
+  <div class="title bo-section-title">App Update</div>
+  <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Checks for the newest version and reloads the app. Your saved POS data stays on this device.</div></div>
   <div class="title bo-section-title">Settings & Backup</div>
   <div class="panel bo-settings">
    <div class="bo-setting-row"><div><b>USD/LBP Rate</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('Saved')">Save</button></div>
@@ -877,6 +879,7 @@ function editRaw(rid){
 }
 function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions and quantities will be cleared. Recipes, products, purchase prices, price history, customers, suppliers and employees will be kept.'))return;if(!confirm('Final confirmation: clear trial stock and transactions now?'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];db.settings.lastBusinessDate=today();save();alert('GO-LIVE reset completed. Master data and price history were kept. Enter physical stock before starting sales.');home();}
 
+async function updateDropsApp(){try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg){await reg.update();if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}}const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));location.href=location.pathname+'?update='+Date.now()+location.hash;}catch(e){location.reload(true)}}
 function backup(){try{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DropsPOS-backup-'+today()+'.json';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}catch(e){alert('Backup export failed: '+e.message)}}
 function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
 function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
