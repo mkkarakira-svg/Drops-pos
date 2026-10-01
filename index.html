@@ -1552,4 +1552,46 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
  };
 })();
 </script>
+<script id="drops-flash-recipe-fix-v442">
+/* Flash recipe correction: values are grams per litre of WATER BASE.
+   Standard Flash batch = 140 L water base; finished batch is tracked as 200 L for packing.
+   Raw stock remains in kg. */
+(function(){
+ const norm=s=>String(s||'').trim().toLowerCase();
+ function flashFormula(){return (db.products||[]).find(p=>norm(p.name).replace(/\s+(1|4|5|10|20)l$/,'')==='flash' && (p.formulaMaster||(+p.size||0)===0)) || (db.products||[]).find(p=>norm(p.name)==='flash');}
+ function setFlashRecipe(){
+   const p=flashFormula(); if(!p)return;
+   const wanted={'flash hcl 30kg':1,'phosphoric acid':.01,'semasol':.005,'fragrance':.001,'antra':.002};
+   Object.keys(wanted).forEach(name=>{
+     const r=(db.raw||[]).find(x=>norm(x.name)===name); if(!r)return;
+     let x=(db.recipes||[]).find(q=>String(q.productId)===String(p.id)&&String(q.rawId)===String(r.id));
+     if(x)x.qtyPerLiter=wanted[name]; else db.recipes.push({id:id(),productId:p.id,rawId:r.id,qtyPerLiter:wanted[name]});
+   });
+   // Water is the production base, not a stocked ingredient deduction for Flash.
+   db.recipes=(db.recipes||[]).filter(x=>!(String(x.productId)===String(p.id)&&norm((db.raw||[]).find(r=>String(r.id)===String(x.rawId))?.name)==='water 10l'));
+ }
+ if(!db._flashRecipeFix442){setFlashRecipe();db._flashRecipeFix442=true;save();}
+ const original=window.produceAndPack;
+ window.produceAndPack=function(){
+   const pid=document.getElementById('bp')?.value;
+   const p=(db.products||[]).find(x=>String(x.id)===String(pid));
+   const isFlash=p&&norm(p.name).replace(/\s+(1|4|5|10|20)l$/,'')==='flash';
+   if(!isFlash)return original();
+   const finishedL=+document.getElementById('bl')?.value;
+   if(!(finishedL>0))return alert('Enter batch quantity');
+   // Flash standard ratio: 200 L finished batch corresponds to 140 L water base.
+   const waterBaseL=finishedL*.7;
+   const rec=(db.recipes||[]).filter(x=>String(x.productId)===String(p.id));
+   if(!rec.length)return alert('Flash recipe is incomplete');
+   for(const x of rec){const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId)),need=(+x.qtyPerLiter||0)*waterBaseL;if(!r||r.qty<need)return alert('Insufficient material: '+(r?r.name:'')+'\nRequired '+need.toFixed(3)+' kg\nAvailable '+(r?(+r.qty||0).toFixed(3):0)+' kg');}
+   const size=+document.getElementById('packSize').value;let pack=null,label=null,q=0;
+   if(size){q=Math.floor(finishedL/size);const aliases=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];pack=db.raw.find(r=>aliases.includes(norm(r.name)));label=db.raw.find(r=>['label sticker','label','sticker'].includes(norm(r.name)));if(!pack||pack.qty<q)return alert('Not enough empty containers: '+aliases[0]);if(label&&label.qty<q)return alert('Not enough labels');}
+   const bid=id(),ts=new Date().toISOString();let cost=0;
+   rec.forEach(x=>{const r=db.raw.find(a=>String(a.id)===String(x.rawId)),need=(+x.qtyPerLiter||0)*waterBaseL;r.qty-=need;cost+=need*(+r.cost||0);db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'production',rawId:r.id,name:r.name,qty:-need,balance:r.qty,cost:r.cost});});
+   const b={id:bid,date:today(),time:ts,productId:p.id,product:p.name,liters:finishedL,remainingLiters:finishedL,cost,status:'open',waterBaseLiters:waterBaseL};db.batches.unshift(b);
+   if(size){let baseName=String(p.name).replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim(),fp=ensureFinishedProduct(baseName,size);pack.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'packaging_use',rawId:pack.id,name:pack.name,qty:-q,balance:pack.qty,cost:pack.cost});if(label){label.qty-=q;db.rawMoves.unshift({id:id(),batchId:bid,date:today(),time:ts,type:'label_use',rawId:label.id,name:label.name,qty:-q,balance:label.qty,cost:label.cost});}fp.qty+=q;b.remainingLiters=finishedL-q*size;if(b.remainingLiters<.0001){b.remainingLiters=0;b.status='closed';}fp.cost=(cost/finishedL*size)+pack.cost+(label?label.cost:0);let mv={id:id(),batchId:bid,date:today(),time:ts,productId:fp.id,name:fp.name,qty:q,liters:q*size,balance:fp.qty,unitCost:fp.cost};db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});}
+   save();alert(size?'Production and packing completed: '+q+' × '+size+'L':'Flash batch saved: '+finishedL+' L (water base '+waterBaseL+' L) and materials deducted');production();
+ };
+})();
+</script>
 </body></html>
