@@ -262,7 +262,7 @@ nav.nav{bottom:18px!important;margin-bottom:18px!important;}
 body{padding-bottom:170px!important;}\n.wrap{padding-bottom:170px!important;}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.2.9</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.0</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -779,7 +779,7 @@ function settings(){
   <div class="title bo-section-title">Settings & Backup</div>
   <div class="panel bo-settings">
    <div class="bo-setting-row"><div><b>USD/LBP Rate</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('Saved')">Save</button></div>
-   <div class="muted" style="margin-bottom:8px">Full backup includes stock, prices, recipes, purchases, sales and settings.</div><div class="bo-backup-row"><button onclick="backup()">⬇️ Export Full Backup</button><label class="bo-file">📁 Choose Backup<input type="file" id="restore" accept=".json,application/json"></label><button class="orange" onclick="restoreDB()">Restore Backup</button></div>
+   <div class="muted" style="margin-bottom:8px">Full backup includes stock, prices, recipes, purchases, sales and settings.</div><div class="bo-backup-row"><button type="button" onclick="backup()">⬇️ Export Full Backup</button><button type="button" class="bo-file" onclick="chooseBackupFile()">📁 Choose Backup</button><input type="file" id="restore" accept=".json,application/json" style="position:absolute;left:-9999px;width:1px;height:1px" onchange="backupFileChosen(this)"><button type="button" class="orange" onclick="restoreDB()">Restore Backup</button></div>
   </div>
  </div>`;
 }
@@ -877,7 +877,9 @@ function editRaw(rid){
 }
 function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions and quantities will be cleared. Recipes, products, purchase prices, price history, customers, suppliers and employees will be kept.'))return;if(!confirm('Final confirmation: clear trial stock and transactions now?'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];db.settings.lastBusinessDate=today();save();alert('GO-LIVE reset completed. Master data and price history were kept. Enter physical stock before starting sales.');home();}
 
-function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='DropsPOS-backup-'+today()+'.json';a.click()}
+function backup(){try{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DropsPOS-backup-'+today()+'.json';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}catch(e){alert('Backup export failed: '+e.message)}}
+function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
+function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
 function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
 const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
 if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
@@ -1593,5 +1595,8 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
    save();alert(size?'Production and packing completed: '+q+' × '+size+'L':'Flash batch saved: '+finishedL+' L (water base '+waterBaseL+' L) and materials deducted');production();
  };
 })();
+</script>
+<script id="drops-backup-fix-v430">
+/* Backup controls fixed for Android/PWA: explicit button opens file picker. */
 </script>
 </body></html>
