@@ -1602,4 +1602,19 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
 <script id="drops-backup-fix-v430">
 /* Backup controls fixed for Android/PWA: explicit button opens file picker. */
 </script>
+<script id="drops-flash-remove-pq7-v431">
+/* Remove stray PQ7 from Flash recipe only; no stock quantities are changed. */
+(function(){
+ const norm=s=>String(s||'').trim().toLowerCase();
+ const p=(db.products||[]).find(x=>norm(x.name)==='flash' && (x.formulaMaster||(+x.size||0)===0)) || (db.products||[]).find(x=>norm(x.name)==='flash');
+ if(p){
+   db.recipes=(db.recipes||[]).filter(x=>{
+     if(String(x.productId)!==String(p.id))return true;
+     const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));
+     return norm(r?.name)!=='pq7';
+   });
+   save();
+ }
+})();
+</script>
 </body></html>
