@@ -808,7 +808,7 @@ function packLeftover1L(bid){const b=db.batches.find(x=>String(x.id)===String(bi
 
 function packing(){
  let open=db.batches.filter(b=>(b.remainingLiters??b.liters)>0);
- $('#app').innerHTML='<div class="title">Batch Packing</div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b> — Batch '+b.liters+' L<br><span class="muted">Remaining '+(b.remainingLiters??b.liters).toFixed(2)+' L • '+b.date+'</span><div class="row" style="margin-top:8px"><select id="pkp'+b.id+'">'+db.products.map(p=>'<option value="'+p.id+'">'+p.name+' ('+(p.size||1)+'L)</option>').join('')+'</select><input id="pkq'+b.id+'" type="number" min="1" placeholder="Pack Count"><button onclick="packBatch('+b.id+')">Pack</button></div></div>').join('')||'No open batches')+'</div>';
+ $('#app').innerHTML='<div class="title">Batch Packing</div><div class="panel">'+(open.map(b=>'<div class="item"><b>'+b.product+'</b> — Batch '+b.liters+' L<br><span class="muted">Remaining '+(b.remainingLiters??b.liters).toFixed(2)+' L • '+b.date+'</span><div class="row" style="margin-top:8px"><select id="pkp'+b.id+'">'+db.products.map(p=>'<option value="'+p.id+'">'+p.name+' ('+(p.size||1)+'L)</option>').join('')+'</select><input id="pkq'+b.id+'" type="number" min="1" placeholder="Pack Count"><button onclick="packBatch('+b.id+')">Pack</button><button class="orange" onclick="wasteBatch('+b.id+')">Waste / Close</button></div></div>').join('')||'No open batches')+'</div>';
 }
 function packBatch(bid){
  let b=db.batches.find(x=>String(x.id)===String(bid)),
@@ -830,6 +830,14 @@ function packBatch(bid){
  let mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,liters,balance:p.qty,unitCost};
  db.packings.unshift(mv);db.stockMoves.unshift({...mv,type:'production_pack'});
  save();alert('Packing completed: '+q+' × '+size+'L\nAdded to finished goods stock\nand deducted '+q+' empty container'+(label?' + '+q+' label':'') );packing();
+}
+function wasteBatch(bid){
+ const b=db.batches.find(x=>String(x.id)===String(bid));if(!b)return;
+ const remain=+(b.remainingLiters??b.liters)||0;if(remain<=0)return alert('Batch is already closed');
+ if(!confirm('Record '+remain.toFixed(2)+' L as waste and close this batch?'))return;
+ b.remainingLiters=0;b.status='closed';
+ const mv={id:id(),batchId:b.id,date:today(),time:new Date().toISOString(),type:'batch_waste',productId:b.productId,name:b.product,qty:-remain,liters:remain,balance:0,unitCost:b.liters?b.cost/b.liters:0};
+ db.stockMoves.unshift(mv);save();alert('Waste recorded: '+remain.toFixed(2)+' L\nBatch closed');packing();
 }
 function historyReport(){
  let from=document.getElementById('histFrom')?.value||today(),to=document.getElementById('histTo')?.value||today();
