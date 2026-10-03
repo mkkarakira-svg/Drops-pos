@@ -949,6 +949,18 @@ if(!db._laundryRecipeFix3){
 }
 
 
+/* LAUNDRY GEL RECIPE CORRECTION - confirmed 2026-10-03 */
+if(!db._laundryRecipeFix4){
+ const norm=x=>String(x||'').trim().toLowerCase();
+ const rawFor=(name,cost=0)=>{let r=db.raw.find(x=>norm(x.name)===norm(name));if(!r){r={id:id(),name,qty:0,cost,unit:'kg'};db.raw.push(r)}return r};
+ const spec=[['tayloz',.002],['selfonic',.050],['soda',.007],['n70',.020],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.005],['colour200',.001],['salt',.025],['water 10l',.001]];
+ db.products.filter(p=>/laundry|washing/i.test(String(p.name||''))).forEach(lp=>{
+   db.recipes=db.recipes.filter(z=>String(z.productId)!==String(lp.id));
+   spec.forEach(([n,q])=>{const rr=rawFor(n);db.recipes.push({id:id(),productId:lp.id,rawId:rr.id,qtyPerLiter:q})});
+ });
+ db._laundryRecipeFix4=true;save();
+}
+
 if(!db._packagingSeed1){
  [['Gallon 5L',0.34],['Gallon 4L',0.45],['Bottle 1L',0.15]].forEach(([name,cost])=>{
    if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'piece',category:'packaging'});
