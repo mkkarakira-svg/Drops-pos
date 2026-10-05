@@ -290,7 +290,7 @@ body{padding-bottom:0!important;}
 .selling-family-list{display:grid;gap:10px}.selling-family-card{background:#fff;border:1px solid #e6ebf2;border-radius:17px;overflow:hidden;box-shadow:0 4px 14px #0714260d}.selling-family-head{width:100%;border:0;background:#fff;padding:17px 16px;display:flex;justify-content:space-between;align-items:center;font-size:17px;text-align:left}.selling-family-head span{font-size:25px;color:#2473f3}.selling-family-body{padding:0 12px 12px}.selling-size-row{display:grid;grid-template-columns:55px 1fr 1fr;gap:9px;align-items:end;border-top:1px solid #edf0f4;padding:12px 0}.selling-size-badge{background:#eef5ff;color:#1859b7;border-radius:10px;padding:10px 5px;text-align:center;font-weight:900}.selling-size-row label{font-size:12px;color:#667085}.selling-size-row input{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border-radius:10px}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.11</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.12</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -859,7 +859,7 @@ function settings(){
 
 
 function sellingPrices(){
- const base=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();
+ const base=n=>String(n||'').replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim();
  const ps=posSellProducts().filter(p=>+(p.size||0)!==1);
  const groups={};ps.forEach(p=>{const n=base(p.name),k=n.toLowerCase();if(!groups[k])groups[k]={name:n,items:[]};groups[k].items.push(p)});
  const gs=Object.values(groups).sort((a,b)=>a.name.localeCompare(b.name));
