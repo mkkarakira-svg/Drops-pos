@@ -276,8 +276,12 @@ body{padding-bottom:0!important;}
 .home-leftovers-card{width:100%;margin:10px 0 12px;border:0;border-radius:18px;background:#fff;box-shadow:0 4px 14px #07142612;padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;text-align:left;color:#071426;cursor:pointer}
 .home-leftovers-icon{font-size:27px}.home-leftovers-card b{display:block;font-size:17px}.home-leftovers-card small{display:block;margin-top:3px;font-size:11px;color:#64748b;font-weight:600}.home-leftovers-arrow{font-size:27px;font-weight:800;color:#64748b}
 </style>
+<style id="ppm-search-visible-v433">
+.ppm-search-box{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;gap:9px!important;background:#fff!important;border:2px solid #2473f3!important;border-radius:16px!important;padding:9px 13px!important;margin:10px 0 12px!important;box-shadow:0 4px 14px #07142612!important}
+.ppm-search-box span{font-size:21px!important}.ppm-search-box input{display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;min-width:0!important;border:0!important;outline:0!important;background:transparent!important;font-size:16px!important;padding:8px 2px!important;color:#071426!important}
+</style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.2</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.3</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -484,7 +488,8 @@ function purchasePriceMaster(){
  const grouped={};cats.forEach(c=>grouped[c]=[]);
  (db.raw||[]).forEach(r=>{let c=rawCategoryOf(r);if(!grouped[c])c='Raw Materials';grouped[c].push(r)});
  $('#app').innerHTML=`<div class="title">Purchase Price Master</div>
- <div class="panel"><div class="muted">Official purchase prices. Choose a box below to view, add and edit items.</div><div style="margin-top:10px"><input id="ppmSearch" type="search" placeholder="🔍 Search material..." oninput="filterPriceMaster()" style="width:100%;font-size:16px;padding:12px 14px"></div></div>
+ <div class="panel"><div class="muted">Official purchase prices. Choose a category to view, add and edit items.</div></div>
+ <div class="ppm-search-box"><span>🔍</span><input id="ppmSearch" type="text" placeholder="Search material — e.g. tayloz" oninput="filterPriceMaster()"></div>
  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
   ${cats.map((c,i)=>`<button class="${i===0?'green':''}" id="ppmTab${i}" onclick="showPriceMasterCategory(${i})" style="min-height:76px;font-weight:800">${c}<br><small>${grouped[c].length} items</small></button>`).join('')}
  </div>
