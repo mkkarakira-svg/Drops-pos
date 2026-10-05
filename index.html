@@ -290,7 +290,7 @@ body{padding-bottom:0!important;}
 .selling-family-list{display:grid;gap:10px}.selling-family-card{background:#fff;border:1px solid #e6ebf2;border-radius:17px;overflow:hidden;box-shadow:0 4px 14px #0714260d}.selling-family-head{width:100%;border:0;background:#fff;padding:17px 16px;display:flex;justify-content:space-between;align-items:center;font-size:17px;text-align:left}.selling-family-head span{font-size:25px;color:#2473f3}.selling-family-body{padding:0 12px 12px}.selling-size-row{display:grid;grid-template-columns:55px 1fr 1fr;gap:9px;align-items:end;border-top:1px solid #edf0f4;padding:12px 0}.selling-size-badge{background:#eef5ff;color:#1859b7;border-radius:10px;padding:10px 5px;text-align:center;font-weight:900}.selling-size-row label{font-size:12px;color:#667085}.selling-size-row input{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border-radius:10px}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.13</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.14</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -859,16 +859,29 @@ function settings(){
 
 
 function sellingPrices(){
- const base=n=>{let s=String(n||'').trim();return s.replace(new RegExp('\\\\s+(1|4|5|10|20)L\\\\s*
- const ps=posSellProducts().filter(p=>+(p.size||0)!==1);
- const groups={};ps.forEach(p=>{const n=base(p.name),k=n.toLowerCase();if(!groups[k])groups[k]={name:n,items:[]};groups[k].items.push(p)});
- const gs=Object.values(groups).sort((a,b)=>a.name.localeCompare(b.name));
- $('#app').innerHTML=`<div class="title">Selling Prices</div><div class="panel selling-price-intro"><b>💰 Sales Price Master</b><div class="muted">Tap an item to set its 4L, 5L or other available selling prices.</div></div><div class="selling-family-list">${gs.map((g,i)=>`<div class="selling-family-card"><button type="button" class="selling-family-head" onclick="toggleSellingFamily('spf_${i}',this)"><b>${g.name}</b><span>›</span></button><div id="spf_${i}" class="selling-family-body" style="display:none">${g.items.sort((a,b)=>(+a.size||0)-(+b.size||0)).map(p=>`<div class="selling-size-row"><div class="selling-size-badge">${p.size}L</div><label>Retail $<input id="spr_${p.id}" type="number" min="0" step=".01" value="${+p.price||0}"></label><label>Wholesale $<input id="spw_${p.id}" type="number" min="0" step=".01" value="${+p.wholesalePrice||0}"></label></div>`).join('')}</div></div>`).join('')}</div><button class="selling-price-save" onclick="saveSellingPrices()">💾 Save All Selling Prices</button>`;
+ var ps=posSellProducts().filter(function(p){return +(p.size||0)!==1});
+ var groups={};
+ ps.forEach(function(p){
+  var full=String(p.name||'').trim(), parts=full.split(' '), last=parts[parts.length-1]||'', name=full;
+  if(/^(1|4|5|10|20)L$/i.test(last)){parts.pop();name=parts.join(' ').trim()}
+  var k=name.toLowerCase();
+  if(!groups[k])groups[k]={name:name,items:[]};
+  groups[k].items.push(p);
+ });
+ var gs=Object.keys(groups).map(function(k){return groups[k]}).sort(function(a,b){return a.name.localeCompare(b.name)});
+ var html='<div class="title">Selling Prices</div><div class="panel selling-price-intro"><b>💰 Sales Price Master</b><div class="muted">Tap an item to set its available selling prices.</div></div><div class="selling-family-list">';
+ gs.forEach(function(g,i){
+  html+='<div class="selling-family-card"><button type="button" class="selling-family-head" onclick="toggleSellingFamily(\'spf_'+i+'\',this)"><b>'+g.name+'</b><span>›</span></button><div id="spf_'+i+'" class="selling-family-body" style="display:none">';
+  g.items.sort(function(a,b){return (+a.size||0)-(+b.size||0)}).forEach(function(p){
+   html+='<div class="selling-size-row"><div class="selling-size-badge">'+p.size+'L</div><label>Retail $<input id="spr_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.price||0)+'"></label><label>Wholesale $<input id="spw_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.wholesalePrice||0)+'"></label></div>';
+  });
+  html+='</div></div>';
+ });
+ html+='</div><button class="selling-price-save" onclick="saveSellingPrices()">💾 Save All Selling Prices</button>';
+ $('#app').innerHTML=html;
 }
-function toggleSellingFamily(id,btn){const el=document.getElementById(id);if(!el)return;const open=el.style.display!=='none';el.style.display=open?'none':'block';const a=btn&&btn.querySelector('span');if(a)a.textContent=open?'›':'⌄'}
-function saveSellingPrices(){
- let n=0;posSellProducts().filter(p=>+(p.size||0)!==1).forEach(p=>{const r=document.getElementById('spr_'+p.id),w=document.getElementById('spw_'+p.id);if(!r||!w)return;const rv=parseFloat(r.value),wv=parseFloat(w.value);if(Number.isFinite(rv)&&rv>=0)p.price=rv;if(Number.isFinite(wv)&&wv>=0)p.wholesalePrice=wv;n++});save();alert('Selling prices saved: '+n+' products');
-}
+function toggleSellingFamily(id,btn){var el=document.getElementById(id);if(!el)return;var open=el.style.display!=='none';el.style.display=open?'none':'block';var a=btn&&btn.querySelector('span');if(a)a.textContent=open?'›':'⌄'}
+function saveSellingPrices(){var n=0;posSellProducts().filter(function(p){return +(p.size||0)!==1}).forEach(function(p){var r=document.getElementById('spr_'+p.id),w=document.getElementById('spw_'+p.id);if(!r||!w)return;var rv=parseFloat(r.value),wv=parseFloat(w.value);if(Number.isFinite(rv)&&rv>=0)p.price=rv;if(Number.isFinite(wv)&&wv>=0)p.wholesalePrice=wv;n++});save();alert('Selling prices saved: '+n+' products')}
 function costing(){
  const masters=(db.products||[]).filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  const costPerL=p=>(db.recipes||[]).filter(x=>String(x.productId)===String(p.id)).reduce((t,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return t+(+x.qtyPerLiter||0)*(+r?.cost||0)},0);
