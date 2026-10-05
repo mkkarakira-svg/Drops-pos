@@ -1508,33 +1508,15 @@ window.voidInvoice=function(i){
 function dropsFinishedUnitCost(p){
  if(!p||p.formulaMaster)return 0;
  const parseSize=v=>{const m=String(v==null?'':v).match(/(1|4|5|10|20)/);return m?+m[1]:0};
- const size=parseSize(p.size)||parseSize(p.name); if(!size)return +p.cost||0;
- const base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
- const formulas={
-  'dishwashing':[['tayloz',.002],['selfonic',.05],['soda (caustic flakes)',.007],['n70',.05],['bb4',.01],['kd',.005],['parmatol',.001],['fragrance',.0015],['colour200',.001],['salt',.02],['water 10l',.001]],
-  'hand soap':[['n70',.08],['bb4',.02],['kd',.02],['b.s',.002],['parmatol',.001],['fragrance',.004],['colour200',.001],['salt',.02],['water 10l',.001]],
-  'laundry gel':[['tayloz',.002],['selfonic',.04],['soda (caustic flakes)',.007],['n70',.04],['semasol',.01],['anti foam',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025],['water 10l',.001]],
-  'comfort':[['candel b',.02],['oil balsam',.015],['parmatol',.001],['fragrance',.005],['colour200',.0002],['water 10l',.001]],
-  'floor cleaner':[['selfonic',.005],['soda (caustic flakes)',.001],['n70',.01],['ipa',.01],['parmatol',.005],['fragrance',.005],['colour200',.001],['semasol',.0025],['water 10l',.001]],
-  'pine oil':[['rw',.045],['colour200',.001],['water 10l',.001]],
-  'javel':[['clore 12%',.001],['fragrance',.001],['water 10l',.003]],
-  'flash':[['flash hcl 30kg',.001],['phosphoric acid',.01],['semasol',.005],['fragrance',.001],['antra',.002],['water 10l',.0023]],
-  'rambo':[['n70',.01],['citric acid',.01],['ipa',.02],['pvp',.025],['soda (caustic flakes)',.025],['colour200',.001],['water 10l',.001]],
-  'shampoo':[['n70',.12],['kd',.03],['bb4',.03],['pq7',.01],['glycerin',.003],['parmatol',.001],['fragrance',.004],['colour200',.001],['salt',.02],['water 10l',.001]],
-  'tab':[['stpp',.008],['n70',.05],['semasol',.04],['pvp',.005],['ipa',.001],['parmatol',.001],['fragrance',.002],['colour200',.001],['water 10l',.001]]
- };
+ const size=parseSize(p.size)||parseSize(p.name);if(!size)return +p.cost||0;
  const norm=n=>String(n||'').trim().toLowerCase();
- const rawCost=n=>{const r=(db.raw||[]).find(x=>norm(x.name)===norm(n));return r?(+r.cost||0):0};
- const formula=formulas[base];
- let perL=formula?formula.reduce((t,x)=>t+x[1]*rawCost(x[0]),0):0;
- if(!formula){
-   const owners=(db.products||[]).filter(x=>String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()===base);
-   const rec=(db.recipes||[]).filter(r=>owners.some(o=>String(o.id)===String(r.productId)));
-   perL=rec.reduce((t,x)=>{const r=(db.raw||[]).find(q=>String(q.id)===String(x.rawId));return t+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
- }
+ const base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
+ const masters=(db.products||[]).filter(x=>x.formulaMaster&&String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()===base);
+ const rec=(db.recipes||[]).filter(x=>masters.some(m=>String(m.id)===String(x.productId)));
+ const perL=rec.reduce((t,x)=>{const r=(db.raw||[]).find(q=>String(q.id)===String(x.rawId));return t+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
  let pack=0;
  const names=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
- const c=(db.raw||[]).find(r=>names.includes(norm(r.name)));if(c)pack+=+c.cost||0;
+ const container=(db.raw||[]).find(r=>names.includes(norm(r.name)));if(container)pack+=+container.cost||0;
  const label=(db.raw||[]).find(r=>['label sticker','label','sticker'].includes(norm(r.name)));if(label)pack+=+label.cost||0;
  return perL*size+pack;
 }
