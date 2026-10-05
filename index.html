@@ -484,14 +484,15 @@ function purchasePriceMaster(){
  const grouped={};cats.forEach(c=>grouped[c]=[]);
  (db.raw||[]).forEach(r=>{let c=rawCategoryOf(r);if(!grouped[c])c='Raw Materials';grouped[c].push(r)});
  $('#app').innerHTML=`<div class="title">Purchase Price Master</div>
- <div class="panel"><div class="muted">Official purchase prices. Choose a box below to view, add and edit items.</div></div>
+ <div class="panel"><div class="muted">Official purchase prices. Choose a box below to view, add and edit items.</div><div style="margin-top:10px"><input id="ppmSearch" type="search" placeholder="🔍 Search material..." oninput="filterPriceMaster()" style="width:100%;font-size:16px;padding:12px 14px"></div></div>
  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
   ${cats.map((c,i)=>`<button class="${i===0?'green':''}" id="ppmTab${i}" onclick="showPriceMasterCategory(${i})" style="min-height:76px;font-weight:800">${c}<br><small>${grouped[c].length} items</small></button>`).join('')}
  </div>
  ${cats.map((c,i)=>`<div id="ppmBox${i}" class="panel" style="display:${i===0?'block':'none'}"><h3 style="margin-top:0">${c}</h3>
  <div class="row" style="margin-bottom:10px"><input id="ppmName${i}" placeholder="New item name"><select id="ppmUnit${i}"><option>kg</option><option>Piece</option><option>Liter</option><option>Carton</option><option>Bag</option></select><input id="ppmCost${i}" type="number" step=".001" min="0" placeholder="Unit Price $"><button class="green" onclick="addPriceMasterItem(${i})">+ Add Item</button></div>
- ${grouped[c].length?grouped[c].map(r=>`<div class="item"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><input id="min_${r.id}" type="number" step=".001" min="0" value="${+r.minStock||0}" placeholder="Min Stock"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button><button onclick="showPriceHistory('${r.id}')">History</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}<div id="priceHistoryBox"></div>`;
+ ${grouped[c].length?grouped[c].map(r=>`<div class="item ppm-material" data-name="${String(r.name||'').toLowerCase()}"><b>${r.name}</b><div class="row" style="margin-top:7px"><input id="mp_${r.id}" type="number" step=".001" min="0" value="${+r.cost||0}" placeholder="Unit Price $"><input id="min_${r.id}" type="number" step=".001" min="0" value="${+r.minStock||0}" placeholder="Min Stock"><span class="muted">${r.unit||((/gallon|bottle|label/i.test(r.name))?'Piece':'kg')}</span><button onclick="saveMasterPrice('${r.id}')">Save</button><button onclick="showPriceHistory('${r.id}')">History</button></div></div>`).join(''):'<div class="muted">No items in this category</div>'}</div>`).join('')}<div id="priceHistoryBox"></div>`;
 }
+function filterPriceMaster(){const q=String(document.getElementById('ppmSearch')?.value||'').trim().toLowerCase();document.querySelectorAll('.ppm-material').forEach(el=>{el.style.display=!q||String(el.dataset.name||'').includes(q)?'block':'none'});}
 function showPriceMasterCategory(i){
  [0,1,2].forEach(n=>{let b=document.getElementById('ppmBox'+n),t=document.getElementById('ppmTab'+n);if(b)b.style.display=n===i?'block':'none';if(t)t.classList.toggle('green',n===i)});
 }
