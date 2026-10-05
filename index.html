@@ -287,7 +287,7 @@ body{padding-bottom:0!important;}
 .selling-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.selling-price-card{background:#fff;border:1px solid #e6ebf2;border-radius:17px;padding:12px;box-shadow:0 4px 14px #0714260d}.selling-price-name{display:flex;justify-content:space-between;gap:6px;align-items:center;margin-bottom:9px}.selling-price-name b{font-size:15px}.selling-price-name span{background:#eef5ff;border-radius:9px;padding:4px 7px;font-weight:800;color:#1859b7}.selling-price-card label{display:block;font-size:12px;color:#667085;margin-top:7px}.selling-price-card input{width:100%;box-sizing:border-box;margin-top:4px;padding:9px;border-radius:10px}.selling-price-save{position:sticky;bottom:72px;width:100%;min-height:50px;margin-top:14px;border-radius:15px;font-weight:900}.selling-price-intro{margin-bottom:11px}@media(max-width:390px){.selling-price-grid{grid-template-columns:1fr}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.9</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.10</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -308,7 +308,7 @@ function go(x,fromHistory=false){
   case 'sale':return sale();case 'products':return products();case 'reports':return reports();
   case 'raw':return raw();case 'stockAlerts':return stockAlerts();case 'production':return production();case 'purchases':return purchases();
   case 'expenses':return expenses();case 'cashbox':return cashbox();case 'stocktake':return stocktake();case 'closingPage':return closingPage();case 'accountsPage':return accountsPage();case 'invoices':return invoices();case 'people':return people();
-  case 'settings':return settings();case 'employees':return employees();case 'costing':return costing();case 'packing':return packing();case 'leftovers':return leftovers();case 'historyReport':return historyReport();case 'purchasePriceMaster':return purchasePriceMaster();
+  case 'settings':return settings();case 'employees':return employees();case 'costing':return costing();case 'sellingPrices':return sellingPrices();case 'packing':return packing();case 'leftovers':return leftovers();case 'historyReport':return historyReport();case 'purchasePriceMaster':return purchasePriceMaster();
   case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();
   default:return home();
  }
