@@ -547,11 +547,21 @@ function editPurchase(pid){
  $('#puSaveBtn').textContent='Save Changes';$('#puCancelBtn').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
 }
 function cancelPurchaseEdit(){purchaseEditId=null;purchases()}
+function togglePurchaseInvoice(key){
+ const el=document.getElementById('inv_'+key);if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
 function renderPurchaseList(){
  const from=$('#puFrom')?.value||'',to=$('#puTo')?.value||'',cat=$('#puFilterCat')?.value||'';
  let list=(db.purchases||[]).filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)&&(!cat||x.category===cat));
  const total=list.reduce((a,x)=>a+(x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0)),0);
- $('#purchaseList').innerHTML=`<div class="item"><b>Total Purchases</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(x=>{let t=x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0);return `<div class="item"><b>${x.name}</b> <span class="pill">${x.category||'Raw Materials'}</span><span style="float:left"><b>${money(t)}</b></span><div class="muted">${x.date||''} • ${x.qty||0} ${x.unit||'kg'} × ${money(x.cost||0)}${x.supplier?' • '+x.supplier:''}${x.invoiceNo?' • Invoice '+x.invoiceNo:''}</div>${x.note?`<div class="muted">${x.note}</div>`:''}<button style="margin-top:8px" onclick="editPurchase('${x.id}')">✏️ Edit</button></div>`}).join(''):'<div class="muted">No purchases in this selection</div>'}`;
+ const groups={};
+ list.forEach(x=>{const inv=String(x.invoiceNo||'No Invoice').trim()||'No Invoice',key=(x.date||'')+'|'+inv+'|'+(x.supplier||'');(groups[key]||(groups[key]={invoice:inv,date:x.date||'',supplier:x.supplier||'',items:[]})).items.push(x)});
+ const cards=Object.values(groups).map((g,idx)=>{
+   const gt=g.items.reduce((a,x)=>a+(x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0)),0),dom='g'+idx;
+   const rows=g.items.map(x=>{const t=x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0);return `<div class="item" style="margin:8px 0"><b>${x.name}</b> <span class="pill">${x.category||'Raw Materials'}</span><span style="float:left"><b>${money(t)}</b></span><div class="muted">${x.qty||0} ${x.unit||'kg'} × ${money(x.cost||0)}</div>${x.note?`<div class="muted">${x.note}</div>`:''}<button style="margin-top:7px" onclick="editPurchase('${x.id}')">✏️ Edit</button></div>`}).join('');
+   return `<div class="item" style="margin-top:12px"><div onclick="togglePurchaseInvoice('${dom}')" style="cursor:pointer"><b>Invoice ${g.invoice}</b><span style="float:left"><b>${money(gt)}</b></span><div class="muted">${g.date}${g.supplier?' • '+g.supplier:''} • ${g.items.length} item${g.items.length===1?'':'s'} • Tap to review</div></div><div id="inv_${dom}" style="display:none;margin-top:8px">${rows}<div style="padding:10px 0;border-top:1px solid #ddd"><b>Invoice Total</b><span style="float:left"><b>${money(gt)}</b></span></div></div></div>`;
+ }).join('');
+ $('#purchaseList').innerHTML=`<div class="item"><b>Total Purchases</b><span style="float:left"><b>${money(total)}</b></span></div>${cards||'<div class="muted">No purchases in this selection</div>'}`;
 }
 function buyRaw(){addPurchase()}
 function production(){
