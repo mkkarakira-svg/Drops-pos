@@ -488,6 +488,7 @@ function addPriceMasterItem(i){
 }
 function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v=+document.getElementById('mp_'+rid).value,m=+document.getElementById('min_'+rid).value;if(!r||v<0||m<0)return;let old=+r.cost||0;if(v!==old)db.priceHistory.unshift({id:id(),rawId:r.id,name:r.name,date:today(),time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:v,source:'Price Master'});r.cost=v;r.minStock=m;save();alert('Price & minimum stock updated for '+r.name)}
 function showPriceHistory(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),h=(db.priceHistory||[]).filter(x=>String(x.rawId)===String(rid)).slice(0,10),el=document.getElementById('priceHistoryBox');if(!el||!r)return;el.innerHTML=`<div class="panel"><h3>${r.name} — Price History</h3>${h.length?h.map(x=>`<div class="item"><b>${money(x.oldPrice)} → ${money(x.newPrice)}</b><div class="muted">${x.date} • ${x.source||''}</div></div>`).join(''):'<div class="muted">No price changes yet</div>'}</div>`;el.scrollIntoView({behavior:'smooth'})}
+let purchaseEditId=null;
 function purchases(){
  const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
  const suppliers=(db.people||[]).filter(p=>p.type==='Supplier');
@@ -497,15 +498,16 @@ function purchases(){
   <div class="row"><select id="puCat" onchange="purchaseCatChange()"><option value="">Select Category</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select><select id="puRaw" style="display:none"><option value="">Select Stock Material</option>${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select><input id="puDesc" placeholder="Description / What was purchased?"></div>
   <div class="row"><input id="puQty" type="number" step=".001" min="0" placeholder="Quantity"><select id="puUnit"><option>kg</option><option>Piece</option><option>Carton</option><option>Bag</option><option>Liter</option><option>Ton</option><option>Service</option></select><input id="puPrice" type="number" step=".001" min="0" placeholder="Unit Price $"></div>
   <div class="row"><select id="puPay"><option>Cash</option><option>Credit</option><option>Transfer</option><option>Cheque</option></select><input id="puInvoice" placeholder="Invoice No."><input id="puNote" placeholder="Notes"></div>
-  <button class="orange" style="width:100%;margin-top:8px" onclick="addPurchase()">Record Purchase</button>
+  <button id="puSaveBtn" class="orange" style="width:100%;margin-top:8px" onclick="addPurchase()">Record Purchase</button>
+  <button id="puCancelBtn" style="width:100%;margin-top:8px;display:none" onclick="cancelPurchaseEdit()">Cancel Edit</button>
  </div>
  <div class="panel"><div style="margin-bottom:10px"><b>Quick Purchase Report</b><div class="muted">Filter purchases by period and category</div></div><div class="row"><input id="puFrom" type="date" aria-label="From Date" title="From Date" onchange="renderPurchaseList()"><input id="puTo" type="date" aria-label="To Date" title="To Date" onchange="renderPurchaseList()"><select id="puFilterCat" onchange="renderPurchaseList()"><option value="">All Categories</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select></div><div id="purchaseList"></div></div>`;
  purchaseCatChange();renderPurchaseList();
 }
-function purchaseCatChange(){
+function purchaseCatChange(skipPrice){
  const c=$('#puCat')?.value||'',stock=['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(c);
  if($('#puRaw')){$('#puRaw').style.display=stock?'':'none';$('#puRaw').onchange=purchaseItemPrice}
- if($('#puPrice')){$('#puPrice').readOnly=stock;if(stock)purchaseItemPrice()}
+ if($('#puPrice')){$('#puPrice').readOnly=false;if(stock&&!skipPrice)purchaseItemPrice()}
 }
 function purchaseItemPrice(){
  const r=db.raw.find(x=>String(x.id)===String($('#puRaw')?.value||''));
@@ -517,16 +519,39 @@ function addPurchase(){
  let raw=null,name=desc;
  if(['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(cat)&&rawId){raw=db.raw.find(r=>String(r.id)===String(rawId));if(raw)name=raw.name}
  if(!name)return alert('Enter description or select material');
- const total=q*price,p={id:id(),date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
- db.purchases.unshift(p);
+ const vals={date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total:q*price,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
+ if(purchaseEditId){
+   const p=db.purchases.find(x=>String(x.id)===String(purchaseEditId));if(!p)return alert('Purchase not found');
+   const oldRaw=p.rawId?db.raw.find(r=>String(r.id)===String(p.rawId)):null,oldQty=+p.qty||0;
+   if(oldRaw)oldRaw.qty=Math.max(0,(+oldRaw.qty||0)-oldQty);
+   if(raw)raw.qty=(+raw.qty||0)+q;
+   const affected=[oldRaw,raw].filter(Boolean);
+   Object.assign(p,vals);
+   db.rawMoves=(db.rawMoves||[]).filter(m=>String(m.purchaseId)!==String(p.id));
+   if(raw)db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase_edit',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id});
+   affected.forEach(rr=>{
+     const latest=(db.purchases||[]).filter(x=>String(x.rawId)===String(rr.id)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.id).localeCompare(String(a.id)))[0];
+     if(latest){const old=+rr.cost||0,newPrice=+latest.cost||0;if(old!==newPrice)db.priceHistory.unshift({id:id(),rawId:rr.id,name:rr.name,date:today(),time:new Date().toLocaleTimeString(),oldPrice:old,newPrice,source:'Purchase Edit',supplier:latest.supplier||''});rr.cost=newPrice}
+   });
+   purchaseEditId=null;save();purchases();return;
+ }
+ const p={id:id(),...vals};db.purchases.unshift(p);
  if(raw){let old=+raw.cost||0;if(price!==old){db.priceHistory.unshift({id:id(),rawId:raw.id,name:raw.name,date:p.date,time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:price,source:'Purchase',supplier:p.supplier||''});raw.cost=price}raw.qty=(+raw.qty||0)+q;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
  save();purchases();
 }
+function editPurchase(pid){
+ const p=(db.purchases||[]).find(x=>String(x.id)===String(pid));if(!p)return;
+ purchaseEditId=p.id;
+ $('#puDate').value=p.date||today();$('#puSupplier').value=p.supplier||'';$('#puCat').value=p.category||'';purchaseCatChange(true);
+ if($('#puRaw'))$('#puRaw').value=p.rawId||'';$('#puDesc').value=p.name||'';$('#puQty').value=p.qty||'';$('#puUnit').value=p.unit||'kg';$('#puPrice').value=p.cost??'';$('#puPay').value=p.payment||'Cash';$('#puInvoice').value=p.invoiceNo||'';$('#puNote').value=p.note||'';
+ $('#puSaveBtn').textContent='Save Changes';$('#puCancelBtn').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
+}
+function cancelPurchaseEdit(){purchaseEditId=null;purchases()}
 function renderPurchaseList(){
  const from=$('#puFrom')?.value||'',to=$('#puTo')?.value||'',cat=$('#puFilterCat')?.value||'';
  let list=(db.purchases||[]).filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)&&(!cat||x.category===cat));
  const total=list.reduce((a,x)=>a+(x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0)),0);
- $('#purchaseList').innerHTML=`<div class="item"><b>Total Purchases</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(x=>{let t=x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0);return `<div class="item"><b>${x.name}</b> <span class="pill">${x.category||'Raw Materials'}</span><span style="float:left"><b>${money(t)}</b></span><div class="muted">${x.date||''} • ${x.qty||0} ${x.unit||'kg'} × ${money(x.cost||0)}${x.supplier?' • '+x.supplier:''}${x.invoiceNo?' • Invoice '+x.invoiceNo:''}</div>${x.note?`<div class="muted">${x.note}</div>`:''}</div>`}).join(''):'<div class="muted">No purchases in this selection</div>'}`;
+ $('#purchaseList').innerHTML=`<div class="item"><b>Total Purchases</b><span style="float:left"><b>${money(total)}</b></span></div>${list.length?list.map(x=>{let t=x.total!=null?+x.total:(+x.qty||0)*(+x.cost||0);return `<div class="item"><b>${x.name}</b> <span class="pill">${x.category||'Raw Materials'}</span><span style="float:left"><b>${money(t)}</b></span><div class="muted">${x.date||''} • ${x.qty||0} ${x.unit||'kg'} × ${money(x.cost||0)}${x.supplier?' • '+x.supplier:''}${x.invoiceNo?' • Invoice '+x.invoiceNo:''}</div>${x.note?`<div class="muted">${x.note}</div>`:''}<button style="margin-top:8px" onclick="editPurchase('${x.id}')">✏️ Edit</button></div>`}).join(''):'<div class="muted">No purchases in this selection</div>'}`;
 }
 function buyRaw(){addPurchase()}
 function production(){
