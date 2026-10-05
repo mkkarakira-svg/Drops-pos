@@ -829,17 +829,19 @@ function settings(){
 
 function costing(){
  const masters=(db.products||[]).filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
- $('#app').innerHTML=`<div class="title">Costing</div><div class="panel"><div class="muted">Tap a formula to see its recipe cost using the latest raw-material prices.</div></div><div id="costingList">${masters.map(p=>costingCard(p)).join('')}</div>`;
+ const costPerL=p=>(db.recipes||[]).filter(x=>String(x.productId)===String(p.id)).reduce((t,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return t+(+x.qtyPerLiter||0)*(+r?.cost||0)},0);
+ $('#app').innerHTML=`<div class="title">Costing</div><div class="panel"><div class="muted">Latest purchase prices • Tap a product to open full costing</div></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${masters.map(p=>`<button onclick="openCosting('${p.id}')" style="min-height:88px;padding:12px;border-radius:16px;text-align:left"><b style="display:block;font-size:16px">${p.name}</b><span class="muted">Cost/L</span><b style="display:block;margin-top:4px">${money3(costPerL(p))}</b></button>`).join('')}</div>`;
 }
-function costingCard(p){
+function money3(v){return '$'+(+v||0).toFixed(3)}
+function openCosting(pid){
+ const p=(db.products||[]).find(x=>String(x.id)===String(pid));if(!p)return;
  const rec=(db.recipes||[]).filter(x=>String(x.productId)===String(p.id));
- const rows=rec.map(x=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId)),qty=+x.qtyPerLiter||0,price=+r?.cost||0,cost=qty*price;return {name:r?.name||'Material',g:qty*1000,price,cost}}),perL=rows.reduce((a,x)=>a+x.cost,0);
- const safe='cost_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'');
- const detail=rows.map(x=>`<div class="item"><b>${x.name}</b><span style="float:left"><b>${money(x.cost)}</b></span><div class="muted">${Number(x.g.toFixed(3))} g/L × ${money(x.price)}/kg</div></div>`).join('');
- const packs=allowedPackSizes(p.name).map(sz=>{const names=sz===20?['gallon 20l','20l gallon']:sz===10?['gallon 10l','10l gallon']:sz===5?['gallon 5l','5l gallon']:sz===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'],norm=n=>String(n||'').trim().toLowerCase(),container=(db.raw||[]).find(r=>names.includes(norm(r.name))),label=(db.raw||[]).find(r=>['label sticker','label','sticker'].includes(norm(r.name))),pack=(+container?.cost||0)+(+label?.cost||0),total=perL*sz+pack;return `<div class="item"><b>${sz}L Final Cost</b><span style="float:left"><b>${money(total)}</b></span><div class="muted">Liquid ${money(perL*sz)} + package ${money(pack)}</div></div>`}).join('');
- return `<div class="panel" style="margin-bottom:10px"><div onclick="toggleCosting('${safe}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:17px">${p.name}</b><div class="muted">Recipe cost / 1L: ${money(perL)}</div></div><b>⌄</b></div><div id="${safe}" style="display:none;margin-top:10px">${detail||'<div class="muted">No recipe saved</div>'}<div class="item"><b>Total Recipe / 1L</b><span style="float:left"><b>${money(perL)}</b></span></div>${packs}</div></div>`;
+ const rows=rec.map(x=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId)),qty=+x.qtyPerLiter||0,price=+r?.cost||0;return {name:r?.name||'Material',g:qty*1000,price,cost:qty*price}});
+ const perL=rows.reduce((a,x)=>a+x.cost,0);
+ const materialRows=rows.map(x=>`<div style="display:grid;grid-template-columns:minmax(0,1.5fr) .75fr .9fr .9fr;gap:6px;align-items:center;padding:10px 0;border-bottom:1px solid #e5e7eb"><b style="min-width:0;overflow-wrap:anywhere">${x.name}</b><span>${Number(x.g.toFixed(3))} g</span><span>${money3(x.price)}/kg</span><b style="text-align:right">${money3(x.cost)}</b></div>`).join('');
+ const packs=allowedPackSizes(p.name).map(sz=>{const norm=n=>String(n||'').trim().toLowerCase(),names=sz===20?['gallon 20l','20l gallon']:sz===10?['gallon 10l','10l gallon']:sz===5?['gallon 5l','5l gallon']:sz===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'],container=(db.raw||[]).find(r=>names.includes(norm(r.name))),label=(db.raw||[]).find(r=>['label sticker','label','sticker'].includes(norm(r.name))),packageCost=(+container?.cost||0)+(+label?.cost||0),liquid=perL*sz,total=liquid+packageCost;return `<div class="item"><b>${sz}L Final Cost</b><b style="float:left">${money3(total)}</b><div class="muted">Liquid ${money3(liquid)} + Package ${money3(packageCost)}</div></div>`}).join('');
+ $('#app').innerHTML=`<div class="title">Costing — ${p.name}</div><button onclick="costing()" style="margin-bottom:10px">← All Products</button><div class="panel"><div style="display:grid;grid-template-columns:minmax(0,1.5fr) .75fr .9fr .9fr;gap:6px;padding-bottom:8px;border-bottom:2px solid #d1d5db"><b>Material</b><b>g/L</b><b>Price</b><b style="text-align:right">Cost/L</b></div>${materialRows||'<div class="muted" style="padding:12px 0">No recipe saved</div>'}<div style="padding:14px 0;font-size:18px"><b>Total Recipe / 1L</b><b style="float:left">${money3(perL)}</b></div></div><div class="panel">${packs}</div>`;
 }
-function toggleCosting(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none'}
 
 function leftovers(){
  const masters=db.products.filter(p=>p.formulaMaster&&String(p.name||'').trim().toLowerCase()!=='car').sort((a,b)=>String(a.name).localeCompare(String(b.name)));
