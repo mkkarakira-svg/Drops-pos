@@ -214,7 +214,7 @@ body:not(.home-view) .app-back{display:block!important}
 .home-view .main-grid{gap:8px!important}
 .home-view .action-card{min-height:94px!important;padding:10px 13px!important;border-radius:17px!important}
 .home-view .action-card b{font-size:20px!important}.home-view .action-card .ico{font-size:22px!important}
-.home-view .panel[onclick="leftovers()"]{padding:12px!important;margin:9px 0!important}
+.home-view .panel[onclick="go('leftovers')"]{padding:12px!important;margin:9px 0!important}
 .home-view .admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
 .home-view .admin-card{min-height:91px!important;padding:8px 3px!important;border-radius:17px!important}
 .home-view .admin-card .ico{font-size:22px!important}.home-view .admin-card b{font-size:13px!important}
@@ -283,7 +283,7 @@ function go(x,fromHistory=false){
   case 'sale':return sale();case 'products':return products();case 'reports':return reports();
   case 'raw':return raw();case 'stockAlerts':return stockAlerts();case 'production':return production();case 'purchases':return purchases();
   case 'expenses':return expenses();case 'cashbox':return cashbox();case 'stocktake':return stocktake();case 'closingPage':return closingPage();case 'accountsPage':return accountsPage();case 'invoices':return invoices();case 'people':return people();
-  case 'settings':return settings();case 'employees':return employees();
+  case 'settings':return settings();case 'employees':return employees();case 'costing':return costing();case 'packing':return packing();case 'leftovers':return leftovers();case 'historyReport':return historyReport();case 'purchasePriceMaster':return purchasePriceMaster();
   case 'returnsPage':return returnsPage();case 'receivablesPage':return receivablesPage();
   default:return home();
  }
@@ -330,7 +330,7 @@ function home(){
   ${actionCard('🛒','Sales','sale','#2473f3')}${actionCard('🏭','Production','production','#11b85b')}
   ${actionCard('🧾','Purchases','purchases','#ff7900')}${actionCard('📦','Stock','products','#6236e8')}
  </div>
- <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="quick-grid" style="margin-bottom:12px"><div class="kpi-card" onclick="cashbox()" style="cursor:pointer"><div class="muted">💵 Cashbox Balance</div><b>${money(cashBalance)}</b></div><div class="kpi-card" onclick="production()" style="cursor:pointer"><div class="muted">🏭 Latest Production</div><b>${lastBatch?lastBatch.product:'No batches yet'}</b><div class="muted">${lastBatch?(lastBatch.liters+' L • '+lastBatch.date):''}</div></div></div><div class="panel" onclick="go('stockAlerts')" style="cursor:pointer"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
+ <div class="panel" onclick="leftovers()" style="cursor:pointer;font-weight:800">🧴 Leftovers / 1L</div><div class="quick-grid" style="margin-bottom:12px"><div class="kpi-card" onclick="cashbox()" style="cursor:pointer"><div class="muted">💵 Cashbox Balance</div><b>${money(cashBalance)}</b></div><div class="kpi-card" onclick="go('production')" style="cursor:pointer"><div class="muted">🏭 Latest Production</div><b>${lastBatch?lastBatch.product:'No batches yet'}</b><div class="muted">${lastBatch?(lastBatch.liters+' L • '+lastBatch.date):''}</div></div></div><div class="panel" onclick="go('stockAlerts')" style="cursor:pointer"><b>⚠️ Stock Alert</b><div class="muted">${db.products.filter(p=>!p.formulaMaster&&(+p.qty||0)<=5).length} Low / Out of Stock Product • ${db.raw.filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10)).length} Low Raw/Packaging</div></div><div class="section-title">Management</div>
  <div class="admin-grid">
   ${adminCard('👥','Customers','people')}${adminCard('💵','Cashbox','cashbox')}${adminCard('📋','Physical Stocktake','stocktake')}${adminCard('🔒','Daily / Monthly Closing','closingPage')}${adminCard('📒','Customer & Supplier Accounts','accountsPage')}${adminCard('🧑‍💼','Employees & Distributors','employees')}${adminCard('↩️','Returns','returnsPage')}${adminCard('💳','Receivables & Collections','receivablesPage')}${adminCard('💸','Expenses','expenses')}${adminCard('📊','Reports','reports')}${adminCard('⚙️','Settings','settings')}
  </div>
@@ -453,7 +453,7 @@ function stockAlerts(){
  const materials=(db.raw||[]).filter(r=>(+r.qty||0)<=(r.minStock!=null?+r.minStock:10));
  $('#app').innerHTML=`<div class="title">Stock Alerts</div>
  <div class="panel"><h3>Finished Products</h3>${finished.length?finished.map(p=>`<div class="item" onclick="products()" style="cursor:pointer"><b>${p.name}</b><span class="pill">${+p.qty||0} Pack</span><div class="muted">Low / Out of Stock</div></div>`).join(''):'<div class="muted">No finished-product alerts</div>'}</div>
- <div class="panel"><h3>Materials & Packaging</h3>${materials.length?materials.map(r=>`<div class="item" onclick="raw()" style="cursor:pointer"><b>${r.name}</b><span class="pill">${(+r.qty||0).toFixed(r.unit==='Piece'?0:3)} ${r.unit||'kg'}</span><div class="muted">Minimum: ${r.minStock!=null?+r.minStock:10}</div></div>`).join(''):'<div class="muted">No material or packaging alerts</div>'}</div>`;
+ <div class="panel"><h3>Materials & Packaging</h3>${materials.length?materials.map(r=>`<div class="item" onclick="go('raw')" style="cursor:pointer"><b>${r.name}</b><span class="pill">${(+r.qty||0).toFixed(r.unit==='Piece'?0:3)} ${r.unit||'kg'}</span><div class="muted">Minimum: ${r.minStock!=null?+r.minStock:10}</div></div>`).join(''):'<div class="muted">No material or packaging alerts</div>'}</div>`;
 }
 function raw(){
  const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons'];
@@ -807,14 +807,14 @@ function settings(){
  <div class="backoffice-page">
   <div class="title">Back Office</div>
   <div class="bo-grid">
-   <button class="bo-card" onclick="packing()"><span>📦</span><b>Batch Packing</b></button>
+   <button class="bo-card" onclick="go('packing')"><span>📦</span><b>Batch Packing</b></button>
    <button class="bo-card" onclick="leftovers()"><span>🧴</span><b>Leftovers / 1 Liter</b></button>
-   <button class="bo-card" onclick="historyReport()"><span>🕘</span><b>Movement History</b></button>
+   <button class="bo-card" onclick="go('historyReport')"><span>🕘</span><b>Movement History</b></button>
    <button class="bo-card" onclick="raw()"><span>🧪</span><b>Raw Materials</b></button>
    <button class="bo-card" onclick="go('purchases')"><span>🧾</span><b>Purchases / Receiving</b></button>
    <button class="bo-card" onclick="production()"><span>🏭</span><b>Production & Recipes</b></button>
-   <button class="bo-card" onclick="purchasePriceMaster()"><span>💲</span><b>Price Master</b></button>
-   <button class="bo-card" onclick="costing()"><span>🧮</span><b>Costing</b></button>
+   <button class="bo-card" onclick="go('purchasePriceMaster')"><span>💲</span><b>Price Master</b></button>
+   <button class="bo-card" onclick="go('costing')"><span>🧮</span><b>Costing</b></button>
   </div>
   <div class="title bo-section-title">App Update</div>
   <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Checks for the newest version and reloads the app. Your saved POS data stays on this device.</div></div>
@@ -1084,16 +1084,13 @@ let _restoreView=String(location.hash||'').replace(/^#/,'')||'home';try{if(_rest
 </script><script>
 window.goHome=function(){
   if(currentView==='home') return;
-  currentView='home';try{sessionStorage.setItem('dropsCurrentView','home')}catch(e){};history.replaceState({dropsView:'home'},'',location.pathname+location.search+'#home');
-  document.body.classList.add('home-view');
-  home();
-  history.pushState({dropsView:'home'},'',location.href);
+  const backOfficeViews=['packing','leftovers','historyReport','raw','purchases','production','purchasePriceMaster','costing'];
+  if(backOfficeViews.includes(currentView)){go('settings');return;}
+  go('home');
 };
 window.addEventListener('popstate',function(e){
- const v=e.state&&e.state.dropsView;
- if(currentView!=='home'){ currentView='home';document.body.classList.add('home-view');nav('home');home();history.pushState({dropsView:'home'},'',location.href);return; }
- if(v&&v!=='home') go(v,true);
- else history.pushState({dropsView:'home'},'',location.href);
+ const v=(e.state&&e.state.dropsView)||String(location.hash||'').replace(/^#/,'')||'home';
+ go(v,true);
 });
 history.replaceState({dropsView:currentView||'home'},'',location.href);
 
