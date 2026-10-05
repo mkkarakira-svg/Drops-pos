@@ -289,8 +289,8 @@ body{padding-bottom:0!important;}
 <style id="selling-family-v4311">
 .selling-family-list{display:grid;gap:10px}.selling-family-card{background:#fff;border:1px solid #e6ebf2;border-radius:17px;overflow:hidden;box-shadow:0 4px 14px #0714260d}.selling-family-head{width:100%;border:0;background:#fff;padding:17px 16px;display:flex;justify-content:space-between;align-items:center;font-size:17px;text-align:left}.selling-family-head span{font-size:25px;color:#2473f3}.selling-family-body{padding:0 12px 12px}.selling-size-row{display:grid;grid-template-columns:55px 1fr 1fr;gap:9px;align-items:end;border-top:1px solid #edf0f4;padding:12px 0}.selling-size-badge{background:#eef5ff;color:#1859b7;border-radius:10px;padding:10px 5px;text-align:center;font-weight:900}.selling-size-row label{font-size:12px;color:#667085}.selling-size-row input{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border-radius:10px}
 </style>
-</head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.19</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<style id="selling-pricing-box-v4320">.sp-groups{display:grid;gap:10px;margin:10px 0}.sp-card{background:#fff;border:1px solid #e5eaf1;border-radius:16px;overflow:hidden;box-shadow:0 3px 12px #0714260d}.sp-head{width:100%;padding:16px;border:0;background:#fff;display:flex;justify-content:space-between;align-items:center;font-size:16px;text-align:left}.sp-head span{font-size:22px;color:#2473f3}.sp-body{padding:0 12px 12px}.sp-size{display:grid;grid-template-columns:48px 1fr 1fr;gap:8px;align-items:end;padding:10px 0;border-top:1px solid #edf0f4}.sp-size strong{background:#eef5ff;color:#1760bd;border-radius:9px;text-align:center;padding:10px 3px}.sp-size label{font-size:12px;color:#667085}.sp-size input{width:100%;box-sizing:border-box;margin-top:4px;padding:9px}</style></head><body>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.20</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -859,12 +859,14 @@ function settings(){
 
 
 function sellingPrices(){
- var ps=posSellProducts().filter(function(p){return +(p.size||0)!==1});
- ps.sort(function(a,b){return String(a.name||'').localeCompare(String(b.name||''))});
- var one=posSellProducts().filter(function(p){return +(p.size||0)===1}),onePrice=one.length?(+one[0].price||0):0;
- var html='<div class="title">Selling Prices</div><div class="panel"><b>💰 Sales Price Master</b><div class="muted">Set Retail now. Wholesale can be added later.</div></div><div class="panel"><b>🧴 All 1L Bottles</b><div class="muted" style="margin:5px 0 8px">One retail price for every 1L product.</div><label>1L Retail $<input id="all1lprice" type="number" min="0" step=".01" value="'+onePrice+'"></label></div>';
- ps.forEach(function(p){html+='<div class="panel"><b>'+String(p.name||'Product')+'</b><div class="row" style="margin-top:8px"><label style="flex:1">Retail $<input id="spr_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.price||0)+'"></label><label style="flex:1">Wholesale $<input id="spw_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.wholesalePrice||0)+'"></label></div></div>'});
- html+='<button style="width:100%;font-weight:900;margin-bottom:100px" onclick="saveSellingPrices()">💾 Save All Selling Prices</button>';
+ var all=posSellProducts(), ps=all.filter(function(p){return +(p.size||0)!==1});
+ var one=all.filter(function(p){return +(p.size||0)===1}),onePrice=one.length?(+one[0].price||0):0;
+ var groups={};
+ ps.forEach(function(p){var n=String(p.name||'').trim(),parts=n.split(' '),last=parts[parts.length-1]||'';if(last.toUpperCase()===String(p.size||'').toUpperCase()+'L')parts.pop();var base=parts.join(' ').trim()||n,k=base.toLowerCase();if(!groups[k])groups[k]={name:base,items:[]};groups[k].items.push(p)});
+ var gs=Object.keys(groups).map(function(k){return groups[k]}).sort(function(a,b){return a.name.localeCompare(b.name)});
+ var html='<div class="title">Selling Prices</div><div class="panel"><b>💰 Sales Price Master</b><div class="muted">Tap a product to open its sizes.</div></div><div class="panel"><b>🧴 All 1L Bottles</b><div class="muted" style="margin:5px 0 8px">One retail price for every 1L product.</div><label>1L Retail $<input id="all1lprice" type="number" min="0" step=".01" value="'+onePrice+'"></label></div><div class="sp-groups">';
+ gs.forEach(function(g,i){html+='<div class="sp-card"><button type="button" class="sp-head" onclick="var x=document.getElementById(\'spg'+i+'\');x.style.display=x.style.display===\'none\'?\'block\':\'none\'"><b>'+g.name+'</b><span>›</span></button><div id="spg'+i+'" class="sp-body" style="display:none">';g.items.sort(function(a,b){return (+a.size||0)-(+b.size||0)}).forEach(function(p){html+='<div class="sp-size"><strong>'+p.size+'L</strong><label>Retail $<input id="spr_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.price||0)+'"></label><label>Wholesale $<input id="spw_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.wholesalePrice||0)+'"></label></div>'});html+='</div></div>'});
+ html+='</div><button style="width:100%;font-weight:900;margin-bottom:100px" onclick="saveSellingPrices()">💾 Save All Selling Prices</button>';
  document.getElementById('app').innerHTML=html;
 }
 function saveSellingPrices(){
