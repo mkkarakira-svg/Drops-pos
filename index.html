@@ -283,8 +283,11 @@ body{padding-bottom:0!important;}
 <style id="packing-cards-v437">
 .packing-grid{display:grid;gap:12px}.packing-card{background:#fff;border:1px solid #e7ebf0;border-radius:20px;padding:16px;box-shadow:0 5px 18px #07142612}.packing-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.packing-head b{display:block;font-size:18px}.packing-head small{display:block;color:#667085;margin-top:4px}.packing-head strong{background:#eef5ff;border-radius:12px;padding:8px 10px;white-space:nowrap;color:#1859b7}.packing-label{font-size:12px;color:#667085;margin:12px 0 5px}.packing-controls{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:8px}.packing-controls select,.packing-controls input{width:100%;min-width:0}.packing-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.packing-actions button{min-height:46px;border-radius:13px}@media(max-width:430px){.packing-controls{grid-template-columns:1fr 105px}}
 </style>
+<style id="selling-prices-v439">
+.selling-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.selling-price-card{background:#fff;border:1px solid #e6ebf2;border-radius:17px;padding:12px;box-shadow:0 4px 14px #0714260d}.selling-price-name{display:flex;justify-content:space-between;gap:6px;align-items:center;margin-bottom:9px}.selling-price-name b{font-size:15px}.selling-price-name span{background:#eef5ff;border-radius:9px;padding:4px 7px;font-weight:800;color:#1859b7}.selling-price-card label{display:block;font-size:12px;color:#667085;margin-top:7px}.selling-price-card input{width:100%;box-sizing:border-box;margin-top:4px;padding:9px;border-radius:10px}.selling-price-save{position:sticky;bottom:72px;width:100%;min-height:50px;margin-top:14px;border-radius:15px;font-weight:900}.selling-price-intro{margin-bottom:11px}@media(max-width:390px){.selling-price-grid{grid-template-columns:1fr}}
+</style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.8</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.9</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -839,6 +842,7 @@ function settings(){
    <button class="bo-card" onclick="production()"><span>🏭</span><b>Production & Recipes</b></button>
    <button class="bo-card" onclick="go('purchasePriceMaster')"><span>💲</span><b>Price Master</b></button>
    <button class="bo-card" onclick="go('costing')"><span>🧮</span><b>Costing</b></button>
+   <button class="bo-card" onclick="go('sellingPrices')"><span>💰</span><b>Selling Prices</b></button>
   </div>
   <div class="title bo-section-title">App Update</div>
   <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Checks for the newest version and reloads the app. Your saved POS data stays on this device.</div></div>
@@ -851,6 +855,13 @@ function settings(){
 }
 
 
+function sellingPrices(){
+ const ps=posSellProducts().filter(p=>+(p.size||0)!==1).sort((a,b)=>String(a.name).localeCompare(String(b.name))||(+a.size||0)-(+b.size||0));
+ $('#app').innerHTML=`<div class="title">Selling Prices</div><div class="panel selling-price-intro"><b>💰 Sales Price Master</b><div class="muted">Set prices once here. Retail and Wholesale prices are used automatically in the POS.</div></div><div class="selling-price-grid">${ps.map(p=>`<div class="selling-price-card"><div class="selling-price-name"><b>${p.name}</b><span>${p.size}L</span></div><label>Retail $<input id="spr_${p.id}" type="number" min="0" step=".01" value="${+p.price||0}"></label><label>Wholesale $<input id="spw_${p.id}" type="number" min="0" step=".01" value="${+p.wholesalePrice||0}"></label></div>`).join('')}</div><button class="selling-price-save" onclick="saveSellingPrices()">💾 Save All Selling Prices</button>`;
+}
+function saveSellingPrices(){
+ let n=0;posSellProducts().filter(p=>+(p.size||0)!==1).forEach(p=>{const r=document.getElementById('spr_'+p.id),w=document.getElementById('spw_'+p.id);if(!r||!w)return;const rv=parseFloat(r.value),wv=parseFloat(w.value);if(Number.isFinite(rv)&&rv>=0)p.price=rv;if(Number.isFinite(wv)&&wv>=0)p.wholesalePrice=wv;n++});save();alert('Selling prices saved: '+n+' products');
+}
 function costing(){
  const masters=(db.products||[]).filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  const costPerL=p=>(db.recipes||[]).filter(x=>String(x.productId)===String(p.id)).reduce((t,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return t+(+x.qtyPerLiter||0)*(+r?.cost||0)},0);
