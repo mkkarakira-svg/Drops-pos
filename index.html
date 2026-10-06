@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.26</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.27</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -873,16 +873,23 @@ function sellingPrices(){
  var ps=all.filter(function(p){return +(p.size||0)!==1}),groups={};
  ps.forEach(function(p){var full=String(p.name||'Product').trim(),suffix=' '+String(+(p.size||0))+'L',base=full;if(full.toUpperCase().slice(-suffix.length)===suffix.toUpperCase())base=full.slice(0,-suffix.length).trim();if(!base)base=full;var key=base.toLowerCase();if(!groups[key])groups[key]={name:base,items:[]};groups[key].items.push(p)});
  var keys=Object.keys(groups).sort(function(a,b){return groups[a].name.localeCompare(groups[b].name)});
- var html='<div class="title">Selling Prices</div><div class="panel"><b>💰 Sales Price Master</b><div class="muted">Tap a product to show its sizes.</div></div><div class="panel"><b>🧴 All 1L Bottles</b><div class="muted" style="margin:5px 0 8px">One retail price for every 1L product.</div><label>1L Retail $<input id="all1lprice" type="number" min="0" step=".01" value="'+onePrice+'"></label></div>';
- keys.forEach(function(key,i){var g=groups[key];html+='<div class="panel pricing-color-card" style="padding:0;overflow:hidden"><button type="button" class="pricing-color-head" style="width:100%;color:#071426;border:0;padding:17px;text-align:left;font-weight:900;font-size:16px" onclick="togglePriceBox(\'pricebox'+i+'\')">'+g.name+' <span style="float:right;color:#2473f3">›</span></button><div id="pricebox'+i+'" style="display:none;padding:0 14px 14px">';g.items.sort(function(a,b){return (+a.size||0)-(+b.size||0)}).forEach(function(p){html+='<div class="row" style="border-top:1px solid #eee;padding-top:10px;margin-top:8px"><b style="min-width:38px">'+p.size+'L</b><label style="flex:1">Retail $<input id="spr_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.price||0)+'"></label><label style="flex:1">Wholesale $<input id="spw_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.wholesalePrice||0)+'"></label></div>'});html+='</div></div>'});
- html+='<button style="width:100%;font-weight:900;margin-bottom:100px" onclick="saveSellingPrices()">💾 Save All Selling Prices</button>';
+ var html='<div class="title">Selling Prices</div><div class="panel"><b>💰 Sales Price Master</b><div class="muted">Tap a product to show its sizes.</div></div><div class="panel"><b>🧴 All 1L Bottles</b><div class="muted" style="margin:5px 0 8px">One retail price for every 1L product.</div><label>1L Retail $<input id="all1lprice" type="number" min="0" step=".01" value="'+onePrice+'" oninput="sellingPriceDraftChanged(this)"></label></div>';
+ keys.forEach(function(key,i){var g=groups[key];html+='<div class="panel pricing-color-card" style="padding:0;overflow:hidden"><button type="button" class="pricing-color-head" style="width:100%;color:#071426;border:0;padding:17px;text-align:left;font-weight:900;font-size:16px" onclick="togglePriceBox(\'pricebox'+i+'\')">'+g.name+' <span style="float:right;color:#2473f3">›</span></button><div id="pricebox'+i+'" style="display:none;padding:0 14px 14px">';g.items.sort(function(a,b){return (+a.size||0)-(+b.size||0)}).forEach(function(p){html+='<div class="row" style="border-top:1px solid #eee;padding-top:10px;margin-top:8px"><b style="min-width:38px">'+p.size+'L</b><label style="flex:1">Retail $<input id="spr_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.price||0)+'" oninput="sellingPriceDraftChanged(this)"></label><label style="flex:1">Wholesale $<input id="spw_'+p.id+'" type="number" min="0" step=".01" value="'+(+p.wholesalePrice||0)+'" oninput="sellingPriceDraftChanged(this)"></label></div>'});html+='</div></div>'});
+ html+='<button id="saveAllSellingPricesBtn" style="width:100%;font-weight:900;margin-bottom:100px" onclick="saveSellingPrices()">💾 Save All Items</button>';
  document.getElementById('app').innerHTML=html;
 }
 function togglePriceBox(id){var x=document.getElementById(id);if(x)x.style.display=x.style.display==='none'?'block':'none'}
+function sellingPriceDraftChanged(el){
+ if(!el)return;
+ el.style.borderColor='#2473f3';
+ el.style.background='#eef5ff';
+ var btn=document.getElementById('saveAllSellingPricesBtn');
+ if(btn){btn.textContent='💾 Save All Items';btn.style.background='#1769ff'}
+}
 function saveSellingPrices(){
  var one=document.getElementById('all1lprice');if(one){var op=parseFloat(one.value);if(!isNaN(op)&&op>=0)posSellProducts().filter(function(p){return +(p.size||0)===1}).forEach(function(p){p.price=op})}
  posSellProducts().filter(function(p){return +(p.size||0)!==1}).forEach(function(p){var r=document.getElementById('spr_'+p.id),w=document.getElementById('spw_'+p.id);if(r){var x=parseFloat(r.value);if(!isNaN(x)&&x>=0)p.price=x}if(w){var y=parseFloat(w.value);if(!isNaN(y)&&y>=0)p.wholesalePrice=y}});
- save();alert('Selling prices saved');
+ save();sellingPrices();alert('All selling prices saved');
 }
 function costing(){
  const masters=(db.products||[]).filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
