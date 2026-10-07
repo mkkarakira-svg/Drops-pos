@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.27</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.28</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -609,7 +609,7 @@ function production(){
  formulaNames.forEach(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase()&&x.formulaMaster);if(!p)db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true})});
  let recipeProducts=db.products.filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  let recipeOpts=recipeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
- let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item"><div><b>${String(b.product).replace(/\\s+(1|4|5)L\\s*$/i,'')}</b><div class="muted">${b.liters} L</div></div><b>${money(b.cost)}</b></div>`).join('');
+ let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item" onclick="editBatchCost('${b.id}')" style="cursor:pointer"><div><b>${String(b.product).replace(/\\s+(1|4|5)L\\s*$/i,'')}</b><div class="muted">${b.liters} L • Tap to edit cost</div></div><b>${money(b.cost)}</b></div>`).join('');
  $('#app').innerHTML=`
  <div class="production-page">
   <div class="title">Production & Batches</div>
@@ -636,7 +636,13 @@ function production(){
   <div class="panel prod-card"><div class="prod-card-head"><div class="prod-icon">📋</div><div><b>Recent Batches</b><div class="muted">Latest production records</div></div></div>${batches||'<div class="muted">No batches yet</div>'}</div>
  </div>`;
  setTimeout(()=>{renderRecipeEditor();syncPackOptions()},0);
-}function addFormulaMaster(){let n=String($('#newFormulaName')?.value||'').trim();if(!n)return alert('Enter formula name');if(db.products.some(p=>p.formulaMaster&&String(p.name).trim().toLowerCase()===n.toLowerCase()))return alert('Formula already exists');let p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true,customFormula:true};db.products.push(p);save();production();setTimeout(()=>{if($('#rp')){$('#rp').value=p.id;renderRecipeEditor()}},0)}
+}function editBatchCost(batchId){
+ let b=(db.batches||[]).find(x=>String(x.id)===String(batchId));if(!b)return;
+ let v=prompt('Batch cost for '+String(b.product||'Batch')+' '+(+b.liters||0)+' L',(+b.cost||0).toFixed(2));if(v===null)return;
+ let n=parseFloat(v);if(!Number.isFinite(n)||n<0)return alert('Enter a valid batch cost');
+ b.cost=n;save();production();alert('Batch cost updated. Stock and raw materials were not changed.');
+}
+function addFormulaMaster(){let n=String($('#newFormulaName')?.value||'').trim();if(!n)return alert('Enter formula name');if(db.products.some(p=>p.formulaMaster&&String(p.name).trim().toLowerCase()===n.toLowerCase()))return alert('Formula already exists');let p={id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true,customFormula:true};db.products.push(p);save();production();setTimeout(()=>{if($('#rp')){$('#rp').value=p.id;renderRecipeEditor()}},0)}
 function renameFormulaMaster(){let pid=$('#rp')?.value,p=db.products.find(x=>String(x.id)===String(pid)&&x.formulaMaster);if(!p)return;let n=prompt('New formula name',p.name);if(n===null)return;n=String(n).trim();if(!n)return alert('Name cannot be empty');if(db.products.some(x=>x!==p&&x.formulaMaster&&String(x.name).trim().toLowerCase()===n.toLowerCase()))return alert('A formula with this name already exists');let old=p.name;p.name=n;(db.batches||[]).forEach(b=>{if(String(b.productId)===String(p.id)&&b.product===old)b.product=n});save();production();setTimeout(()=>{if($('#rp')){$('#rp').value=p.id;renderRecipeEditor()}},0)}
 function deleteFormulaMaster(){let pid=$('#rp')?.value,p=db.products.find(x=>String(x.id)===String(pid)&&x.formulaMaster);if(!p)return;if(!confirm('Delete خلطة '+p.name+' and its recipes?'))return;db.recipes=db.recipes.filter(x=>String(x.productId)!==String(p.id));db.products=db.products.filter(x=>String(x.id)!==String(p.id));save();production()}
 
