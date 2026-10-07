@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.29</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.30</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -897,11 +897,12 @@ function saveSellingPrices(){
  posSellProducts().filter(function(p){return +(p.size||0)!==1}).forEach(function(p){var r=document.getElementById('spr_'+p.id),w=document.getElementById('spw_'+p.id);if(r){var x=parseFloat(r.value);if(!isNaN(x)&&x>=0)p.price=x}if(w){var y=parseFloat(w.value);if(!isNaN(y)&&y>=0)p.wholesalePrice=y}});
  save();sellingPrices();alert('All selling prices saved');
 }
+function isRecipeWater(r){return /^water(?:\s+10l)?$/i.test(String(r?.name||'').trim())}
+function recipeUnitQty(x,r){return isRecipeWater(r)?(+x.qtyPerLiter||0)*1000:(+x.qtyPerLiter||0)}
+function recipeUnitCost(r){return isRecipeWater(r)?0.011:(+r?.cost||0)}
+
 function costing(){
  const masters=(db.products||[]).filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
- const isRecipeWater=r=>/^water(?:\s+10l)?$/i.test(String(r?.name||'').trim());
- const recipeUnitQty=(x,r)=>isRecipeWater(r)?(+x.qtyPerLiter||0)*1000:(+x.qtyPerLiter||0);
- const recipeUnitCost=r=>isRecipeWater(r)?0.011:(+r?.cost||0);
  const costPerL=p=>(db.recipes||[]).filter(x=>String(x.productId)===String(p.id)).reduce((t,x)=>{const r=(db.raw||[]).find(a=>String(a.id)===String(x.rawId));return t+recipeUnitQty(x,r)*recipeUnitCost(r)},0);
  $('#app').innerHTML=`<div class="title">Costing</div><div class="panel"><div style="color:#111;font-weight:600">Latest purchase prices • Tap a product to open full costing</div></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${masters.map(p=>`<button onclick="openCosting('${p.id}')" style="min-height:88px;padding:12px;border-radius:16px;text-align:left"><b style="display:block;font-size:16px">${p.name}</b><span style="color:#111">Cost/L</span><b style="display:block;margin-top:4px">${money3(costPerL(p))}</b></button>`).join('')}</div>`;
 }
