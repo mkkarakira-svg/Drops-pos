@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.35</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.36</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -421,7 +421,7 @@ function renderProducts(){
   return `<div class="stock-family"><div class="stock-family-name">${f.name}</div><div class="stock-sizes">${sizes.map(sz=>{
    const ms=db.products.filter(p=>!p.formulaMaster&&base(p.name)===f.name.toLowerCase()&&+(p.size||0)===sz);
    const p=ms.sort((a,b)=>(+b.qty||0)-(+a.qty||0))[0];
-   const q=qtyFor(f.name,sz),c=p?+p.cost||0:0,r=p?+p.price||0:0,w=p?+p.wholesalePrice||0:0,margin=r>0?((r-c)/r*100):0;
+   const q=qtyFor(f.name,sz),c=p?dropsFinishedUnitCost(p):0,r=p?+p.price||0:0,w=p?+p.wholesalePrice||0:0,margin=r>0?((r-c)/r*100):0;
    return `<div class="stock-size" onclick="setOpeningStock('${f.name.replace(/'/g,"\'")}',${sz})" style="cursor:pointer"><span>${sz}L</span><b>${q}</b><small>Pack</small><small>Cost ${money(c)}</small><small>Retail ${money(r)} • Profit ${money(r-c)}</small><small>${margin.toFixed(1)}% margin${w?' • Wholesale '+money(w):''}</small><small style="font-weight:800">Tap to set opening stock</small></div>`;
   }).join('')}</div></div>`;
  }).join('');
@@ -1651,7 +1651,7 @@ function dropsFinishedUnitCost(p){
  const base=String(p.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
  const masters=(db.products||[]).filter(x=>x.formulaMaster&&String(x.name||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase()===base);
  const rec=(db.recipes||[]).filter(x=>masters.some(m=>String(m.id)===String(x.productId)));
- const perL=rec.reduce((t,x)=>{const r=(db.raw||[]).find(q=>String(q.id)===String(x.rawId));return t+(r?(+x.qtyPerLiter||0)*(+r.cost||0):0)},0);
+ const perL=rec.reduce((t,x)=>{const r=(db.raw||[]).find(q=>String(q.id)===String(x.rawId));return t+(r?recipeUnitQty(x,r)*recipeUnitCost(r):0)},0);
  let pack=0;
  const names=size===20?['gallon 20l','20l gallon']:size===10?['gallon 10l','10l gallon']:size===5?['gallon 5l','5l gallon']:size===4?['gallon 4l','4l gallon']:['bottle 1l','1l bottle'];
  const container=(db.raw||[]).find(r=>names.includes(norm(r.name)));if(container)pack+=+container.cost||0;
