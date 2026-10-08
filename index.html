@@ -251,7 +251,7 @@ body:not(.home-view) .app-back{display:block!important}
 </style><style id="ppm-mobile-clean">
 .ppm-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}.ppm-tabs button{min-height:76px;font-weight:800}.ppm-card{display:block}.ppm-name{display:block;font-size:18px;margin-bottom:10px}.ppm-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ppm-fields label span{display:block;font-size:12px;font-weight:700;margin:0 0 5px 3px;color:#64748b}.ppm-fields input{width:100%;box-sizing:border-box}.ppm-actions{display:flex;gap:8px;margin-top:10px}.ppm-actions button{flex:1}.ppm-add{margin-bottom:14px}
 @media(max-width:520px){.ppm-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.ppm-tabs button{padding:10px 4px}.ppm-add{grid-template-columns:1fr 1fr}.ppm-fields{grid-template-columns:1fr 1fr}.ppm-actions button{min-height:48px}}
-\n<style id="version-badge-v423">.app-version{display:inline-block;margin-left:6px;padding:3px 6px;border:1px solid #ffffff55;border-radius:7px;font-size:9px!important;font-weight:800;vertical-align:middle;opacity:.9;letter-spacing:.2px}@media(max-width:520px){.app-version{font-size:8px!important;padding:2px 5px;margin-left:4px}}</style>
+\n<style id="version-badge-v423">.app-version{display:inline-block;margin-left:6px;padding:3px 6px;border:1px solid #ffffff55;border-radius:7px;font-size:12px!important;font-weight:900;vertical-align:middle;opacity:.9;letter-spacing:.2px}@media(max-width:520px){.app-version{font-size:11px!important;padding:3px 5px;margin-left:4px}}</style>
 <style id="android-bottom-safe-v424">
 html,body{min-height:100%;}
 nav.nav{box-sizing:border-box!important;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;height:calc(86px + env(safe-area-inset-bottom,0px))!important;min-height:calc(86px + env(safe-area-inset-bottom,0px))!important;z-index:9999!important;}
@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.39</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.40</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1028,7 +1028,7 @@ async function updateDropsApp(){
    if(reg){try{await Promise.race([reg.update(),new Promise(resolve=>setTimeout(resolve,2500))])}catch(e){}}
   }
   const url=new URL(window.location.href);
-  url.searchParams.set('v','4.3.39');
+  url.searchParams.set('v','4.3.40');
   url.searchParams.set('t',String(Date.now()));
   url.hash='home';
   window.location.replace(url.toString());
