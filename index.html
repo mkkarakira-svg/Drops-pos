@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.40</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.41</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1021,20 +1021,30 @@ function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions
 
 async function updateDropsApp(){
  const btn=document.querySelector('button[onclick="updateDropsApp()"]');
- if(btn){btn.disabled=true;btn.textContent='⏳ Checking for update...'}
+ const oldText=btn?.textContent||'🔄 Update Drops POS';
+ if(btn){btn.disabled=true;btn.textContent='⏳ Checking latest version...'}
  try{
-  if('serviceWorker' in navigator){
-   const reg=await navigator.serviceWorker.getRegistration();
-   if(reg){try{await Promise.race([reg.update(),new Promise(resolve=>setTimeout(resolve,2500))])}catch(e){}}
-  }
-  const url=new URL(window.location.href);
-  url.searchParams.set('v','4.3.40');
-  url.searchParams.set('t',String(Date.now()));
-  url.hash='home';
-  window.location.replace(url.toString());
+  const target='4.3.41';
+  const url=new URL('index.html',window.location.href);
+  url.searchParams.set('updateCheck',String(Date.now()));
+  const response=await fetch(url.toString(),{cache:'no-store',redirect:'follow'});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  const html=await response.text();
+  const match=html.match(/class="app-version"[^>]*>v([0-9.]+)</);
+  if(!match)throw new Error('Version not found');
+  const remote=match[1];
+  const local=document.querySelector('.app-version')?.textContent?.trim().replace(/^v/,'')||'';
+  const compare=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)-(y[i]||0)}return 0};
+  if(compare(remote,local)<=0){alert('Current version: v'+local+'. Latest published version: v'+remote+'. No newer version is available yet.');return}
+  const nextUrl=new URL(window.location.href);
+  nextUrl.searchParams.set('v',remote);
+  nextUrl.searchParams.set('t',String(Date.now()));
+  nextUrl.hash='home';
+  window.location.assign(nextUrl.toString());
  }catch(e){
-  if(btn){btn.disabled=false;btn.textContent='🔄 Update Drops POS'}
-  alert('Update could not reload. Please retry. Your saved data was not changed.');
+  alert('Could not check the published update. Please try again shortly. Saved data is safe.');
+ }finally{
+  if(btn){btn.disabled=false;btn.textContent=oldText}
  }
 }
 function backup(){try{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DropsPOS-backup-'+today()+'.json';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}catch(e){alert('Backup export failed: '+e.message)}}
