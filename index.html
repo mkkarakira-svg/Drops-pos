@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.41</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.42</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1047,7 +1047,34 @@ async function updateDropsApp(){
   if(btn){btn.disabled=false;btn.textContent=oldText}
  }
 }
-function backup(){try{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DropsPOS-backup-'+today()+'.json';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}catch(e){alert('Backup export failed: '+e.message)}}
+async function backup(){
+ try{
+  const data=JSON.stringify(db,null,2);
+  const filename='DropsPOS-backup-'+today()+'.json';
+  const blob=new Blob([data],{type:'application/json'});
+  const file=new File([blob],filename,{type:'application/json'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   try{
+    await navigator.share({files:[file],title:'Drops POS Full Backup'});
+    alert('Backup shared. Make sure you saved the JSON file to Files, Drive, or another safe location.');
+    return;
+   }catch(err){
+    if(err&&err.name==='AbortError')return;
+   }
+  }
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;link.download=filename;link.textContent='Download '+filename;
+  link.style.cssText='display:block;padding:14px;margin:12px 0;background:#eaf2ff;color:#123b76;border-radius:10px;font-weight:800;text-align:center';
+  const host=document.getElementById('app')||document.body;
+  const old=document.getElementById('dropsBackupFallback');if(old)old.remove();
+  const holder=document.createElement('div');holder.id='dropsBackupFallback';
+  holder.appendChild(link);host.prepend(holder);
+  link.click();
+  alert('Backup requested. Check Downloads for '+filename+'. If missing, tap the blue Download link shown on this page or open Drops POS in Chrome to export.');
+  setTimeout(()=>{URL.revokeObjectURL(url);holder.remove()},120000);
+ }catch(e){alert('Backup export failed: '+e.message)}
+}
 function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
 function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
 function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
