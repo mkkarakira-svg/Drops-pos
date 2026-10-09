@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.47</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.48</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1047,7 +1047,41 @@ async function updateDropsApp(){
   if(btn){btn.disabled=false;btn.textContent=oldText}
  }
 }
-async function backup(){try{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DropsPOS-backup-'+today()+'.json';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}catch(e){alert('Backup export failed: '+e.message)}}
+async function backup(){
+ const filename='DropsPOS-backup-'+today()+'.json';
+ let data,blob;
+ try{data=JSON.stringify(db,null,2);blob=new Blob([data],{type:'application/json'});}
+ catch(e){alert('Could not prepare backup: '+e.message);return;}
+ if(typeof window.showSaveFilePicker==='function'){
+  try{
+   const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'JSON backup',accept:{'application/json':['.json']}}]});
+   const writer=await handle.createWritable();await writer.write(blob);await writer.close();
+   alert('Backup saved as '+filename+'. Check its location in My Files.');return;
+  }catch(e){if(e.name==='AbortError')return;}
+ }
+ const prior=document.getElementById('dropsBackupPanel');if(prior)prior.remove();
+ const panel=document.createElement('div');panel.id='dropsBackupPanel';
+ panel.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:12px';
+ const card=document.createElement('div');card.style.cssText='background:#fff;color:#142338;border-radius:14px;padding:16px;width:100%;max-width:530px;max-height:90vh;overflow:auto;box-sizing:border-box';
+ const h=document.createElement('h3');h.textContent='Save Full Backup — '+(blob.size/1024).toFixed(1)+' KB';card.appendChild(h);
+ const p=document.createElement('p');p.textContent='Your data is ready. No backup is saved yet. Use Share File, Download, or Copy Text and save it outside Drops POS.';card.appendChild(p);
+ const btn=(label,color,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='display:block;width:100%;padding:14px;margin:9px 0;background:'+color+';color:#fff;border:0;border-radius:9px;font-weight:bold';b.onclick=fn;card.appendChild(b);return b};
+ btn('📤 Share JSON file / Save to Drive','#15955b',async()=>{
+  try{const file=new File([blob],filename,{type:'application/json'});if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){alert('File sharing is not supported here. Try Download or Copy Text.');return}await navigator.share({files:[file],title:filename})}
+  catch(e){if(e.name!=='AbortError')alert('Share unavailable: '+e.message)}
+ });
+ btn('⬇ Download JSON file','#2169e8',()=>{
+  try{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},60000);alert('Download requested. Check My Files > Downloads; this does not confirm it was saved.')}
+  catch(e){alert('Download unavailable: '+e.message)}
+ });
+ const area=document.createElement('textarea');area.readOnly=true;area.value=data;area.style.cssText='width:100%;height:100px;box-sizing:border-box;font-size:11px';card.appendChild(area);
+ btn('📋 Copy full backup text','#4b5e83',async()=>{
+  try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(data);else{area.focus();area.select();if(!document.execCommand('copy'))throw Error('Clipboard blocked')}alert('Copied '+data.length+' characters. Paste into a text editor, save as '+filename+', and verify file size. Copying alone is NOT a saved backup.')}
+  catch(e){area.focus();area.select();alert('Copy blocked. Select all the text and copy manually.')}
+ });
+ const note=document.createElement('p');note.textContent='Do not use Restore Backup. Do not delete this app or clear its data.';card.appendChild(note);
+ btn('Close','#69717e',()=>panel.remove());panel.appendChild(card);document.body.appendChild(panel);
+}
 function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
 function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
 function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
