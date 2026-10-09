@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.46</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.47</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1047,39 +1047,7 @@ async function updateDropsApp(){
   if(btn){btn.disabled=false;btn.textContent=oldText}
  }
 }
-async function backup(){
- try{
-  const data=JSON.stringify(db,null,2);
-  const filename='DropsPOS-backup-'+today()+'.json';
-  const blob=new Blob([data],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  
-  const old=document.getElementById('dropsBackupPanel');
-  if(old){old.remove();if(window.dropsBackupUrl)URL.revokeObjectURL(window.dropsBackupUrl)}
-  window.dropsBackupUrl=url;
-  const panel=document.createElement('div');
-  panel.id='dropsBackupPanel';
-  panel.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:12px';
-  const card=document.createElement('div');
-  card.style.cssText='background:#fff;color:#07182b;border-radius:15px;padding:16px;width:100%;max-width:550px;max-height:90vh;overflow:auto;box-sizing:border-box';
-  const heading=document.createElement('h3');heading.textContent='Full Backup — '+filename;card.appendChild(heading);
-  const desc=document.createElement('p');desc.textContent='Backup ready ('+(blob.size/1024).toFixed(1)+' KB). Save it outside this app. Keep this window open until you confirm the file exists.';card.appendChild(desc);
-  const link=document.createElement('a');link.href=url;link.download=filename;link.onclick=function(){ /* Allow the browser to handle the native download attribute; do not open the JSON in a new tab. */ };link.textContent='⬇ Download backup file';link.style.cssText='display:block;background:#1769ef;color:white;padding:14px;border-radius:9px;text-align:center;font-weight:bold;margin:10px 0';card.appendChild(link);
-  const open=document.createElement('button');open.type='button';open.textContent='📄 Open Backup File in browser';open.style.cssText='display:block;width:100%;padding:13px;background:#1769ef;color:white;border:0;border-radius:9px;margin:8px 0';open.onclick=()=>{try{const w=window.open(url,'_blank');if(!w)alert('Browser blocked opening the file. Use Copy Backup Text below.')}catch(e){alert('Opening file blocked: '+e.message)}};card.appendChild(open);
-  const share=document.createElement('button');share.type='button';share.textContent='📤 Share / Save backup';share.style.cssText='display:block;width:100%;padding:13px;margin:8px 0;background:#12a865;color:white;border:0;border-radius:9px;font-weight:bold';
-  share.onclick=async()=>{try{const file=new File([blob],filename,{type:'application/json'});if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){alert('File sharing is not available here. Try Download or Copy backup text below.');return}await navigator.share({files:[file],title:'Drops POS Backup'})}catch(e){if(e.name!=='AbortError')alert('Share failed: '+e.message)}};
-  card.appendChild(share);
-  const tip=document.createElement('p');tip.textContent='If download/share does not work, tap Copy Backup Text, paste into a text editor, and save as '+filename+'. Do not paste into Restore.';card.appendChild(tip);
-  const area=document.createElement('textarea');area.value=data;area.readOnly=true;area.style.cssText='display:block;width:100%;height:90px;box-sizing:border-box;font-size:11px';card.appendChild(area);
-  const copy=document.createElement('button');copy.type='button';copy.textContent='📋 Copy Backup Text';copy.style.cssText='padding:12px;width:100%;margin:8px 0;border:0;border-radius:8px;background:#e4edff;color:#07182b;font-weight:bold';
-  copy.onclick=async()=>{try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(data)}else{area.focus();area.select();if(!document.execCommand('copy'))throw new Error('Clipboard unavailable')}alert('Backup text copied. Paste into a text editor and save as '+filename+'.')}catch(e){area.focus();area.select();alert('Automatic copy was blocked. Use the selected text to copy manually.')}};
-  card.appendChild(copy);
-  const close=document.createElement('button');close.type='button';close.textContent='Close';close.style.cssText='padding:12px;width:100%;margin:8px 0;border:0;border-radius:8px';
-  close.onclick=()=>{panel.remove();URL.revokeObjectURL(url);window.dropsBackupUrl=null};card.appendChild(close);
-  panel.appendChild(card);document.body.appendChild(panel);
-
- }catch(e){alert('Backup preparation failed: '+e.message)}
-}
+async function backup(){try{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DropsPOS-backup-'+today()+'.json';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}catch(e){alert('Backup export failed: '+e.message)}}
 function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
 function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
 function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
