@@ -1,9 +1,9 @@
-const C='drops-pos-v150';
+const C='drops-pos-v151';
 const BACKUP_CACHE='drops-pos-export-temp-v1';
 
 self.addEventListener('install',e=>{self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([
- caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)))),
+ caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C&&k!==BACKUP_CACHE).map(k=>caches.delete(k)))),
  self.clients.claim()
 ])));
 self.addEventListener('fetch',e=>{
@@ -15,7 +15,6 @@ self.addEventListener('fetch',e=>{
    if(!stored)return new Response('Backup not staged. Return to Drops POS and retry.',{status:404,headers:{'Content-Type':'text/plain'}});
    const body=await stored.blob();
    const filename=(stored.headers.get('X-Drops-Filename')||'DropsPOS-backup.json').replace(/[^a-zA-Z0-9._-]/g,'');
-   await c.delete(new Request(new URL('./__drops_backup_staged__',self.registration.scope).href));
    return new Response(body,{status:200,headers:{'Content-Type':'application/octet-stream','Content-Disposition':'attachment; filename="'+filename+'"','Cache-Control':'no-store','Content-Length':String(body.size)}});
   })());
   return;
