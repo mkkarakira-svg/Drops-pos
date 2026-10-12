@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.50</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.51</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1071,31 +1071,37 @@ async function backup(){
    card.appendChild(saveBtn);
   }
  }
- const native=document.createElement('button');native.type='button';native.textContent='⬇ Save Backup — direct file download';
+ const native=document.createElement('button');native.type='button';native.textContent='1 — Prepare backup file';
  native.style.cssText='display:block;width:100%;padding:15px;margin:9px 0;background:#1769e8;color:white;border:0;border-radius:9px;font-weight:bold';
+ const direct=document.createElement('button');direct.type='button';direct.textContent='2 — Download prepared JSON';
+ direct.style.cssText='display:none;width:100%;padding:15px;margin:9px 0;background:#168044;color:white;border:0;border-radius:9px;font-weight:bold';
+ const downloadUrl=new URL('./__drops_backup_download__',location.href).href;
  native.onclick=async()=>{
-  native.disabled=true;native.textContent='Preparing secure download...';
+  native.disabled=true;native.textContent='Preparing file...';direct.style.display='none';
   try{
-   if(!('serviceWorker' in navigator))throw Error('Browser does not support offline download service');
+   if(!('serviceWorker' in navigator))throw Error('Download service not available');
    const reg=await navigator.serviceWorker.ready;
    const worker=navigator.serviceWorker.controller||reg.active;
-   if(!worker)throw Error('Download service not active. Close and reopen Drops POS.');
+   if(!worker)throw Error('Service not active');
    const ch=new MessageChannel();
    const ack=new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>reject(new Error('Download service did not respond')),12000);
-    ch.port1.onmessage=e=>{clearTimeout(timeout);if(e.data&&e.data.ok)resolve();else reject(new Error(e.data?.error||'Backup staging failed'))};
+    const timeout=setTimeout(()=>reject(new Error('Preparation timed out')),12000);
+    ch.port1.onmessage=e=>{clearTimeout(timeout);if(e.data&&e.data.ok)resolve();else reject(new Error(e.data?.error||'Preparation failed'))};
    });
    worker.postMessage({type:'STAGE_BACKUP',json:data,filename},[ch.port2]);
    await ack;
-   const link=document.createElement('a');
-   link.href=new URL('./__drops_backup_download__',location.href).href;
-   link.download=filename;link.style.display='none';
-   document.body.appendChild(link);link.click();link.remove();
-   alert('Download requested. Check My Files > Downloads for '+filename+'. Do not assume success until the file exists.');
-  }catch(e){alert('Direct download unavailable: '+e.message)}
-  finally{native.disabled=false;native.textContent='⬇ Save Backup — direct file download'}
+   native.textContent='✓ Backup prepared ('+(blob.size/1024).toFixed(1)+' KB)';
+   direct.style.display='block';
+  }catch(e){alert('Could not prepare download: '+e.message);native.textContent='1 — Prepare backup file'}
+  finally{native.disabled=false}
  };
- card.appendChild(native);
+ direct.onclick=()=>{
+  // Synchronous navigation on a direct user tap retains Android download user activation.
+  // No await, popup, or synthetic click.
+  window.location.assign(downloadUrl);
+ };
+ card.appendChild(native);card.appendChild(direct);
+
  const p=document.createElement('p');p.textContent='Your data is ready. No backup is saved yet. Use Share File, Download, or Copy Text and save it outside Drops POS.';card.appendChild(p);
  const btn=(label,color,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='display:block;width:100%;padding:14px;margin:9px 0;background:'+color+';color:#fff;border:0;border-radius:9px;font-weight:bold';b.onclick=fn;card.appendChild(b);return b};
  btn('📤 Share JSON file / Save to Drive','#15955b',async()=>{
