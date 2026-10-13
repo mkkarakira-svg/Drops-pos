@@ -92,7 +92,20 @@ public class MainActivity extends Activity {
         s.setSupportZoom(false);
 
         webView.addJavascriptInterface(new BackupBridge(), "DropsBackupAndroid");
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                if (!url.startsWith(APP_URL)) return;
+                String script = "(function(){"
+                    + "window.backup=async function(){"
+                    + "try{var json=JSON.stringify(db,null,2);"
+                    + "if(!json||json.length<100)throw Error('No data');"
+                    + "DropsBackupAndroid.saveJson('DropsPOS-backup-'+new Date().toISOString().slice(0,10)+'.json',json);"
+                    + "}catch(e){alert('Backup failed: '+e.message);}"
+                    + "};"
+                    + "})();";
+                view.evaluateJavascript(script, null);
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient());
         setContentView(webView);
 
