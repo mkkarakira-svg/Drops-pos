@@ -1,6 +1,11 @@
 package com.drops.pos;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.webkit.JavascriptInterface;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import android.os.Bundle;
 import android.os.Build;
 import android.webkit.WebChromeClient;
@@ -15,6 +20,36 @@ import android.graphics.Color;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    private static final int BACKUP_SAVE_REQUEST = 9102;
+    private String pendingBackup;
+    private final class BackupBridge {
+        @JavascriptInterface public void saveJson(String filename, String json) {
+            if (json == null || json.length() < 100) return;
+            runOnUiThread(() -> {
+                pendingBackup = json;
+                Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/json");
+                intent.putExtra(Intent.EXTRA_TITLE, filename.replaceAll("[^a-zA-Z0-9._-]", ""));
+                startActivityForResult(intent, BACKUP_SAVE_REQUEST);
+            });
+        }
+    }
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != BACKUP_SAVE_REQUEST) return;
+        if (resultCode == RESULT_OK && data != null && data.getData() != null && pendingBackup != null) {
+            try (OutputStream out = getContentResolver().openOutputStream(data.getData())) {
+                if (out == null) throw new Exception("No output stream");
+                out.write(pendingBackup.getBytes(StandardCharsets.UTF_8));
+                out.flush();
+                webView.evaluateJavascript("alert('Backup saved. Check the chosen folder.')", null);
+            } catch (Exception e) {
+                webView.evaluateJavascript("alert('Backup save failed. Please retry.')", null);
+            }
+        }
+        pendingBackup = null;
+    }
     private static final String APP_URL = "https://mkkarakira-svg.github.io/Drops-pos/";
 
     @Override
@@ -56,6 +91,7 @@ public class MainActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setSupportZoom(false);
 
+        webView.addJavascriptInterface(new BackupBridge(), "DropsBackupAndroid");
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
         setContentView(webView);
