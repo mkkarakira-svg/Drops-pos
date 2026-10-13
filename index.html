@@ -1053,6 +1053,11 @@ async function backup(){
  try{data=JSON.stringify(db,null,2);blob=new Blob([data],{type:'application/json'});}
  catch(e){alert('Could not prepare backup: '+e.message);return;}
 
+ if(window.DropsBackupAndroid && typeof window.DropsBackupAndroid.saveJson==='function') {
+  try { window.DropsBackupAndroid.saveJson(filename,data); }
+  catch(e) { alert('Android backup picker unavailable: '+e.message); }
+  return;
+ }
  const prior=document.getElementById('dropsBackupPanel');if(prior)prior.remove();
  const panel=document.createElement('div');panel.id='dropsBackupPanel';
  panel.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:12px';
