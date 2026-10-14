@@ -1,0 +1,48 @@
+name: Test Android Backup APK
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/test-backup-apk.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      # GitHub-hosted Ubuntu runners include an Android SDK; avoid sdkmanager setup failures.
+      - name: Verify Android SDK
+        run: test -d "$ANDROID_HOME" && echo "Android SDK available at $ANDROID_HOME"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Verify APK signing and package
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name '*.apk' -print -quit)
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 8
+          unzip -l "$APK" | tail -n 8
+          ls -lh "$APK"
+      - name: Verify installation in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm path com.drops.pos.next.backuptest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drops-backup-test-apk
+          path: app/build/outputs/apk/debug/*.apk
