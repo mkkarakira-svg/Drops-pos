@@ -33,6 +33,15 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 8
           unzip -l "$APK" | tail -n 8
           ls -lh "$APK"
+      - name: Verify installation in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm path com.drops.pos.next.backuptest
       - uses: actions/upload-artifact@v4
         with:
           name: drops-backup-test-apk
