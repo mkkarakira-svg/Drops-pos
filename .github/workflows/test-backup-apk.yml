@@ -25,6 +25,14 @@ jobs:
           gradle-version: '8.10.2'
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
+      - name: Verify APK signing and package
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name '*.apk' -print -quit)
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 8
+          unzip -l "$APK" | tail -n 8
+          ls -lh "$APK"
       - uses: actions/upload-artifact@v4
         with:
           name: drops-backup-test-apk
