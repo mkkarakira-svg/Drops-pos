@@ -1,6 +1,9 @@
 package com.drops.pos;
 
 import android.app.Activity;
+import android.webkit.JavascriptInterface;
+import android.util.Base64;
+import java.io.OutputStream;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
@@ -26,6 +29,9 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
     private static final int FILE_REQUEST = 2026;
+    private static final int SAVE_BACKUP_REQUEST = 2027;
+    private byte[] pendingBackup;
+    private String pendingBackupName;
     private static final String APP_URL = "https://mkkarakira-svg.github.io/Drops-pos/";
 
     @Override
@@ -67,6 +73,25 @@ public class MainActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setSupportZoom(false);
 
+        webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface public void saveBackup(String filename, String base64) {
+                try {
+                    byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                    if (bytes.length == 0 || bytes.length > 20 * 1024 * 1024) throw new Exception("Invalid backup size");
+                    runOnUiThread(() -> {
+                        pendingBackup = bytes;
+                        pendingBackupName = filename.matches("DropsPOS-backup-[0-9-]+\\.json") ? filename : "DropsPOS-backup.json";
+                        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("application/json");
+                        intent.putExtra(Intent.EXTRA_TITLE, pendingBackupName);
+                        startActivityForResult(intent, SAVE_BACKUP_REQUEST);
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Backup error: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                }
+            }
+        }, "DropsAndroid");
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
@@ -110,6 +135,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SAVE_BACKUP_REQUEST) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null && pendingBackup != null) {
+                try (OutputStream stream = getContentResolver().openOutputStream(data.getData())) {
+                    if (stream == null) throw new Exception("Cannot open destination");
+                    stream.write(pendingBackup);
+                    stream.flush();
+                    Toast.makeText(this, "Backup saved successfully", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, "Backup save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+            pendingBackup = null;
+            pendingBackupName = null;
+            return;
+        }
         if (requestCode == FILE_REQUEST && fileCallback != null) {
             fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
             fileCallback = null;
