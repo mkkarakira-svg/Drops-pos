@@ -300,7 +300,7 @@ body{padding-bottom:0!important;}
 #app .pricing-color-head{color:#132238!important}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.53</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.54</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1050,18 +1050,18 @@ async function updateDropsApp(){
 async function backup(){
  const filename='DropsPOS-backup-'+today()+'.json';
  let blob;
- try{
-  const data=JSON.stringify(db,null,2);
-  blob=new Blob([data],{type:'application/json'});
-  if(!blob.size)throw Error('Empty backup');
- }catch(e){alert('Backup error: '+e.message);return;}
- const url=URL.createObjectURL(blob);
- const a=document.createElement('a');
- a.href=url;a.download=filename;a.style.display='none';
- document.body.appendChild(a);
- a.click();
- setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},60000);
- alert('Backup download requested: '+filename+' ('+Math.round(blob.size/1024)+' KB). Check Downloads before changing or deleting the app.');
+ try{blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});if(!blob.size)throw Error('Empty backup')}
+ catch(e){alert('Backup error: '+e.message);return}
+ const previous=document.getElementById('dropsBackupSaveDialog');if(previous)previous.remove();
+ const overlay=document.createElement('div');overlay.id='dropsBackupSaveDialog';
+ overlay.style.cssText='position:fixed;inset:0;background:#000a;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+ const panel=document.createElement('div');panel.style.cssText='background:white;color:#102039;padding:20px;border-radius:16px;width:100%;max-width:440px';
+ panel.innerHTML='<h3>Save Drops POS Backup</h3><p>'+filename+' — '+Math.round(blob.size/1024)+' KB</p>';
+ const add=(label,handler)=>{const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.style.cssText='display:block;width:100%;padding:16px;margin:10px 0;border:0;border-radius:10px;background:#1466ca;color:white;font-weight:bold';btn.onclick=handler;panel.appendChild(btn)};
+ if(window.showSaveFilePicker)add('💾 Save file to phone',async()=>{try{const h=await showSaveFilePicker({suggestedName:filename,types:[{description:'JSON',accept:{'application/json':['.json']}}]});const w=await h.createWritable();await w.write(blob);await w.close();alert('File saved: '+filename)}catch(e){if(e.name!=='AbortError')alert('Save failed: '+e.message)}});
+ add('📤 Share backup file / Save to Drive',async()=>{try{const file=new File([blob],filename,{type:'application/json'});if(!navigator.share||!navigator.canShare?.({files:[file]}))throw Error('File sharing unavailable in this app');await navigator.share({files:[file],title:filename})}catch(e){if(e.name!=='AbortError')alert('Share failed: '+e.message)}});
+ add('⬇️ Download JSON',()=>{const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();setTimeout(()=>{link.remove();URL.revokeObjectURL(url)},60000);alert('Download requested. Verify the file exists in Downloads.')});
+ add('Close',()=>overlay.remove());overlay.appendChild(panel);document.body.appendChild(overlay);
 }
 function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
 function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
