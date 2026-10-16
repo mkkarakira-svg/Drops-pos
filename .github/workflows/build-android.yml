@@ -1,0 +1,45 @@
+name: Build Drops POS Android APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'icon.svg'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/build-android.yml'
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Prepare bundled offline web app
+        run: |
+          mkdir -p www
+          cp index.html icon.svg manifest.webmanifest sw.js www/
+      - name: Install Capacitor and generate Android project
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DropsPOS-Android-test-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
