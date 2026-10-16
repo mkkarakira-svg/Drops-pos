@@ -26,6 +26,32 @@ jobs:
           ls -lh "$APK"
           unzip -l "$APK" | tail -n 25
           test "$(stat -c%s "$APK")" -gt 10000
+      - name: Restore release signing key
+        env:
+          DROPS_KEYSTORE_BASE64: ${{ secrets.DROPS_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$DROPS_KEYSTORE_BASE64"
+          printf '%s' "$DROPS_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > app/drops-release.jks
+          test -s app/drops-release.jks
+      - name: Build signed release APK (isolated test)
+        env:
+          DROPS_KEYSTORE_FILE: drops-release.jks
+          DROPS_KEYSTORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          DROPS_KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          DROPS_KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --no-daemon
+      - name: Inspect release package and signing certificate
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          test -s "$APK"
+          ls -lh "$APK"
+          $ANDROID_HOME/build-tools/35.0.0/aapt dump badging "$APK" | head -n 3
+          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --print-certs "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drops-pos-SIGNED-test-DO-NOT-INSTALL
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: drops-pos-test-apk-DO-NOT-INSTALL-ON-LIVE-DATA
