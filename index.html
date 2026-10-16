@@ -1021,31 +1021,26 @@ function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions
 
 async function updateDropsApp(){
  const btn=document.querySelector('button[onclick="updateDropsApp()"]');
- const oldText=btn?.textContent||'🔄 Update Drops POS';
- if(btn){btn.disabled=true;btn.textContent='⏳ Checking latest version...'}
+ const oldText=btn?.textContent||'Update POS Drops';
+ if(btn){btn.disabled=true;btn.textContent='Checking Android updates...'}
  try{
-  const target='4.3.41';
-  const url=new URL('index.html',window.location.href);
-  url.searchParams.set('updateCheck',String(Date.now()));
-  const response=await fetch(url.toString(),{cache:'no-store',redirect:'follow'});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  const html=await response.text();
-  const match=html.match(/class="app-version"[^>]*>v([0-9.]+)</);
-  if(!match)throw new Error('Version not found');
-  const remote=match[1];
-  const local=document.querySelector('.app-version')?.textContent?.trim().replace(/^v/,'')||'';
+  const local=document.querySelector('.app-version')?.textContent?.trim().replace(/^v/,'')||'0';
+  const response=await fetch('https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest',{cache:'no-store',headers:{'Accept':'application/vnd.github+json'}});
+  if(response.status===404){alert('No published Android update is available yet. Your data has not changed.');return}
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const release=await response.json();
+  const remote=String(release.tag_name||'').replace(/^v/i,'');
   const compare=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)-(y[i]||0)}return 0};
-  if(compare(remote,local)<=0){alert('Current version: v'+local+'. Latest published version: v'+remote+'. No newer version is available yet.');return}
-  const nextUrl=new URL(window.location.href);
-  nextUrl.searchParams.set('v',remote);
-  nextUrl.searchParams.set('t',String(Date.now()));
-  nextUrl.hash='home';
-  window.location.assign(nextUrl.toString());
+  if(!/^\d+(\.\d+)+$/.test(remote))throw Error('Invalid release version');
+  if(compare(remote,local)<=0){alert('Current version: v'+local+'. No newer published Android update is available.');return}
+  const apk=(release.assets||[]).find(a=>a.name==='POS-Drops-update.apk'&&/^https:\/\/github\.com\/mkkarakira-svg\/Drops-pos\/releases\/download\//.test(a.browser_download_url||''));
+  if(!apk){alert('Version v'+remote+' is published, but its POS Drops Android installer is not ready. No changes were made.');return}
+  if(confirm('POS Drops v'+remote+' is available. Download the Android update? Install it over the existing POS Drops app; do not uninstall it.')){
+   window.open(apk.browser_download_url,'_blank');
+  }
  }catch(e){
-  alert('Could not check the published update. Please try again shortly. Saved data is safe.');
- }finally{
-  if(btn){btn.disabled=false;btn.textContent=oldText}
- }
+  alert('Could not check Android updates. Please check your internet connection and try again. Your saved data is safe.');
+ }finally{if(btn){btn.disabled=false;btn.textContent=oldText}}
 }
 async function backup(){
  const filename='DropsPOS-backup-'+today()+'.json';
