@@ -51,8 +51,54 @@ jobs:
           assert n == 1, 'Could not find Android versionCode'
           p.write_text(s)
           PY
-      - name: Build debug APK
+      - name: Check permanent signing credentials
+        env:
+          KEYSTORE_B64: ${{ secrets.POS_DROPS_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.POS_DROPS_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.POS_DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.POS_DROPS_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Permanent signing credentials are not configured. Refusing to build an APK that cannot update existing installs."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/pos-drops.jks"
+          echo "POS_DROPS_KEYSTORE_PATH=$RUNNER_TEMP/pos-drops.jks" >> "$GITHUB_ENV"
+      - name: Configure signed Android update
+        env:
+          STORE_PASSWORD: ${{ secrets.POS_DROPS_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.POS_DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.POS_DROPS_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          signing="""
+          android {
+            signingConfigs {
+              posDrops {
+                storeFile file(System.getenv('POS_DROPS_KEYSTORE_PATH'))
+                storePassword System.getenv('STORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+              }
+            }
+            buildTypes {
+              debug {
+                signingConfig signingConfigs.posDrops
+              }
+            }
+          }
+          """
+          p.write_text(s+'\\n'+signing)
+          PY
+      - name: Build signed test APK
         working-directory: android
+        env:
+          STORE_PASSWORD: ${{ secrets.POS_DROPS_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.POS_DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.POS_DROPS_KEY_PASSWORD }}
         run: ./gradlew assembleDebug --no-daemon
       - name: Upload test APK
         uses: actions/upload-artifact@v4
