@@ -91,7 +91,7 @@ jobs:
             }
           }
           """
-          p.write_text(s+'\\n'+signing)
+          p.write_text(s+chr(10)+signing)
           PY
       - name: Build signed test APK
         working-directory: android
