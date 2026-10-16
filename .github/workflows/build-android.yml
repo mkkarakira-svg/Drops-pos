@@ -53,10 +53,10 @@ jobs:
           PY
       - name: Check permanent signing credentials
         env:
-          KEYSTORE_B64: ${{ secrets.POS_DROPS_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.POS_DROPS_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.POS_DROPS_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.POS_DROPS_KEY_PASSWORD }}
+          KEYSTORE_B64: ${{ secrets.DROPS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
             echo "::error::Permanent signing credentials are not configured. Refusing to build an APK that cannot update existing installs."
@@ -66,9 +66,9 @@ jobs:
           echo "POS_DROPS_KEYSTORE_PATH=$RUNNER_TEMP/pos-drops.jks" >> "$GITHUB_ENV"
       - name: Configure signed Android update
         env:
-          STORE_PASSWORD: ${{ secrets.POS_DROPS_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.POS_DROPS_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.POS_DROPS_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -96,9 +96,9 @@ jobs:
       - name: Build signed test APK
         working-directory: android
         env:
-          STORE_PASSWORD: ${{ secrets.POS_DROPS_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.POS_DROPS_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.POS_DROPS_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
         run: ./gradlew assembleDebug --no-daemon
       - name: Upload test APK
         uses: actions/upload-artifact@v4
