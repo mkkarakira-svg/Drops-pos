@@ -1,0 +1,8 @@
+{
+  "appId": "com.dropsdetergents.pos",
+  "appName": "Drops POS",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
