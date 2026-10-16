@@ -36,6 +36,21 @@ jobs:
           npm install --no-audit --no-fund
           npx cap add android
           npx cap sync android
+      - name: Set POS Drops fullscreen and update version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/res/values/styles.xml')
+          s = p.read_text()
+          s = s.replace('</style>', '<item name="android:windowFullscreen">true</item>\n</style>', 1)
+          p.write_text(s)
+          p = Path('android/app/build.gradle')
+          s = p.read_text()
+          import re
+          s, n = re.subn(r'versionCode\s+\d+', 'versionCode 2', s, count=1)
+          assert n == 1, 'Could not find Android versionCode'
+          p.write_text(s)
+          PY
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
