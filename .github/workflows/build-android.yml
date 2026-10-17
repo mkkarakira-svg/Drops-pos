@@ -49,7 +49,7 @@ jobs:
           import re
           s, n = re.subn(r'versionCode\s+\d+', 'versionCode 59', s, count=1)
           assert n == 1, 'Could not find Android versionCode'
-          s, n = re.subn(r'versionName\\s+["\'][^"\']+["\']', 'versionName "4.3.59"', s, count=1)
+          s, n = re.subn(r'versionName\s+["\'][^"\']+["\']', 'versionName "4.3.59"', s, count=1)
           assert n == 1, 'Could not find Android versionName'
           p.write_text(s)
           PY
