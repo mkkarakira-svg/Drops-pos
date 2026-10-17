@@ -1,6 +1,12 @@
 name: Build Drops POS Android APK
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/build-android.yml'
   push:
     paths:
       - 'index.html'
@@ -36,12 +42,17 @@ jobs:
           npm install --no-audit --no-fund
           npx cap add android
           npx cap sync android
+      - name: Set candidate Android version
+        run: |
+          sed -i 's/versionCode [0-9][0-9]*/versionCode 60/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "4.3.60"/' android/app/build.gradle
+          grep -E 'versionCode 60|versionName "4.3.60"' android/app/build.gradle
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: DropsPOS-Android-test-APK
+          name: POS-Drops-4.3.60-TEST-NOT-FOR-INSTALL
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
