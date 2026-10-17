@@ -46,8 +46,8 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r"versionCode\\s+\\d+", "versionCode 4359", s, count=1)
-          s, n2 = re.subn(r"versionName\\s+['\"][^'\"]+['\"]", "versionName '4.3.59'", s, count=1)
+          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4359", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.59'", s, count=1)
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
