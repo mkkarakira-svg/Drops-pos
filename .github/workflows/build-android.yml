@@ -44,7 +44,7 @@ jobs:
           s = p.read_text()
           # Apply fullscreen to every Android activity theme, not only the first style.
           import re
-          s, count = re.subn(r'(</style>)', '<item name="android:windowFullscreen">true</item>\\n\\1', s)
+          s, count = re.subn(r'(</style>)', lambda m: '<item name="android:windowFullscreen">true</item>' + chr(10) + m.group(1), s)
           assert count >= 1, 'No Android styles found'
           p.write_text(s)
           # Enforce fullscreen at the native Activity level on Samsung/Android.
@@ -55,11 +55,11 @@ jobs:
             activity = matches[0]
           java = activity.read_text()
           java = java.replace('public class MainActivity extends BridgeActivity {',
-              'public class MainActivity extends BridgeActivity {\\n'
-              '  @Override public void onCreate(android.os.Bundle savedInstanceState) {\\n'
-              '    super.onCreate(savedInstanceState);\\n'
+              'public class MainActivity extends BridgeActivity {' + chr(10)
+              '  @Override public void onCreate(android.os.Bundle savedInstanceState) {' + chr(10)
+              '    super.onCreate(savedInstanceState);' + chr(10)
               '    getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN, '
-              'android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);\\n'
+              'android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);' + chr(10)
               '  }')
           assert 'FLAG_FULLSCREEN' in java, 'Native fullscreen injection failed'
           activity.write_text(java)
