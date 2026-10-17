@@ -51,16 +51,50 @@ jobs:
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
-      - name: Build debug APK
+      - name: Restore permanent signing credentials
+        env:
+          KEYSTORE_B64: ${{ secrets.DROPS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$STORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD" || exit 1
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/pos-drops.jks"
+          test -s "$RUNNER_TEMP/pos-drops.jks"
+          echo "POS_DROPS_KEYSTORE_PATH=$RUNNER_TEMP/pos-drops.jks" >> "$GITHUB_ENV"
+      - name: Configure existing signing key
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          p.write_text(p.read_text() + """
+          android {
+            signingConfigs {
+              posDrops {
+                storeFile file(System.getenv('POS_DROPS_KEYSTORE_PATH'))
+                storePassword System.getenv('STORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+              }
+            }
+            buildTypes {
+              debug {
+                signingConfig signingConfigs.posDrops
+              }
+            }
+          }
+          """)
+          PY
+      - name: Build signed candidate APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:\n          STORE_PASSWORD: \${{ secrets.DROPS_KEYSTORE_PASSWORD }}\n          KEY_ALIAS: \${{ secrets.DROPS_KEY_ALIAS }}\n          KEY_PASSWORD: \${{ secrets.DROPS_KEY_PASSWORD }}\n        run: ./gradlew assembleDebug --no-daemon
       - name: Inspect generated APK identity and signing certificate
         working-directory: android
         run: |
           APK=app/build/outputs/apk/debug/app-debug.apk
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
           APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
-          "$AAPT" dump badging "$APK" | grep '^package:'
+          "$AAPT" dump badging "$APK" | grep '^package:'\n          "$APKSIGNER" verify --print-certs "$APK"
           "$AAPT" dump badging "$APK" | grep -q "versionCode='4359' versionName='4.3.59'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
