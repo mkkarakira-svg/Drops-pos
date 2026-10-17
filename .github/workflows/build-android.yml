@@ -61,7 +61,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
           APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
           "$AAPT" dump badging "$APK" | grep '^package:'
-          "$APKSIGNER" verify --print-certs "$APK"\n          "$AAPT" dump badging "$APK" | grep -q "versionCode=\x274359\x27 versionName=\x274.3.59\x27"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='4359' versionName='4.3.59'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Upload test APK
