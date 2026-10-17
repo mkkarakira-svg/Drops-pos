@@ -39,6 +39,18 @@ jobs:
       - name: Verify application identity and version
         run: |
           node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.59')process.exit(1)"
+      - name: Set Android version metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          import re
+          s, n1 = re.subn(r"versionCode\\s+\\d+", "versionCode 4359", s, count=1)
+          s, n2 = re.subn(r"versionName\\s+['\"][^'\"]+['\"]", "versionName '4.3.59'", s, count=1)
+          assert n1 == 1 and n2 == 1, "Missing Android version fields"
+          p.write_text(s)
+          PY
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
@@ -49,7 +61,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
           APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
           "$AAPT" dump badging "$APK" | grep '^package:'
-          "$APKSIGNER" verify --print-certs "$APK"
+          "$APKSIGNER" verify --print-certs "$APK"\n          "$AAPT" dump badging "$APK" | grep -q "versionCode=\x274359\x27 versionName=\x274.3.59\x27"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Upload test APK
