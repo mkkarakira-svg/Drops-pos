@@ -1022,27 +1022,30 @@ function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions
 async function updateDropsApp(){
  const btn=document.querySelector('button[onclick="updateDropsApp()"]');
  const oldText=btn?.textContent||'🔄 Update Drops POS';
- if(btn){btn.disabled=true;btn.textContent='⏳ Checking latest version...'}
+ if(btn){btn.disabled=true;btn.textContent='⏳ Checking Android updates...'}
  try{
-  const target='4.3.41';
-  const url=new URL('index.html',window.location.href);
-  url.searchParams.set('updateCheck',String(Date.now()));
-  const response=await fetch(url.toString(),{cache:'no-store',redirect:'follow'});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  const html=await response.text();
-  const match=html.match(/class="app-version"[^>]*>v([0-9.]+)</);
-  if(!match)throw new Error('Version not found');
-  const remote=match[1];
-  const local=document.querySelector('.app-version')?.textContent?.trim().replace(/^v/,'')||'';
-  const compare=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)-(y[i]||0)}return 0};
-  if(compare(remote,local)<=0){alert('Current version: v'+local+'. Latest published version: v'+remote+'. No newer version is available yet.');return}
-  const nextUrl=new URL(window.location.href);
-  nextUrl.searchParams.set('v',remote);
-  nextUrl.searchParams.set('t',String(Date.now()));
-  nextUrl.hash='home';
-  window.location.assign(nextUrl.toString());
+  const endpoint='https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest';
+  const response=await fetch(endpoint,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
+  if(!response.ok)throw new Error('GitHub HTTP '+response.status);
+  const release=await response.json();
+  const remote=String(release.tag_name||'').replace(/^[vV][.\s-]*/,'');
+  const local=String(document.querySelector('.app-version')?.textContent||'').trim().replace(/^[vV]/,'');
+  if(!/^\d+(?:\.\d+)*$/.test(remote)||!/^\d+(?:\.\d+)*$/.test(local))throw new Error('Cannot read version numbers');
+  const cmp=(x,y)=>{const a=x.split('.').map(Number),b=y.split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return (a[i]||0)-(b[i]||0)}return 0};
+  if(cmp(remote,local)<=0){alert('Installed screen version: v'+local+'. Latest published release: v'+remote+'. No newer release.');return}
+  const apk=(release.assets||[]).find(a=>/\.apk$/i.test(a.name||'')&&a.browser_download_url);
+  if(!apk)throw new Error('New release has no downloadable APK');
+  // Download is user-initiated. Android alone validates package ID, versionCode and signing key.
+  if(!confirm('Android release v'+remote+' found. Download '+apk.name+'? Android will ask for your approval before installation. Do not uninstall your existing app.'))return;
+  const link=document.createElement('a');
+  link.href=apk.browser_download_url;
+  link.download=apk.name;
+  link.rel='noopener noreferrer';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
  }catch(e){
-  alert('Could not check the published update. Please try again shortly. Saved data is safe.');
+  alert('Android update check failed: '+(e?.message||e)+'. Your saved data was not changed.');
  }finally{
   if(btn){btn.disabled=false;btn.textContent=oldText}
  }
