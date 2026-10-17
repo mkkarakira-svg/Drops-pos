@@ -42,14 +42,33 @@ jobs:
           from pathlib import Path
           p = Path('android/app/src/main/res/values/styles.xml')
           s = p.read_text()
-          s = s.replace('</style>', '<item name="android:windowFullscreen">true</item>\n</style>', 1)
+          # Apply fullscreen to every Android activity theme, not only the first style.
+          import re
+          s, count = re.subn(r'(</style>)', '<item name="android:windowFullscreen">true</item>\\n\\1', s)
+          assert count >= 1, 'No Android styles found'
           p.write_text(s)
+          # Enforce fullscreen at the native Activity level on Samsung/Android.
+          activity = Path('android/app/src/main/java/com/dropsdetergents/posdrops/stable/MainActivity.java')
+          if not activity.exists():
+            matches = list(Path('android/app/src/main/java').rglob('MainActivity.java'))
+            assert len(matches) == 1, f'Expected one MainActivity.java: {matches}'
+            activity = matches[0]
+          java = activity.read_text()
+          java = java.replace('public class MainActivity extends BridgeActivity {',
+              'public class MainActivity extends BridgeActivity {\\n'
+              '  @Override public void onCreate(android.os.Bundle savedInstanceState) {\\n'
+              '    super.onCreate(savedInstanceState);\\n'
+              '    getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN, '
+              'android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);\\n'
+              '  }')
+          assert 'FLAG_FULLSCREEN' in java, 'Native fullscreen injection failed'
+          activity.write_text(java)
           p = Path('android/app/build.gradle')
           s = p.read_text()
           import re
-          s, n = re.subn(r'versionCode\s+\d+', 'versionCode 59', s, count=1)
+          s, n = re.subn(r'versionCode\s+\d+', 'versionCode 60', s, count=1)
           assert n == 1, 'Could not find Android versionCode'
-          s, n = re.subn(r'versionName\s+["\'][^"\']+["\']', 'versionName "4.3.59"', s, count=1)
+          s, n = re.subn(r'versionName\s+["\'][^"\']+["\']', 'versionName "4.3.60"', s, count=1)
           assert n == 1, 'Could not find Android versionName'
           p.write_text(s)
           PY
@@ -108,7 +127,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk POS-Drops-update.apk
-          gh release create v4.3.59 POS-Drops-update.apk --title "POS Drops v4.3.59" --notes "Fullscreen and Android update checker. New permanent-signing app identity; install alongside earlier test app and restore your saved backup once." --target "$GITHUB_SHA"
+          gh release create v4.3.60 POS-Drops-update.apk --title "POS Drops v4.3.60" --notes "Fullscreen and Android update checker. New permanent-signing app identity; install alongside earlier test app and restore your saved backup once." --target "$GITHUB_SHA"
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
