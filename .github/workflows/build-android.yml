@@ -67,6 +67,6 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: DropsPOS-Android-DEBUG-NOT-FOR-RELEASE
+          name: DropsPOS-4.3.59-SIGNED-CANDIDATE-NOT-FOR-INSTALL
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
