@@ -1041,8 +1041,11 @@ async function backup(){
     try{
       const fs=cap.Plugins&&cap.Plugins.Filesystem;
       if(!fs||typeof fs.writeFile!=='function')throw Error('Native Filesystem plugin unavailable');
-      const result=await fs.writeFile({path:'DropsPOS/'+filename,data, directory:'DOCUMENTS',encoding:'utf8',recursive:true});
-      alert('Backup saved to Android Documents/DropsPOS/'+filename+'\\nKeep a copy outside this phone too.');
+      await fs.writeFile({path:'DropsPOS/'+filename,data,directory:'DOCUMENTS',encoding:'utf8',recursive:true});
+      const check=await fs.readFile({path:'DropsPOS/'+filename,directory:'DOCUMENTS',encoding:'utf8'});
+      if(typeof check?.data!=='string'||check.data!==data)throw Error('Backup verification failed');
+      const loc=await fs.getUri({path:'DropsPOS/'+filename,directory:'DOCUMENTS'});
+      alert('Backup written and verified inside Android app storage. Location: '+(loc?.uri||'app Documents/DropsPOS/'+filename)+'. This may NOT appear in My Files. Keep an external copy before installing updates.');
     }catch(e){alert('Android save failed: '+(e?.message||e)+'. Use Share backup file or Copy backup text; no download was confirmed.')}
     return;
   }
