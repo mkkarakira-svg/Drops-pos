@@ -298,6 +298,21 @@ body{padding-bottom:0!important;}
 #app .pricing-color-card:nth-of-type(6n) .pricing-color-head{background:#cceff0!important}
 #app .pricing-color-card{border:1px solid #dfe7f1!important;box-shadow:0 4px 13px #0714260d!important}
 #app .pricing-color-head{color:#132238!important}
+</style><style id="drops-mobile-viewport-fix">
+html,body{max-width:100%;overflow-x:hidden}
+*,*::before,*::after{box-sizing:border-box}
+#app,.wrap,.panel,.card{min-width:0;max-width:100%}
+input,select,textarea,button{max-width:100%;min-width:0}
+.top{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;flex-wrap:wrap!important;height:auto!important;min-height:0!important;padding:calc(9px + env(safe-area-inset-top,0px)) 12px 9px!important;margin:0 8px 8px!important;border-radius:0 0 18px 18px!important;overflow:visible!important}
+.top b{font-size:clamp(12px,3.2vw,16px)!important;line-height:1.25!important;white-space:normal!important;overflow-wrap:anywhere!important;flex:1 1 150px!important;min-width:0!important}
+.top .app-version{font-size:12px!important;white-space:nowrap!important}
+.top .top-info{flex:0 1 auto!important;min-width:95px!important;max-width:42%!important;text-align:right!important;margin:0!important}
+.top .top-info div{font-size:11px!important;line-height:1.25!important;white-space:normal!important;margin:0!important}
+.top #headerBack{position:static!important;flex:0 0 auto!important;top:auto!important;left:auto!important;margin:0!important;z-index:1!important}
+.top.has-back b{flex-basis:110px!important}
+.wrap{width:100%!important;margin:0 auto!important;padding:6px 10px calc(86px + env(safe-area-inset-bottom,0px))!important}
+.nav{padding-bottom:env(safe-area-inset-bottom,0px)!important}
+@media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
 <header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.59</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
@@ -864,7 +879,7 @@ function settings(){
    <button class="bo-card" onclick="go('sellingPrices')"><span>💰</span><b>Selling Prices</b></button>
   </div>
   <div class="title bo-section-title">App Update</div>
-  <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Checks for the newest version and reloads the app. Your saved POS data stays on this device.</div></div>
+  <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Shows the current Android update status. APK updates are installed only after a compatible signed release is available; this button does not silently install an APK.</div></div>
   <div class="title bo-section-title">Settings & Backup</div>
   <div class="panel bo-settings">
    <div class="bo-setting-row"><div><b>USD/LBP Rate</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('Saved')">Save</button></div>
