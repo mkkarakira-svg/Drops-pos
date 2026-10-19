@@ -1040,26 +1040,30 @@ async function updateDropsApp(){
  const previous=button?.textContent;
  if(button){button.disabled=true;button.textContent='Checking for updates…';}
  const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
+ const current='4.3.60';
+ const parts=v=>String(v||'').replace(/^v[.\s]*/i,'').split('.').map(n=>Number(n)||0);
+ const newer=(a,b)=>{const x=parts(a),y=parts(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;};
  try{
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),10000);
   let response;
   try{response=await fetch('https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest',{headers:{'Accept':'application/vnd.github+json'},cache:'no-store',signal:controller.signal});}
   finally{clearTimeout(timeout);}
-  if(response.status===404){alert('No public production update is available yet. Your current app and data are unchanged. Test APKs are not updates.');return;}
+  if(response.status===404){alert('No approved Android update is published yet. Current version: '+current+'. Your data is unchanged.');return;}
   if(!response.ok)throw Error('GitHub returned '+response.status);
   const release=await response.json();
   const tag=String(release.tag_name||'');
+  if(!newer(tag,current)){alert('You are on version '+current+'. No newer approved release is available.');return;}
   const assets=Array.isArray(release.assets)?release.assets:[];
   const apk=assets.find(a=>/\.apk$/i.test(a.name||'') && !/debug|test|candidate|separate/i.test(a.name||''));
-  if(!apk){alert('Latest GitHub release ('+tag+') has no approved production APK. No changes were made to this app.');return;}
-  // The installed app identity and signing certificate must match the release APK before an in-place update.
-  // Do not attempt to replace it or offer a misleading automatic install.
-  if(confirm('A release is listed ('+tag+'). A production APK is listed, but compatibility has not been verified. Open the release information only (do not install until verified)? Your POS data will not change.')){
+  if(!apk){alert('Version '+tag+' is listed, but there is no approved production APK. Your app and data are unchanged.');return;}
+  // A release asset alone cannot prove package identity or signing-key compatibility.
+  // Open release details, not the installer, until release verification is implemented.
+  if(confirm('New release '+tag+' found. APK compatibility has not been verified. Open release notes only? Do not install until verified.')){
    window.open(release.html_url||releases,'_blank','noopener,noreferrer');
   }
  }catch(e){
-  if(confirm('Could not check GitHub right now. Open the releases page in your browser? No POS data will be changed.')){
+  if(confirm('Could not check GitHub right now. Open the releases page? No POS data will change.')){
    window.open(releases,'_blank','noopener,noreferrer');
   }
  }finally{if(button){button.disabled=false;button.textContent=previous;}}
