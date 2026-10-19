@@ -1035,7 +1035,34 @@ function editRaw(rid){
 function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions and quantities will be cleared. Recipes, products, purchase prices, price history, customers, suppliers and employees will be kept.'))return;if(!confirm('Final confirmation: clear trial stock and transactions now?'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];db.settings.lastBusinessDate=today();save();alert('GO-LIVE reset completed. Master data and price history were kept. Enter physical stock before starting sales.');home();}
 
 async function updateDropsApp(){
- alert('POS Drops New v4.3.59 is a separate test app. In-app Android APK updates are not yet supported. Do not uninstall the old POS Drops. New versions must be verified and installed through a signed APK.');
+ const button=document.querySelector('button[onclick="updateDropsApp()"]');
+ if(button?.disabled)return;
+ const previous=button?.textContent;
+ if(button){button.disabled=true;button.textContent='Checking for updates…';}
+ const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
+ try{
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),10000);
+  let response;
+  try{response=await fetch('https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest',{headers:{'Accept':'application/vnd.github+json'},cache:'no-store',signal:controller.signal});}
+  finally{clearTimeout(timeout);}
+  if(response.status===404){alert('No public production update is available yet. Your current app and data are unchanged. Test APKs are not updates.');return;}
+  if(!response.ok)throw Error('GitHub returned '+response.status);
+  const release=await response.json();
+  const tag=String(release.tag_name||'');
+  const assets=Array.isArray(release.assets)?release.assets:[];
+  const apk=assets.find(a=>/\\.apk$/i.test(a.name||'') && !/debug|test|candidate|separate/i.test(a.name||''));
+  if(!apk){alert('Latest GitHub release ('+tag+') has no approved production APK. No changes were made to this app.');return;}
+  // The installed POS Drops app uses a distinct Android package from this test build.
+  // Do not attempt to replace it or offer a misleading automatic install.
+  if(confirm('A release is listed ('+tag+'). The installed POS Drops app cannot yet be updated in place safely. Open the release information in your browser? Your POS data will not change.')){
+   window.open(release.html_url||releases,'_blank','noopener,noreferrer');
+  }
+ }catch(e){
+  if(confirm('Could not check GitHub right now. Open the releases page in your browser? No POS data will be changed.')){
+   window.open(releases,'_blank','noopener,noreferrer');
+  }
+ }finally{if(button){button.disabled=false;button.textContent=previous;}}
 }
 async function backup(){
  const filename='DropsPOS-backup-'+today()+'.json';
