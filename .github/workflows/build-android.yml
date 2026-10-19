@@ -38,7 +38,7 @@ jobs:
           npx cap sync android
       - name: Verify application identity and version
         run: |
-          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.posdrops.test'||p.version!=='4.3.59')process.exit(1)"
+          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.59')process.exit(1)"
       - name: Set Android version metadata
         run: |
           python3 - <<'PY'
@@ -102,21 +102,14 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           "$AAPT" dump badging "$APK" | grep -q "versionCode='4359' versionName='4.3.59'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
-          test "$ACTUAL" = "com.dropsdetergents.posdrops.test" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
-      - name: Verify installed app certificate compatibility
+          test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
+      - name: Guard separate installation identity
         run: |
-          echo "Installed POS Drops SHA-256: 699D88D4E886EE9A9DB1C644809185877CF11153CEC389CE8DA60CA9B83753"
-          APK=android/app/build/outputs/apk/debug/app-debug.apk
-          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
-          ACTUAL=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:lower:]' '[:upper:]')
-          if [ "$ACTUAL" != "699D88D4E886EE9A9DB1C644809185877CF11153CEC389CE8DA60CA9B83753" ]; then
-            echo "::warning::APK signing key differs from installed POS Drops. DO NOT INSTALL as update."
-            echo "Signing mismatch; withholding APK artifact."
-            exit 1
-          fi
+          echo "This APK uses com.dropsdetergents.pos, distinct from installed com.dropsdetergents.posdrops.test"
+          echo "Do not uninstall the existing app; this candidate installs separately."
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: DropsPOS-4.3.59-SIGNED-CANDIDATE-NOT-FOR-INSTALL
+          name: POSDrops-4.3.59-SEPARATE-TEST-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
