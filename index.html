@@ -1054,7 +1054,25 @@ async function backup(){
   alert('Check Downloads for '+filename+' (download is not yet verified)');
  });
  const area=document.createElement('textarea');area.value=data;area.readOnly=true;area.style.cssText='display:block;width:100%;height:110px;font-size:12px;box-sizing:border-box';panel.appendChild(area);
- add('📤 Share backup file',async()=>{try{const file=new File([blob],filename,{type:'application/json'});if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){alert('File sharing is not supported by this app. No backup has been saved.');return}await navigator.share({files:[file],title:'Drops POS Backup'});alert('Sharing completed. Check the destination app to confirm the JSON file was saved.')}catch(e){if(e&&e.name==='AbortError')return;alert('Share failed: '+(e&&e.message||e))}});
+ add('📤 Share backup file',async()=>{
+  try{
+    const cap=window.Capacitor;
+    if(cap?.isNativePlatform?.()&&cap.Plugins?.Filesystem&&cap.Plugins?.Share){
+      const fs=cap.Plugins.Filesystem;
+      const path='DropsPOS/'+filename;
+      await fs.writeFile({path,data,directory:'DOCUMENTS',encoding:'utf8',recursive:true});
+      const check=await fs.readFile({path,directory:'DOCUMENTS',encoding:'utf8'});
+      if(check?.data!==data)throw Error('Backup verification failed');
+      const loc=await fs.getUri({path,directory:'DOCUMENTS'});
+      await cap.Plugins.Share.share({title:'Drops POS Backup',url:loc.uri,dialogTitle:'Save Drops POS Backup'});
+      alert('Sharing opened. Confirm the file is saved in your chosen destination.');
+      return;
+    }
+    const file=new File([blob],filename,{type:'application/json'});
+    if(!navigator.share||!navigator.canShare?.({files:[file]}))throw Error('File sharing unavailable');
+    await navigator.share({files:[file],title:'Drops POS Backup'});
+  }catch(e){if(e?.name==='AbortError')return;alert('Share failed: '+(e?.message||e)+'. Existing data was not changed.')}
+ });
  add('📋 Copy backup text',async()=>{try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(data);else{area.focus();area.select();if(!document.execCommand('copy'))throw Error('Copy unavailable')}alert('Copied. Save as '+filename+' outside the app.')}catch(e){area.focus();area.select();alert('Select all and copy the backup text manually.')}});
  add('Close',()=>overlay.remove());overlay.appendChild(panel);document.body.appendChild(overlay);
 }
