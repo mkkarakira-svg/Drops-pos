@@ -10,7 +10,11 @@ window.dropsCustomerPriceList=function(mode){
  const extras=(data()[mode]||[]);
  const price=p=>Number(wholesale?p.wholesalePrice:p.price)||0;
  const row=(name,size,usd)=>'<tr><td>'+esc(name)+'</td><td>'+size+' L</td><td>$'+usd.toFixed(2)+'</td><td>'+Math.round(usd*rate).toLocaleString('en-US')+'</td></tr>';
- const entries=products.map(p=>({name:String(p.name||'').replace(/\s+(4|5)L\s*$/i,'').trim(),size:Number(p.size),usd:price(p)})).concat(extras.map(e=>({name:e.name,size:Number(e.size),usd:Number(e.usd)||0})));
+ const cleanName=p=>String(p.name||'').replace(/\s+(4|5)L\s*$/i,'').trim();
+ const grouped=new Map();
+ products.forEach(p=>{const name=cleanName(p),key=name.toLocaleLowerCase('en');if(!grouped.has(key))grouped.set(key,{name,items:[]});grouped.get(key).items.push({name,size:Number(p.size),usd:price(p)});});
+ const groups=[...grouped.values()].sort((a,b)=>{const both=x=>x.items.some(i=>i.size===4)&&x.items.some(i=>i.size===5);return Number(both(b))-Number(both(a))||a.name.localeCompare(b.name);});
+ const entries=groups.flatMap(g=>g.items.sort((a,b)=>a.size-b.size)).concat(extras.map(e=>({name:e.name,size:Number(e.size),usd:Number(e.usd)||0})));
  const rows=entries.map(e=>row(e.name,e.size,e.usd)).join('');
  const table='<table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th>Product</th><th>Size</th><th>USD</th><th>LBP</th></tr></thead><tbody>'+rows+'</tbody></table>';
  const heading='DROPS DETERGENTS — '+label+' Price List';
