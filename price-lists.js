@@ -1,8 +1,8 @@
 /* Drops customer price lists: separate read-only wholesale and retail views. */
 (function(){
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));}
-function data(){try{return JSON.parse(localStorage.getItem('dropsSpecialPriceList')||'{}')||{}}catch(e){return {}}}
-function saveData(d){localStorage.setItem('dropsSpecialPriceList',JSON.stringify(d));}
+function data(){return db.specialPriceLists||{}}
+function saveData(d){db.specialPriceLists=d;save();}
 window.dropsCustomerPriceList=function(mode){
  const wholesale=mode==='wholesale',label=wholesale?'Wholesale':'Retail';
  const rate=Number(db.settings?.usdLbp)||90000;
