@@ -1,0 +1,46 @@
+name: Clean rebuild checks
+on:
+  push:
+    branches: [rebuild/drops-pos-clean]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, subprocess
+          html=pathlib.Path('index.html').read_text()
+          scripts=re.findall(r'<script(?:\\s[^>]*)?>([\\s\\S]*?)</script\\s*>',html,re.I)
+          for i,script in enumerate(scripts):
+              if not script.strip(): continue
+              path=pathlib.Path('/tmp/drops-script-'+str(i)+'.js')
+              path.write_text(script)
+              subprocess.run(['node','--check',str(path)],check=True)
+          print('Checked',len(scripts),'inline script blocks')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build debug APK (testing only)
+        run: gradle :app:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drops-pos-clean-debug-TEST-ONLY
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
