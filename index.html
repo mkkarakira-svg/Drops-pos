@@ -1064,9 +1064,9 @@ async function updateDropsApp(){
   const notes=String(release.body||'');
   const packageMatch=notes.match(/^Android-Package:\s*(\S+)\s*$/mi);
   const signerMatch=notes.match(/^Android-Signer-SHA256:\s*([A-Fa-f0-9:]{64,95})\s*$/mi);
-  const expectedSigner=''; // Set only after independently verifying the installed APK certificate.
+  const expectedSigner='8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63'; // Verified from signed Android build #72; Android confirmed same-app update.
   const normalized=v=>String(v||'').replace(/[^a-fA-F0-9]/g,'').toUpperCase();
-  if(!packageMatch||packageMatch[1]!=='com.dropsdetergents.pos'||!signerMatch||!expectedSigner||normalized(signerMatch[1])!==normalized(expectedSigner)){
+  if(!packageMatch||packageMatch[1]!=='com.dropsdetergents.pos'||!signerMatch||normalized(signerMatch[1])!==normalized(expectedSigner)){
    alert('A newer release exists, but its Android identity/signature is not yet approved for safe updating. No changes were made.');
    return;
   }
