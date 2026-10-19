@@ -1051,11 +1051,11 @@ async function updateDropsApp(){
   const release=await response.json();
   const tag=String(release.tag_name||'');
   const assets=Array.isArray(release.assets)?release.assets:[];
-  const apk=assets.find(a=>/\\.apk$/i.test(a.name||'') && !/debug|test|candidate|separate/i.test(a.name||''));
+  const apk=assets.find(a=>/\.apk$/i.test(a.name||'') && !/debug|test|candidate|separate/i.test(a.name||''));
   if(!apk){alert('Latest GitHub release ('+tag+') has no approved production APK. No changes were made to this app.');return;}
-  // The installed POS Drops app uses a distinct Android package from this test build.
+  // The installed app identity and signing certificate must match the release APK before an in-place update.
   // Do not attempt to replace it or offer a misleading automatic install.
-  if(confirm('A release is listed ('+tag+'). The installed POS Drops app cannot yet be updated in place safely. Open the release information in your browser? Your POS data will not change.')){
+  if(confirm('A release is listed ('+tag+'). A production APK is listed, but compatibility has not been verified. Open the release information only (do not install until verified)? Your POS data will not change.')){
    window.open(release.html_url||releases,'_blank','noopener,noreferrer');
   }
  }catch(e){
