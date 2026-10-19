@@ -1089,12 +1089,17 @@ async function restoreDB(){
  try{
   candidate=JSON.parse(await file.text());
   if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw Error('Not an object');
-  for(const key of ['products','raw','recipes','batches','invoices','purchases']){
-   if(!Array.isArray(candidate[key]))throw Error('Missing or invalid '+key);
+  // Accept older valid backups while preserving every field exactly as exported.
+  if(!Array.isArray(candidate.products)||!Array.isArray(candidate.raw))
+   throw Error('Products or raw materials list missing');
+  for(const key of ['recipes','batches','invoices','purchases','expenses','people']){
+   if(candidate[key]!==undefined&&!Array.isArray(candidate[key]))
+    throw Error('Invalid '+key);
   }
-  if(!candidate.settings||typeof candidate.settings!=='object'||Array.isArray(candidate.settings))throw Error('Invalid settings');
+  if(candidate.settings!==undefined&&(!candidate.settings||typeof candidate.settings!=='object'||Array.isArray(candidate.settings)))
+   throw Error('Invalid settings');
  }catch(e){alert('Backup not valid: '+e.message+'\\nNothing was changed.');return}
- const summary='Products: '+candidate.products.length+' | Raw materials: '+candidate.raw.length+' | Recipes: '+candidate.recipes.length+' | Invoices: '+candidate.invoices.length+' | Purchases: '+candidate.purchases.length;
+ const summary='Products: '+candidate.products.length+' | Raw materials: '+candidate.raw.length+' | Recipes: '+(candidate.recipes?.length??0)+' | Invoices: '+(candidate.invoices?.length??0)+' | Purchases: '+(candidate.purchases?.length??0);
  if(!confirm('Restore '+file.name+'?\\n'+summary+'\\n\\nThis will replace all current POS data on this device. Keep your original backup outside the app.'))return;
  const previous=db;
  let previousSerialized;
@@ -1104,7 +1109,6 @@ async function restoreDB(){
   localStorage.setItem('dropsDB',serialized);
   if(localStorage.getItem('dropsDB')!==serialized)throw Error('Storage verification failed');
   db=candidate;
-  db.priceHistory=db.priceHistory||[];
   alert('Backup restored and verified. Reloading POS.');
   location.hash='home';
   location.reload();
