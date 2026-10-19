@@ -1057,10 +1057,24 @@ async function updateDropsApp(){
   const assets=Array.isArray(release.assets)?release.assets:[];
   const apk=assets.find(a=>/\.apk$/i.test(a.name||'') && !/debug|test|candidate|separate/i.test(a.name||''));
   if(!apk){alert('Version '+tag+' is listed, but there is no approved production APK. Your app and data are unchanged.');return;}
-  // A release asset alone cannot prove package identity or signing-key compatibility.
-  // Open release details, not the installer, until release verification is implemented.
-  if(confirm('New release '+tag+' found. APK compatibility has not been verified. Open release notes only? Do not install until verified.')){
-   window.open(release.html_url||releases,'_blank','noopener,noreferrer');
+  // Only a release explicitly marked for the installed package and carrying
+  // a verified signer fingerprint may be offered for download.
+  const notes=String(release.body||'');
+  const packageMatch=notes.match(/^Android-Package:\s*(\S+)\s*$/mi);
+  const signerMatch=notes.match(/^Android-Signer-SHA256:\s*([A-Fa-f0-9:]{64,95})\s*$/mi);
+  const expectedSigner=''; // Set only after independently verifying the installed APK certificate.
+  const normalized=v=>String(v||'').replace(/[^a-fA-F0-9]/g,'').toUpperCase();
+  if(!packageMatch||packageMatch[1]!=='com.dropsdetergents.pos'||!signerMatch||!expectedSigner||normalized(signerMatch[1])!==normalized(expectedSigner)){
+   alert('A newer release exists, but its Android identity/signature is not yet approved for safe updating. No changes were made.');
+   return;
+  }
+  const download=String(apk.browser_download_url||'');
+  if(!/^https:\/\/github\.com\/mkkarakira-svg\/Drops-pos\/releases\/download\//.test(download)){
+   alert('Update download source could not be verified. No changes were made.');
+   return;
+  }
+  if(confirm('Verified update '+tag+' is available. Download APK? Android will ask you to confirm installation. Your existing data should remain, but back up first.')){
+   window.open(download,'_blank','noopener,noreferrer');
   }
  }catch(e){
   if(confirm('Could not check GitHub right now. Open the releases page? No POS data will change.')){
