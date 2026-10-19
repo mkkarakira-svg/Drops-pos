@@ -1099,16 +1099,19 @@ async function backup(){
     try{const bytes=new TextEncoder().encode(data);let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));window.DropsAndroid.saveBackup(filename,btoa(binary));return}catch(e){alert('Android backup save error: '+e.message);return}
   }
   const cap=window.Capacitor;
-  if(cap&&typeof cap.isNativePlatform==='function'&&cap.isNativePlatform()){
+  if(cap?.isNativePlatform?.()){
     try{
-      const fs=cap.Plugins&&cap.Plugins.Filesystem;
-      if(!fs||typeof fs.writeFile!=='function')throw Error('Native Filesystem plugin unavailable');
-      await fs.writeFile({path:'DropsPOS/'+filename,data,directory:'DOCUMENTS',encoding:'utf8',recursive:true});
-      const check=await fs.readFile({path:'DropsPOS/'+filename,directory:'DOCUMENTS',encoding:'utf8'});
-      if(typeof check?.data!=='string'||check.data!==data)throw Error('Backup verification failed');
-      const loc=await fs.getUri({path:'DropsPOS/'+filename,directory:'DOCUMENTS'});
-      alert('Backup written and verified inside Android app storage. Location: '+(loc?.uri||'app Documents/DropsPOS/'+filename)+'. This may NOT appear in My Files. Keep an external copy before installing updates.');
-    }catch(e){alert('Android save failed: '+(e?.message||e)+'. Use Share backup file or Copy backup text; no download was confirmed.')}
+      const fs=cap.Plugins?.Filesystem, share=cap.Plugins?.Share;
+      if(!fs?.writeFile||!share?.share)throw Error('Native file sharing unavailable');
+      const path='DropsPOS/'+filename;
+      await fs.writeFile({path,data,directory:'CACHE',encoding:'utf8',recursive:true});
+      const check=await fs.readFile({path,directory:'CACHE',encoding:'utf8'});
+      if(check?.data!==data)throw Error('Backup verification failed');
+      const loc=await fs.getUri({path,directory:'CACHE'});
+      if(!loc?.uri)throw Error('Backup file URI unavailable');
+      await share.share({title:'Drops POS Backup',url:loc.uri,dialogTitle:'Save backup outside POS Drops'});
+      alert('Choose Files / Save to device or Drive in the Android share menu. Confirm the external file exists before updating.');
+    }catch(e){if(e?.name!=='AbortError')alert('External backup was not confirmed: '+(e?.message||e)+'. Your POS data is unchanged.');}
     return;
   }
 
