@@ -1118,12 +1118,12 @@ async function restoreDB(){
  }
 }
 const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
-if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
+if(false && !db._masterRawSeed1){ /* Legacy automatic migration disabled; use explicit import or editing */MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
 
 const LAUNDRY_RAW=[
  ['soda',1.5],['parmatol',3],['fragrance laundry',18],['colour200',2.5],['water 10l',0.07]
 ];
-if(!db._laundryRawSeed1){LAUNDRY_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._laundryRawSeed1=true;save();}
+if(false && !db._laundryRawSeed1){ /* Legacy automatic migration disabled; use explicit import or editing */LAUNDRY_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._laundryRawSeed1=true;save();}
 function seedLaundryRecipe(){
  if(db._laundryRecipeSeed1)return;
  const spec=[['tayloz',2],['selfonic',40],['soda',7],['n70',40],['semasol',10],['anti foem',1.5],['parmatol',1],['fragrance laundry',4],['kapsul',2],['colour200',1],['salt',25],['water 10l',1]];
@@ -1137,7 +1137,7 @@ seedLaundryRecipe();
 
 const LAUNDRY_RAW_SEED=[['soda',1.5],['parmatol',3],['fragrance',18],['colour200',2.5],['water 10l',0.07]];
 LAUNDRY_RAW_SEED.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});
-if(!db._laundryRecipeSeed1){
+if(false && !db._laundryRecipeSeed1){ /* Legacy automatic migration disabled; use explicit import or editing */
  const lp=db.products.find(p=>/laundry/i.test(p.name));
  const spec=[['tayloz',.002],['selfonic',.040],['soda',.007],['n70',.040],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
  if(lp){db.recipes=db.recipes.filter(x=>x.productId!==lp.id);spec.forEach(([n,q])=>{let r=db.raw.find(x=>String(x.name).toLowerCase()===n);if(r)db.recipes.push({id:id(),productId:lp.id,rawId:r.id,qtyPerLiter:q});});}
@@ -1152,7 +1152,7 @@ if(false && !db._laundryTestStock1){ /* Disabled legacy automatic data mutation 
 }
 
 
-if(!db._laundryRecipeUpdate2){
+if(false && !db._laundryRecipeUpdate2){ /* Legacy automatic migration disabled; use explicit import or editing */
  const lp=db.products.find(p=>/laundry/i.test(p.name));
  if(lp){
    const sf=db.raw.find(r=>String(r.name).toLowerCase()==='selfonic');
@@ -1164,7 +1164,7 @@ if(!db._laundryRecipeUpdate2){
 }
 
 
-if(!db._laundryRecipeFix3){
+if(false && !db._laundryRecipeFix3){ /* Legacy automatic migration disabled; use explicit import or editing */
  const spec=[['tayloz',.002],['selfonic',.050],['soda',.007],['n70',.020],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.004],['kapsul',.002],['colour200',.001],['salt',.025]];
  db.products.filter(p=>/laundry|washing/i.test(p.name)).forEach(lp=>{
    db.recipes=db.recipes.filter(z=>z.productId!==lp.id);
@@ -1175,7 +1175,7 @@ if(!db._laundryRecipeFix3){
 
 
 /* LAUNDRY GEL RECIPE CORRECTION - confirmed 2026-10-03 */
-if(!db._laundryRecipeFix4){
+if(false && !db._laundryRecipeFix4){ /* Legacy automatic migration disabled; use explicit import or editing */
  const norm=x=>String(x||'').trim().toLowerCase();
  const rawFor=(name,cost=0)=>{let r=db.raw.find(x=>norm(x.name)===norm(name));if(!r){r={id:id(),name,qty:0,cost,unit:'kg'};db.raw.push(r)}return r};
  const spec=[['tayloz',.002],['selfonic',.050],['soda',.007],['n70',.020],['semasol',.010],['anti foem',.0015],['parmatol',.001],['fragrance',.005],['colour200',.001],['salt',.025],['water 10l',.001]];
@@ -1186,7 +1186,7 @@ if(!db._laundryRecipeFix4){
  db._laundryRecipeFix4=true;save();
 }
 
-if(!db._packagingSeed1){
+if(false && !db._packagingSeed1){ /* Legacy automatic migration disabled; use explicit import or editing */
  [['Gallon 5L',0.34],['Gallon 4L',0.45],['Bottle 1L',0.15]].forEach(([name,cost])=>{
    if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'piece',category:'packaging'});
  });
@@ -1194,28 +1194,28 @@ if(!db._packagingSeed1){
 }
 
 
-if(!db._labelSeed1){
+if(false && !db._labelSeed1){ /* Legacy automatic migration disabled; use explicit import or editing */
  if(!db.raw.some(r=>String(r.name).toLowerCase()==='label sticker'))db.raw.push({id:id(),name:'Label Sticker',qty:0,cost:0.10,unit:'piece',category:'packaging'});
  db._labelSeed1=true;save();
 }
 
-if(!db._pkgDemo){[['Gallon 5L',100],['Gallon 4L',100],['Bottle 1L',100],['Label Sticker',200]].forEach(([n,q])=>{let x=db.raw.find(v=>String(v.name).toLowerCase()===n.toLowerCase());if(x)x.qty=Math.max(+x.qty||0,q)});db._pkgDemo=true;save();}
+if(false && !db._pkgDemo){ /* Legacy automatic migration disabled; use explicit import or editing */[['Gallon 5L',100],['Gallon 4L',100],['Bottle 1L',100],['Label Sticker',200]].forEach(([n,q])=>{let x=db.raw.find(v=>String(v.name).toLowerCase()===n.toLowerCase());if(x)x.qty=Math.max(+x.qty||0,q)});db._pkgDemo=true;save();}
 
-if(!db._bulk5LProducts1){
+if(false && !db._bulk5LProducts1){ /* Legacy automatic migration disabled; use explicit import or editing */
  ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
    if(!db.products.some(p=>String(p.name).toLowerCase()===((base+' 5L').toLowerCase())))db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
  });
  db._bulk5LProducts1=true;save();
 }
 
-if(!db._ensure5LStockProducts2){
+if(false && !db._ensure5LStockProducts2){ /* Legacy automatic migration disabled; use explicit import or editing */
  ['Dishwashing','Laundry Gel','Hand Soap','Floor Cleaner'].forEach(base=>{
    if(!db.products.some(p=>String(p.name).toLowerCase()===(base+' 5L').toLowerCase()))
      db.products.push({id:id(),name:base+' 5L',price:0,cost:0,qty:0,size:5});
  });
  db._ensure5LStockProducts2=true;save();
 }
-if(!db._price5LTest1){
+if(false && !db._price5LTest1){ /* Legacy automatic migration disabled; use explicit import or editing */
  const prices={'Dishwashing 5L':3.20,'Laundry Gel 5L':3.61,'Hand Soap 5L':3.89,'Floor Cleaner 5L':2.78};
  Object.entries(prices).forEach(([n,v])=>{const p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase());if(p&&!(+p.price>0))p.price=v;});
  db._price5LTest1=true;save();
@@ -1242,7 +1242,7 @@ if(false && !db._allRawDemoStock1){ /* Disabled legacy automatic data mutation *
  });
  db._allRawDemoStock1=true;save();
 }
-if(!db._allFormulaMasters1){
+if(false && !db._allFormulaMasters1){ /* Legacy automatic migration disabled; use explicit import or editing */
  const names=["Dishwashing","Hand Soap","Laundry Gel","Comfort","Floor Cleaner","Pine Oil","Javel","Flash","Easy","Rambo","Shampoo","Balsam","Fresher","Tab","Car"];
  names.forEach(n=>{if(!db.products.some(p=>String(p.name).toLowerCase()===n.toLowerCase()))db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true});});
  db._allFormulaMasters1=true;save();
@@ -1689,7 +1689,7 @@ window.voidInvoice=function(i){
   const seen=new Set();
   db.recipes=(db.recipes||[]).filter(x=>{const k=String(x.productId)+'|'+String(x.rawId);if(seen.has(k))return false;seen.add(k);return true});
  }
- if(!db._rawAliasCleanup430){groups.forEach(mergeGroup);db._rawAliasCleanup430=true;save();}
+ if(false && !db._rawAliasCleanup430){ /* Legacy automatic migration disabled; use explicit import or editing */groups.forEach(mergeGroup);db._rawAliasCleanup430=true;save();}
  // Repair legacy duplicate raw IDs without touching stock quantities.
  (function(){
    const seen=new Set();
@@ -1798,7 +1798,7 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
    // Water is the production base, not a stocked ingredient deduction for Flash.
    db.recipes=(db.recipes||[]).filter(x=>!(String(x.productId)===String(p.id)&&norm((db.raw||[]).find(r=>String(r.id)===String(x.rawId))?.name)==='water 10l'));
  }
- if(!db._flashRecipeFix442){setFlashRecipe();db._flashRecipeFix442=true;save();}
+ if(false && !db._flashRecipeFix442){ /* Legacy automatic migration disabled; use explicit import or editing */setFlashRecipe();db._flashRecipeFix442=true;save();}
  const original=window.produceAndPack;
  window.produceAndPack=function(){
    const pid=document.getElementById('bp')?.value;
