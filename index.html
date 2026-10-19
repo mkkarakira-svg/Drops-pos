@@ -1082,7 +1082,41 @@ async function backup(){
 }
 function chooseBackupFile(){const f=document.getElementById('restore');if(!f)return alert('Backup selector not ready');f.value='';f.click()}
 function backupFileChosen(el){if(el&&el.files&&el.files[0])alert('Backup selected: '+el.files[0].name)}
-function restoreDB(){let f=$('#restore')?.files?.[0];if(!f)return alert('Choose a backup file');let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||!Array.isArray(x.products)||!Array.isArray(x.raw)||!x.settings)return alert('This is not a valid Drops POS backup');if(!confirm('Restore this backup? Current data on this device will be replaced.'))return;db=x;db.priceHistory=db.priceHistory||[];save();alert('Backup restored successfully');home()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
+async function restoreDB(){
+ const file=document.getElementById('restore')?.files?.[0];
+ if(!file){alert('Choose a backup file first.');return}
+ let candidate;
+ try{
+  candidate=JSON.parse(await file.text());
+  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw Error('Not an object');
+  for(const key of ['products','raw','recipes','batches','invoices','purchases']){
+   if(!Array.isArray(candidate[key]))throw Error('Missing or invalid '+key);
+  }
+  if(!candidate.settings||typeof candidate.settings!=='object'||Array.isArray(candidate.settings))throw Error('Invalid settings');
+ }catch(e){alert('Backup not valid: '+e.message+'\\nNothing was changed.');return}
+ const summary='Products: '+candidate.products.length+' | Raw materials: '+candidate.raw.length+' | Recipes: '+candidate.recipes.length+' | Invoices: '+candidate.invoices.length+' | Purchases: '+candidate.purchases.length;
+ if(!confirm('Restore '+file.name+'?\\n'+summary+'\\n\\nThis will replace all current POS data on this device. Keep your original backup outside the app.'))return;
+ const previous=db;
+ let previousSerialized;
+ try{
+  previousSerialized=localStorage.getItem('dropsDB');
+  const serialized=JSON.stringify(candidate);
+  localStorage.setItem('dropsDB',serialized);
+  if(localStorage.getItem('dropsDB')!==serialized)throw Error('Storage verification failed');
+  db=candidate;
+  db.priceHistory=db.priceHistory||[];
+  alert('Backup restored and verified. Reloading POS.');
+  location.hash='home';
+  location.reload();
+ }catch(e){
+  db=previous;
+  try{
+   if(previousSerialized===null)localStorage.removeItem('dropsDB');
+   else localStorage.setItem('dropsDB',previousSerialized);
+  }catch(rollbackError){}
+  alert('Restore failed: '+e.message+'\\nPrevious data was retained where storage allowed.');
+ }
+}
 const MASTER_RAW=[["amoniac",2.2],["anti foem",5.5],["antra",12],["b.s",2.5],["bb4",1.75],["candel b",5],["citrec acid",2.07],["clore 12%",0.55],["flakes",1.5],["flash hcl 30kg",1.17],["formalin",1.31],["glycerin",3.7],["ipa",1.2],["kd",2.77],["n70",2.29],["oil balsam",2.5],["pg",3.5],["phosphoric acid",2.5],["pq7",2.55],["pvp",2.75],["Rw",4],["salt",3],["selfonic",2.95],["selikon",3],["semasol",3.72],["spirtol 1",2.06],["tayloz",6],["twin 80",6.52],["kapsul",26]];
 if(!db._masterRawSeed1){MASTER_RAW.forEach(([name,cost])=>{if(!db.raw.some(r=>String(r.name).toLowerCase()===name.toLowerCase()))db.raw.push({id:id(),name,qty:0,cost,unit:'kg'});});db._masterRawSeed1=true;save();}
 
