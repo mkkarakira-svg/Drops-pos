@@ -1,6 +1,6 @@
 {
-  "appId": "com.dropsdetergents.posdrops.test",
-  "appName": "POS Drops",
+  "appId": "com.dropsdetergents.pos",
+  "appName": "POS Drops New",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
