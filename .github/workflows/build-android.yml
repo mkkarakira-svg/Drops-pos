@@ -38,7 +38,7 @@ jobs:
           npx cap sync android
       - name: Verify application identity and version
         run: |
-          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.59')process.exit(1)"
+          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.60')process.exit(1)"
       - name: Set Android version metadata
         run: |
           python3 - <<'PY'
@@ -46,8 +46,8 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4359", s, count=1)
-          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.59'", s, count=1)
+          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4360", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.60'", s, count=1)
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
@@ -100,7 +100,7 @@ jobs:
           APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
           "$AAPT" dump badging "$APK" | grep '^package:'
           "$APKSIGNER" verify --print-certs "$APK"
-          "$AAPT" dump badging "$APK" | grep -q "versionCode='4359' versionName='4.3.59'"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='4360' versionName='4.3.60'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Guard separate installation identity
@@ -110,6 +110,6 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: POSDrops-4.3.59-SEPARATE-TEST-APK
+          name: POSDrops-4.3.60-SEPARATE-TEST-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
