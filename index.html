@@ -1265,7 +1265,7 @@ history.replaceState({dropsView:currentView||'home'},'',location.href);
 
 /* EXCEL RECIPE IMPORT v54 */
 (function(){
- if(db._excelRecipes2025v1)return;
+ // Clean rebuild: never import historical Excel recipes automatically on startup.\n return;\n if(db._excelRecipes2025v1)return;
  const prices={"amoniac":2.2,"anti foem":5.5,"antra":12,"b.s":2.5,"bb4":1.75,"candel b":5,"citrec acid":2.07,"clore 12%":0.55,"flakes":1.5,"flash hcl 30kg":1.17,"formalin":1.31,"glycerin":3.7,"ipa":1.2,"kd":2.77,"n70":2.29,"oil balsam":2.5,"pg":3.5,"phosphoric acid":2.5,"pq7":2.55,"pvp":2.75,"rw":4,"salt":3,"selfonic":2.95,"selikon":3,"semasol":3.72,"spirtol 1":2.06,"tayloz":6,"twin 80":6.52,"kapsul":26};
  const alias={"anti foam":"anti foem","k d":"kd","candel wax":"candel b","balsam water":"oil balsam","clore":"clore 12%","acid":"flash hcl 30kg","phesforic acid":"phosphoric acid","glecryin":"glycerin","glecryn":"glycerin","spertol 1":"spirtol 1"};
  const specs={
