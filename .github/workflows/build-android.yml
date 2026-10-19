@@ -15,7 +15,7 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -101,6 +101,8 @@ jobs:
           APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
           "$AAPT" dump badging "$APK" | grep '^package:'
           "$APKSIGNER" verify --print-certs "$APK"
+          CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
+          test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Signer mismatch'; exit 1; }
           "$AAPT" dump badging "$APK" | grep -q "versionCode='4361' versionName='4.3.61'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
@@ -114,3 +116,22 @@ jobs:
           name: POSDrops-4.3.61-SEPARATE-TEST-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Publish signed update v4.3.61
+        if: github.ref == 'refs/heads/fix/safe-android-release-20261017'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./package.json').version")" = "4.3.61"
+          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.61.apk
+          cat > release-notes.txt <<'EOF'
+          Android-Package: com.dropsdetergents.pos
+          Android-Signer-SHA256: 8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63
+
+          Drops POS 4.3.61 signed Android update. Back up POS data before updating. Android requires install confirmation.
+          EOF
+          if gh release view v4.3.61 >/dev/null 2>&1; then
+            echo 'Release already exists; refusing to overwrite signed APK'
+            exit 1
+          fi
+          gh release create v4.3.61 POSDrops-4.3.61.apk --title 'Drops POS v4.3.61' --notes-file release-notes.txt --target "$GITHUB_SHA"
