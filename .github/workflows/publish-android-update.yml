@@ -39,13 +39,18 @@ jobs:
           node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!==process.env.EXPECTED_VERSION)process.exit(1)"
       - name: Set Android version metadata
         run: |
-          python3 - <<'PY'
+          EXPECTED_VERSION="${{ inputs.confirm_version }}" python3 - <<'PY'
           from pathlib import Path
+          import os
+          version = os.environ['EXPECTED_VERSION']
+          parts = version.split('.')
+          assert len(parts)==3 and all(x.isdigit() for x in parts)
+          code = int(parts[0])*1000 + int(parts[1])*100 + int(parts[2])
           p = Path("android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4360", s, count=1)
-          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.60'", s, count=1)
+          s, n1 = re.subn(r"versionCode\s+\d+", f"versionCode {code}", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", f"versionName '{version}'", s, count=1)
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
@@ -103,7 +108,7 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
           test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Unexpected signing certificate'; exit 1; }
-          "$AAPT" dump badging "$APK" | grep -q "versionCode='4360' versionName='4.3.60'"
+          "$AAPT" dump badging "$APK" | grep -q "versionName='${{ inputs.confirm_version }}'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Publish approved GitHub release
@@ -111,7 +116,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ inputs.confirm_version }}
         run: |
-          test "$VERSION" = "4.3.60" || { echo 'Version mismatch; update build metadata first'; exit 1; }
           cp android/app/build/outputs/apk/release/app-release.apk "POSDrops-$VERSION.apk"
           printf 'Android-Package: com.dropsdetergents.pos\nAndroid-Signer-SHA256: 8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63\n' > release-notes.txt
-          gh release create "v$VERSION" "POSDrops-$VERSION.apk" --title "Drops POS v$VERSION" --notes-file release-notes.txt --verify-tag
+          gh release create "v$VERSION" "POSDrops-$VERSION.apk" --title "Drops POS v$VERSION" --notes-file release-notes.txt --target "$GITHUB_SHA"
