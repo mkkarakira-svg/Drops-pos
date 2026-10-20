@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.71</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.72</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1042,18 +1042,29 @@ async function updateDropsApp(){
  const previous=button?.textContent;
  if(button){button.disabled=true;button.textContent='Checking for updates…';}
  const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
- const current='4.3.71';
+ const current='4.3.72';
  const parts=v=>String(v||'').replace(/^v[.\s]*/i,'').split('.').map(n=>Number(n)||0);
  const newer=(a,b)=>{const x=parts(a),y=parts(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;};
  try{
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),10000);
-  let response;
-  try{response=await fetch('https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest',{headers:{'Accept':'application/vnd.github+json'},cache:'no-store',signal:controller.signal});}
-  finally{clearTimeout(timeout);}
-  if(response.status===404){alert('No approved Android update is published yet. Current version: '+current+'. Your data is unchanged.');return;}
-  if(!response.ok)throw Error('GitHub returned '+response.status);
-  const release=await response.json();
+  const api='https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest';
+  let release;
+  // Native Android HTTP avoids WebView CORS and intermittent fetch failures.
+  const nativeHttp=window.Capacitor?.Plugins?.CapacitorHttp;
+  if(window.Capacitor?.isNativePlatform?.() && nativeHttp?.get){
+   const response=await nativeHttp.get({url:api,headers:{'Accept':'application/vnd.github+json','User-Agent':'DropsPOS-Android'},connectTimeout:15000,readTimeout:20000});
+   if(response.status===404){alert('No approved Android update is published yet. Current version: '+current+'. Your data is unchanged.');return;}
+   if(response.status<200||response.status>=300)throw Error('GitHub returned '+response.status);
+   release=typeof response.data==='string'?JSON.parse(response.data):response.data;
+  }else{
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),20000);
+   let response;
+   try{response=await fetch(api,{headers:{'Accept':'application/vnd.github+json'},cache:'no-store',signal:controller.signal});}
+   finally{clearTimeout(timeout);}
+   if(response.status===404){alert('No approved Android update is published yet. Current version: '+current+'. Your data is unchanged.');return;}
+   if(!response.ok)throw Error('GitHub returned '+response.status);
+   release=await response.json();
+  }
   const tag=String(release.tag_name||'');
   if(!newer(tag,current)){alert('You are on version '+current+'. No newer approved release is available.');return;}
   const assets=Array.isArray(release.assets)?release.assets:[];
