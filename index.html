@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.73</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.74</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1042,7 +1042,7 @@ async function updateDropsApp(){
  const previous=button?.textContent;
  if(button){button.disabled=true;button.textContent='Checking for updates…';}
  const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
- const current='4.3.73';
+ const current='4.3.74';
  const parts=v=>String(v||'').replace(/^v[.\s]*/i,'').split('.').map(n=>Number(n)||0);
  const newer=(a,b)=>{const x=parts(a),y=parts(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;};
  try{
@@ -1088,31 +1088,15 @@ async function updateDropsApp(){
   }
   if(confirm('Verified update '+tag+' is available. Download APK? Android will ask you to confirm installation. Your existing data should remain, but back up first.')){
    const cap=window.Capacitor;
-   const fs=cap?.Plugins?.Filesystem;
-   if(cap?.isNativePlatform?.() && fs?.downloadFile && fs?.getUri && cap?.Plugins?.DropsUpdater?.installApk){
+   if(cap?.isNativePlatform?.() && cap?.Plugins?.DropsUpdater?.downloadAndInstall){
     try{
      if(button)button.textContent='Downloading update…';
-     // Filesystem.downloadFile requires a writable absolute native path on Android.
-     // Avoid nested relative CACHE paths: they produced ENOENT on Samsung devices.
-     const filename='POSDrops-'+tag.replace(/^v/i,'')+'.apk';
-     const dir=await fs.getUri({path:'',directory:'CACHE'});
-     if(!dir?.uri)throw Error('Android cache location unavailable');
-     const nativePath=decodeURIComponent(dir.uri.replace(/^file:\/\//,'')).replace(/\/$/,'')+'/'+filename;
-     const result=await fs.downloadFile({url:download,path:nativePath});
-     if(result?.status && result.status!==200)throw Error('Download HTTP '+result.status);
-     const file=await fs.stat({path:filename,directory:'CACHE'});
-     if(!file?.size || file.size<1000000)throw Error('APK download incomplete');
-     const uri=await fs.getUri({path:filename,directory:'CACHE'});
-     if(!uri?.uri)throw Error('Downloaded APK cannot be opened');
-     if(button)button.textContent='Opening Android installer…';
-     if(!cap?.Plugins?.DropsUpdater?.installApk)throw Error('Native Android installer unavailable');
-     await cap.Plugins.DropsUpdater.installApk({path:nativePath});
+     await cap.Plugins.DropsUpdater.downloadAndInstall({url:download,version:tag.replace(/^v/i,'')});
     }catch(err){
-     alert('Could not open Android installer automatically: '+(err?.message||err)+'. No POS data was changed.');
+     alert('Android update could not start: '+(err?.message||err)+'. Your POS data is unchanged.');
     }
    }else{
-    alert('Direct installer is not included in this app version. Opening verified download in browser.');
-    window.open(download,'_blank','noopener,noreferrer');
+    alert('Native update download is not available in this version. No POS data was changed.');
    }
   }
  }catch(e){
