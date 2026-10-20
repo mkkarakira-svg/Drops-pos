@@ -84,6 +84,89 @@ jobs:
                 call.resolve();
               } catch(Exception e){call.reject("Installer error: "+e.getMessage());}
             }
+            @PluginMethod
+            public void downloadAndInstall(PluginCall call) {
+              String url=call.getString("url");
+              String version=call.getString("version");
+              if(url==null || version==null || !version.matches("[0-9]+[.][0-9]+[.][0-9]+")
+                 || !url.equals("https://github.com/mkkarakira-svg/Drops-pos/releases/download/v"+version+"/POSDrops-"+version+".apk")){
+                call.reject("Unapproved update URL");return;
+              }
+              new Thread(() -> {
+                File target=new File(getContext().getCacheDir(),"POSDrops-"+version+".apk");
+                try {
+                  java.net.URL current=new java.net.URL(url);
+                  java.net.HttpURLConnection connection=null;
+                  int redirects=0;
+                  while(true) {
+                    if(!"https".equals(current.getProtocol()))throw new Exception("Non-HTTPS download");
+                    String host=current.getHost();
+                    if(!host.equals("github.com") && !host.equals("release-assets.githubusercontent.com") && !host.equals("objects.githubusercontent.com"))
+                      throw new Exception("Untrusted download host");
+                    connection=(java.net.HttpURLConnection)current.openConnection();
+                    connection.setConnectTimeout(20000);
+                    connection.setReadTimeout(30000);
+                    connection.setInstanceFollowRedirects(false);
+                    connection.setRequestProperty("User-Agent","DropsPOS-Android");
+                    int status=connection.getResponseCode();
+                    if(status==301||status==302||status==303||status==307||status==308){
+                      if(++redirects>6)throw new Exception("Too many redirects");
+                      String location=connection.getHeaderField("Location");
+                      if(location==null)throw new Exception("Missing redirect URL");
+                      current=new java.net.URL(current,location);
+                      connection.disconnect();
+                      continue;
+                    }
+                    if(status!=200)throw new Exception("Download HTTP "+status);
+                    break;
+                  }
+                  long total=0;
+                  try(java.io.InputStream input=connection.getInputStream();
+                      java.io.FileOutputStream output=new java.io.FileOutputStream(target)){
+                    byte[] buffer=new byte[32768];int n;
+                    while((n=input.read(buffer))!=-1){
+                      total+=n;
+                      if(total>120000000)throw new Exception("APK exceeds size limit");
+                      output.write(buffer,0,n);
+                    }
+                    output.getFD().sync();
+                  }finally{connection.disconnect();}
+                  if(total<1000000)throw new Exception("APK incomplete");
+                  android.content.pm.PackageInfo info=getContext().getPackageManager().getPackageArchiveInfo(
+                    target.getAbsolutePath(),android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES);
+                  if(info==null || !"com.dropsdetergents.pos".equals(info.packageName) || info.signingInfo==null)
+                    throw new Exception("APK package identity invalid");
+                  android.content.pm.Signature[] signatures=info.signingInfo.getApkContentsSigners();
+                  if(signatures==null || signatures.length!=1)throw new Exception("APK signer missing");
+                  byte[] digest=java.security.MessageDigest.getInstance("SHA-256").digest(signatures[0].toByteArray());
+                  StringBuilder hex=new StringBuilder();
+                  for(byte value:digest)hex.append(String.format(java.util.Locale.ROOT,"%02x",value&255));
+                  if(!hex.toString().equals("8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63"))
+                    throw new Exception("APK signing certificate mismatch");
+                  getActivity().runOnUiThread(() -> {
+                    try {
+                      if(Build.VERSION.SDK_INT>=26 && !getContext().getPackageManager().canRequestPackageInstalls()){
+                        Intent settings=new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                          Uri.parse("package:"+getContext().getPackageName()));
+                        getContext().startActivity(settings);
+                        call.reject("Allow installs from POS Drops New, then tap Update again");return;
+                      }
+                      Uri uri=FileProvider.getUriForFile(getContext(),
+                        getContext().getPackageName()+".dropsupdate.fileprovider",target);
+                      Intent intent=new Intent(Intent.ACTION_VIEW);
+                      intent.setDataAndType(uri,"application/vnd.android.package-archive");
+                      intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                      intent.setClipData(android.content.ClipData.newRawUri("POS Drops update",uri));
+                      getContext().startActivity(intent);
+                      call.resolve();
+                    }catch(Exception e){call.reject("Installer: "+e.getMessage());}
+                  });
+                }catch(Exception e){
+                  target.delete();
+                  call.reject("Download: "+e.getMessage());
+                }
+              }).start();
+            }
           }
           """.replace('\\\\.apk','\\\\.apk'))
           main=java/'MainActivity.java'
@@ -123,7 +206,7 @@ jobs:
           PY
       - name: Verify application identity and version
         run: |
-          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.73')process.exit(1)"
+          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.74')process.exit(1)"
       - name: Set Android version metadata
         run: |
           python3 - <<'PY'
@@ -131,8 +214,8 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4373", s, count=1)
-          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.73'", s, count=1)
+          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4374", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.74'", s, count=1)
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
@@ -187,7 +270,7 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
           test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Signer mismatch'; exit 1; }
-          "$AAPT" dump badging "$APK" | grep -q "versionCode='4373' versionName='4.3.73'"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='4374' versionName='4.3.74'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Guard separate installation identity
@@ -197,25 +280,25 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: POSDrops-4.3.73-SEPARATE-TEST-APK
+          name: POSDrops-4.3.74-SEPARATE-TEST-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-      - name: Publish signed update v4.3.73
+      - name: Publish signed update v4.3.74
         if: github.ref == 'refs/heads/fix/safe-android-release-20261017'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test "$(node -p "require('./package.json').version")" = "4.3.73"
-          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.73.apk
+          test "$(node -p "require('./package.json').version")" = "4.3.74"
+          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.74.apk
           cat > release-notes.txt <<'EOF'
           Android-Package: com.dropsdetergents.pos
           Android-Signer-SHA256: 8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63
 
-          Drops POS 4.3.73 signed Android update. Back up POS data before updating. Android requires install confirmation.
+          Drops POS 4.3.74 signed Android update. Back up POS data before updating. Android requires install confirmation.
           EOF
-          if gh release view v4.3.73 >/dev/null 2>&1; then
+          if gh release view v4.3.74 >/dev/null 2>&1; then
             echo 'Release already exists; refusing to overwrite signed APK'
             exit 1
           fi
-          gh release create v4.3.73 POSDrops-4.3.73.apk --title 'Drops POS v4.3.73' --notes-file release-notes.txt --target "$GITHUB_SHA"
+          gh release create v4.3.74 POSDrops-4.3.74.apk --title 'Drops POS v4.3.74' --notes-file release-notes.txt --target "$GITHUB_SHA"
