@@ -151,21 +151,31 @@ jobs:
                         getContext().startActivity(settings);
                         call.reject("Allow installs from POS Drops New, then tap Update again");return;
                       }
-                      Uri uri=FileProvider.getUriForFile(getContext(),
-                        getContext().getPackageName()+".dropsupdate.fileprovider",target);
-                      // ACTION_INSTALL_PACKAGE invokes the system installer rather than
-                      // ACTION_VIEW's generic "Open with" chooser on Samsung.
-                      Intent intent=new Intent(Intent.ACTION_INSTALL_PACKAGE);
-                      intent.setData(uri);
-                      intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                      intent.putExtra(Intent.EXTRA_RETURN_RESULT,false);
-                      intent.setClipData(android.content.ClipData.newRawUri("POS Drops update",uri));
-                      // Do not query installer handlers: Android 11+ package visibility
-                      // can hide the system installer even when it can handle the intent.
-                      // Let Android resolve the system installation activity directly.
-                      getActivity().startActivity(intent);
+                      // PackageInstaller sessions request Android's actual user-confirmation
+                      // UI via STATUS_PENDING_USER_ACTION instead of a silent VIEW intent.
+                      android.content.pm.PackageInstaller installer=getContext().getPackageManager().getPackageInstaller();
+                      android.content.pm.PackageInstaller.SessionParams params=
+                        new android.content.pm.PackageInstaller.SessionParams(
+                          android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+                      params.setAppPackageName("com.dropsdetergents.pos");
+                      int sessionId=installer.createSession(params);
+                      try(android.content.pm.PackageInstaller.Session session=installer.openSession(sessionId);
+                          java.io.FileInputStream input=new java.io.FileInputStream(target);
+                          java.io.OutputStream output=session.openWrite("base.apk",0,target.length())){
+                        byte[] buf=new byte[32768];int count;
+                        while((count=input.read(buf))!=-1)output.write(buf,0,count);
+                        session.fsync(output);
+                        Intent callback=new Intent(getContext(),DropsInstallReceiver.class);
+                        callback.setAction("com.dropsdetergents.pos.INSTALL_STATUS");
+                        callback.putExtra("sessionId",sessionId);
+                        int flags=android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+                        if(Build.VERSION.SDK_INT>=31)flags|=android.app.PendingIntent.FLAG_MUTABLE;
+                        android.app.PendingIntent pending=android.app.PendingIntent.getBroadcast(
+                          getContext(),sessionId,callback,flags);
+                        session.commit(pending.getIntentSender());
+                      }
                       com.getcapacitor.JSObject result=new com.getcapacitor.JSObject();
-                      result.put("stage","installer_intent_sent");
+                      result.put("stage","installer_session_submitted");
                       call.resolve(result);
                     }catch(Exception e){call.reject("Installer: "+e.getMessage());}
                   });
@@ -177,6 +187,36 @@ jobs:
             }
           }
           """.replace('\\\\.apk','\\\\.apk'))
+          (java/'DropsInstallReceiver.java').write_text("""package com.dropsdetergents.pos;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.pm.PackageInstaller;
+          import android.os.Build;
+          import android.widget.Toast;
+          public class DropsInstallReceiver extends BroadcastReceiver {
+            @Override public void onReceive(Context context,Intent intent){
+              int status=intent.getIntExtra(PackageInstaller.EXTRA_STATUS,PackageInstaller.STATUS_FAILURE);
+              if(status==PackageInstaller.STATUS_PENDING_USER_ACTION){
+                Intent confirmation;
+                if(Build.VERSION.SDK_INT>=33){
+                  confirmation=intent.getParcelableExtra(Intent.EXTRA_INTENT,Intent.class);
+                }else{
+                  confirmation=(Intent)intent.getParcelableExtra(Intent.EXTRA_INTENT);
+                }
+                if(confirmation!=null){
+                  confirmation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                  context.startActivity(confirmation);
+                }else{
+                  Toast.makeText(context,"Android did not return an installer screen",Toast.LENGTH_LONG).show();
+                }
+              }else if(status!=PackageInstaller.STATUS_SUCCESS){
+                String message=intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+                Toast.makeText(context,"Update failed: "+status+" "+(message==null?"":message),Toast.LENGTH_LONG).show();
+              }
+            }
+          }
+          """)
           main=java/'MainActivity.java'
           main.write_text("""package com.dropsdetergents.pos;
           import android.os.Bundle;
@@ -210,11 +250,15 @@ jobs:
             ns+'name':'android.support.FILE_PROVIDER_PATHS',
             ns+'resource':'@xml/drops_update_paths'
           })
+          ET.SubElement(app,'receiver',{
+            ns+'name':'.DropsInstallReceiver',
+            ns+'exported':'false'
+          })
           tree.write(manifest,encoding='utf-8',xml_declaration=True)
           PY
       - name: Verify application identity and version
         run: |
-          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.79')process.exit(1)"
+          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.80')process.exit(1)"
       - name: Set Android version metadata
         run: |
           python3 - <<'PY'
@@ -222,8 +266,8 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4379", s, count=1)
-          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.79'", s, count=1)
+          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4380", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.80'", s, count=1)
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
@@ -278,7 +322,7 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
           test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Signer mismatch'; exit 1; }
-          "$AAPT" dump badging "$APK" | grep -q "versionCode='4379' versionName='4.3.79'"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='4380' versionName='4.3.80'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Guard separate installation identity
@@ -288,25 +332,25 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: POSDrops-4.3.79-SEPARATE-TEST-APK
+          name: POSDrops-4.3.80-SEPARATE-TEST-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-      - name: Publish signed update v4.3.79
+      - name: Publish signed update v4.3.80
         if: github.ref == 'refs/heads/fix/safe-android-release-20261017'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test "$(node -p "require('./package.json').version")" = "4.3.79"
-          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.79.apk
+          test "$(node -p "require('./package.json').version")" = "4.3.80"
+          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.80.apk
           cat > release-notes.txt <<'EOF'
           Android-Package: com.dropsdetergents.pos
           Android-Signer-SHA256: 8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63
 
-          Drops POS 4.3.79 signed Android update. Back up POS data before updating. Android requires install confirmation.
+          Drops POS 4.3.80 signed Android update. Back up POS data before updating. Android requires install confirmation.
           EOF
-          if gh release view v4.3.79 >/dev/null 2>&1; then
+          if gh release view v4.3.80 >/dev/null 2>&1; then
             echo 'Release already exists; refusing to overwrite signed APK'
             exit 1
           fi
-          gh release create v4.3.79 POSDrops-4.3.79.apk --title 'Drops POS v4.3.79' --notes-file release-notes.txt --target "$GITHUB_SHA"
+          gh release create v4.3.80 POSDrops-4.3.80.apk --title 'Drops POS v4.3.80' --notes-file release-notes.txt --target "$GITHUB_SHA"
