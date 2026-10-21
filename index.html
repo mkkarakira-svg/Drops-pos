@@ -298,9 +298,24 @@ body{padding-bottom:0!important;}
 #app .pricing-color-card:nth-of-type(6n) .pricing-color-head{background:#cceff0!important}
 #app .pricing-color-card{border:1px solid #dfe7f1!important;box-shadow:0 4px 13px #0714260d!important}
 #app .pricing-color-head{color:#132238!important}
+</style><style id="drops-mobile-viewport-fix">
+html,body{max-width:100%;overflow-x:hidden}
+*,*::before,*::after{box-sizing:border-box}
+#app,.wrap,.panel,.card{min-width:0;max-width:100%}
+input,select,textarea,button{max-width:100%;min-width:0}
+.top{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;flex-wrap:wrap!important;height:auto!important;min-height:0!important;padding:calc(9px + env(safe-area-inset-top,0px)) 12px 9px!important;margin:0 8px 8px!important;border-radius:0 0 18px 18px!important;overflow:visible!important}
+.top b{font-size:clamp(12px,3.2vw,16px)!important;line-height:1.25!important;white-space:normal!important;overflow-wrap:anywhere!important;flex:1 1 150px!important;min-width:0!important}
+.top .app-version{font-size:12px!important;white-space:nowrap!important}
+.top .top-info{flex:0 1 auto!important;min-width:95px!important;max-width:42%!important;text-align:right!important;margin:0!important}
+.top .top-info div{font-size:11px!important;line-height:1.25!important;white-space:normal!important;margin:0!important}
+.top #headerBack{position:static!important;flex:0 0 auto!important;top:auto!important;left:auto!important;margin:0!important;z-index:1!important}
+.top.has-back b{flex-basis:110px!important}
+.wrap{width:100%!important;margin:0 auto!important;padding:6px 10px calc(86px + env(safe-area-inset-bottom,0px))!important}
+.nav{padding-bottom:env(safe-area-inset-bottom,0px)!important}
+@media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.58</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.83</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -862,9 +877,11 @@ function settings(){
    <button class="bo-card" onclick="go('purchasePriceMaster')"><span>💲</span><b>Price Master</b></button>
    <button class="bo-card" onclick="go('costing')"><span>🧮</span><b>Costing</b></button>
    <button class="bo-card" onclick="go('sellingPrices')"><span>💰</span><b>Selling Prices</b></button>
+   <button class="bo-card" onclick="dropsOpenPriceList('wholesale')"><span>📦</span><b>Wholesale Price List</b></button>
+   <button class="bo-card" onclick="dropsOpenPriceList('retail')"><span>🏷️</span><b>Retail Price List</b></button>
   </div>
   <div class="title bo-section-title">App Update</div>
-  <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Checks for the newest version and reloads the app. Your saved POS data stays on this device.</div></div>
+  <div class="panel bo-settings"><button type="button" style="width:100%" onclick="updateDropsApp()">🔄 Update Drops POS</button><div class="muted" style="margin-top:8px">Shows the current Android update status. APK updates are installed only after a compatible signed release is available; this button does not silently install an APK.</div></div>
   <div class="title bo-section-title">Settings & Backup</div>
   <div class="panel bo-settings">
    <div class="bo-setting-row"><div><b>USD/LBP Rate</b><div class="muted">USD / LBP</div></div><input id="fx" type="number" value="${db.settings.usdLbp}"><button onclick="db.settings.usdLbp=+$('#fx').value;save();refreshFx();alert('Saved')">Save</button></div>
@@ -1020,32 +1037,77 @@ function editRaw(rid){
 function resetTrial(){if(!confirm('Prepare Drops for GO-LIVE? Trial transactions and quantities will be cleared. Recipes, products, purchase prices, price history, customers, suppliers and employees will be kept.'))return;if(!confirm('Final confirmation: clear trial stock and transactions now?'))return;db.raw.forEach(r=>r.qty=0);db.products.forEach(p=>p.qty=0);db.batches=[];db.invoices=[];db.expenses=[];db.purchases=[];db.rawMoves=[];db.stockMoves=[];db.packings=[];db.adjustments=[];db.returns=[];db.receivables=[];db.collections=[];db.cashMoves=[];db.closings=[];db.commissionPayments=[];db.settings.lastBusinessDate=today();save();alert('GO-LIVE reset completed. Master data and price history were kept. Enter physical stock before starting sales.');home();}
 
 async function updateDropsApp(){
- const btn=document.querySelector('button[onclick="updateDropsApp()"]');
- const oldText=btn?.textContent||'🔄 Update Drops POS';
- if(btn){btn.disabled=true;btn.textContent='⏳ Checking latest version...'}
+ const button=document.querySelector('button[onclick="updateDropsApp()"]');
+ if(button?.disabled)return;
+ const previous=button?.textContent;
+ if(button){button.disabled=true;button.textContent='Checking for updates…';}
+ const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
+ const current='4.3.83';
+ const parts=v=>String(v||'').replace(/^v[.\s]*/i,'').split('.').map(n=>Number(n)||0);
+ const newer=(a,b)=>{const x=parts(a),y=parts(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;};
  try{
-  const target='4.3.41';
-  const url=new URL('index.html',window.location.href);
-  url.searchParams.set('updateCheck',String(Date.now()));
-  const response=await fetch(url.toString(),{cache:'no-store',redirect:'follow'});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  const html=await response.text();
-  const match=html.match(/class="app-version"[^>]*>v([0-9.]+)</);
-  if(!match)throw new Error('Version not found');
-  const remote=match[1];
-  const local=document.querySelector('.app-version')?.textContent?.trim().replace(/^v/,'')||'';
-  const compare=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)-(y[i]||0)}return 0};
-  if(compare(remote,local)<=0){alert('Current version: v'+local+'. Latest published version: v'+remote+'. No newer version is available yet.');return}
-  const nextUrl=new URL(window.location.href);
-  nextUrl.searchParams.set('v',remote);
-  nextUrl.searchParams.set('t',String(Date.now()));
-  nextUrl.hash='home';
-  window.location.assign(nextUrl.toString());
+  const api='https://api.github.com/repos/mkkarakira-svg/Drops-pos/releases/latest';
+  let release;
+  // Native Android HTTP avoids WebView CORS and intermittent fetch failures.
+  const nativeHttp=window.Capacitor?.Plugins?.CapacitorHttp;
+  if(window.Capacitor?.isNativePlatform?.() && nativeHttp?.get){
+   const response=await nativeHttp.get({url:api,headers:{'Accept':'application/vnd.github+json','User-Agent':'DropsPOS-Android'},connectTimeout:15000,readTimeout:20000});
+   if(response.status===404){alert('No approved Android update is published yet. Current version: '+current+'. Your data is unchanged.');return;}
+   if(response.status<200||response.status>=300)throw Error('GitHub returned '+response.status);
+   release=typeof response.data==='string'?JSON.parse(response.data):response.data;
+  }else{
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),20000);
+   let response;
+   try{response=await fetch(api,{headers:{'Accept':'application/vnd.github+json'},cache:'no-store',signal:controller.signal});}
+   finally{clearTimeout(timeout);}
+   if(response.status===404){alert('No approved Android update is published yet. Current version: '+current+'. Your data is unchanged.');return;}
+   if(!response.ok)throw Error('GitHub returned '+response.status);
+   release=await response.json();
+  }
+  const tag=String(release.tag_name||'');
+  if(!newer(tag,current)){alert('You are on version '+current+'. No newer approved release is available.');return;}
+  const assets=Array.isArray(release.assets)?release.assets:[];
+  const apk=assets.find(a=>/\.apk$/i.test(a.name||'') && !/debug|test|candidate|separate/i.test(a.name||''));
+  if(!apk){alert('Version '+tag+' is listed, but there is no approved production APK. Your app and data are unchanged.');return;}
+  // Only a release explicitly marked for the installed package and carrying
+  // a verified signer fingerprint may be offered for download.
+  const notes=String(release.body||'');
+  const packageMatch=notes.match(/^Android-Package:\s*(\S+)\s*$/mi);
+  const signerMatch=notes.match(/^Android-Signer-SHA256:\s*([A-Fa-f0-9:]{64,95})\s*$/mi);
+  const expectedSigner='8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63'; // Verified from signed Android build #72; Android confirmed same-app update.
+  const normalized=v=>String(v||'').replace(/[^a-fA-F0-9]/g,'').toUpperCase();
+  if(!packageMatch||packageMatch[1]!=='com.dropsdetergents.pos'||!signerMatch||normalized(signerMatch[1])!==normalized(expectedSigner)){
+   alert('A newer release exists, but its Android identity/signature is not yet approved for safe updating. No changes were made.');
+   return;
+  }
+  const download=String(apk.browser_download_url||'');
+  if(!/^https:\/\/github\.com\/mkkarakira-svg\/Drops-pos\/releases\/download\//.test(download)){
+   alert('Update download source could not be verified. No changes were made.');
+   return;
+  }
+  if(confirm('Verified update '+tag+' is available. Download APK? Android will ask you to confirm installation. Your existing data should remain, but back up first.')){
+   const cap=window.Capacitor;
+   if(cap?.isNativePlatform?.() && cap?.Plugins?.DropsUpdater?.downloadAndInstall){
+    try{
+     if(button)button.textContent='Downloading update…';
+     const result=await Promise.race([
+      cap.Plugins.DropsUpdater.downloadAndInstall({url:download,version:tag.replace(/^v/i,'')}),
+      new Promise((_,reject)=>setTimeout(()=>reject(Error('Download or installer did not respond within 90 seconds')),90000))
+     ]);
+     if(result?.stage==='installer_session_submitted'){alert('Update submitted to Android. Wait for the system installation confirmation. If it does not appear, report that no installer screen appeared.');}else{alert('Update status: '+(result?.stage||'unknown'));}
+    }catch(err){
+     alert('Android update could not start: '+(err?.message||err)+'. Your POS data is unchanged.');
+    }
+   }else{
+    alert('Native update download is not available in this version. No POS data was changed.');
+   }
+  }
  }catch(e){
-  alert('Could not check the published update. Please try again shortly. Saved data is safe.');
- }finally{
-  if(btn){btn.disabled=false;btn.textContent=oldText}
- }
+  if(confirm('Could not check GitHub right now. Open the releases page? No POS data will change.')){
+   window.open(releases,'_blank','noopener,noreferrer');
+  }
+ }finally{if(button){button.disabled=false;button.textContent=previous;}}
 }
 async function backup(){
  const filename='DropsPOS-backup-'+today()+'.json';
@@ -1062,13 +1124,19 @@ async function backup(){
     try{const bytes=new TextEncoder().encode(data);let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));window.DropsAndroid.saveBackup(filename,btoa(binary));return}catch(e){alert('Android backup save error: '+e.message);return}
   }
   const cap=window.Capacitor;
-  if(cap&&typeof cap.isNativePlatform==='function'&&cap.isNativePlatform()){
+  if(cap?.isNativePlatform?.()){
     try{
-      const fs=cap.Plugins&&cap.Plugins.Filesystem;
-      if(!fs||typeof fs.writeFile!=='function')throw Error('Native Filesystem plugin unavailable');
-      const result=await fs.writeFile({path:'DropsPOS/'+filename,data, directory:'DOCUMENTS',encoding:'utf8',recursive:true});
-      alert('Backup saved to Android Documents/DropsPOS/'+filename+'\\nKeep a copy outside this phone too.');
-    }catch(e){alert('Android save failed: '+(e?.message||e)+'. Use Share backup file or Copy backup text; no download was confirmed.')}
+      const fs=cap.Plugins?.Filesystem, share=cap.Plugins?.Share;
+      if(!fs?.writeFile||!share?.share)throw Error('Native file sharing unavailable');
+      const path='DropsPOS/'+filename;
+      await fs.writeFile({path,data,directory:'CACHE',encoding:'utf8',recursive:true});
+      const check=await fs.readFile({path,directory:'CACHE',encoding:'utf8'});
+      if(check?.data!==data)throw Error('Backup verification failed');
+      const loc=await fs.getUri({path,directory:'CACHE'});
+      if(!loc?.uri)throw Error('Backup file URI unavailable');
+      await share.share({title:'Drops POS Backup',url:loc.uri,dialogTitle:'Save backup outside POS Drops'});
+      alert('Choose Files / Save to device or Drive in the Android share menu. Confirm the external file exists before updating.');
+    }catch(e){if(e?.name!=='AbortError')alert('External backup was not confirmed: '+(e?.message||e)+'. Your POS data is unchanged.');}
     return;
   }
 
@@ -1076,7 +1144,25 @@ async function backup(){
   alert('Check Downloads for '+filename+' (download is not yet verified)');
  });
  const area=document.createElement('textarea');area.value=data;area.readOnly=true;area.style.cssText='display:block;width:100%;height:110px;font-size:12px;box-sizing:border-box';panel.appendChild(area);
- add('📤 Share backup file',async()=>{try{const file=new File([blob],filename,{type:'application/json'});if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){alert('File sharing is not supported by this app. No backup has been saved.');return}await navigator.share({files:[file],title:'Drops POS Backup'});alert('Sharing completed. Check the destination app to confirm the JSON file was saved.')}catch(e){if(e&&e.name==='AbortError')return;alert('Share failed: '+(e&&e.message||e))}});
+ add('📤 Share backup file',async()=>{
+  try{
+    const cap=window.Capacitor;
+    if(cap?.isNativePlatform?.()&&cap.Plugins?.Filesystem&&cap.Plugins?.Share){
+      const fs=cap.Plugins.Filesystem;
+      const path='DropsPOS/'+filename;
+      await fs.writeFile({path,data,directory:'DOCUMENTS',encoding:'utf8',recursive:true});
+      const check=await fs.readFile({path,directory:'DOCUMENTS',encoding:'utf8'});
+      if(check?.data!==data)throw Error('Backup verification failed');
+      const loc=await fs.getUri({path,directory:'DOCUMENTS'});
+      await cap.Plugins.Share.share({title:'Drops POS Backup',url:loc.uri,dialogTitle:'Save Drops POS Backup'});
+      alert('Sharing opened. Confirm the file is saved in your chosen destination.');
+      return;
+    }
+    const file=new File([blob],filename,{type:'application/json'});
+    if(!navigator.share||!navigator.canShare?.({files:[file]}))throw Error('File sharing unavailable');
+    await navigator.share({files:[file],title:'Drops POS Backup'});
+  }catch(e){if(e?.name==='AbortError')return;alert('Share failed: '+(e?.message||e)+'. Existing data was not changed.')}
+ });
  add('📋 Copy backup text',async()=>{try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(data);else{area.focus();area.select();if(!document.execCommand('copy'))throw Error('Copy unavailable')}alert('Copied. Save as '+filename+' outside the app.')}catch(e){area.focus();area.select();alert('Select all and copy the backup text manually.')}});
  add('Close',()=>overlay.remove());overlay.appendChild(panel);document.body.appendChild(overlay);
 }
@@ -1838,4 +1924,4 @@ setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&
    save();alert(size?'Flash production completed: '+q+' × '+size+'L':'Flash batch saved: '+L+' L. Materials deducted from the actual batch recipe.');production();
  };
 })();
-</script></body></html>
+</script><script src="price-lists.js"></script></body></html>

@@ -1,0 +1,121 @@
+name: Publish verified Drops POS Android update
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_version:
+        description: 'Exact app version to publish (e.g. 4.3.61)'
+        required: true
+        type: string
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Prepare bundled offline web app
+        run: |
+          mkdir -p www
+          cp index.html icon.svg manifest.webmanifest sw.js price-lists.js www/
+      - name: Install Capacitor and generate Android project
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+      - name: Verify application identity and version
+        env:
+          EXPECTED_VERSION: ${{ inputs.confirm_version }}
+        run: |
+          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!==process.env.EXPECTED_VERSION)process.exit(1)"
+      - name: Set Android version metadata
+        run: |
+          EXPECTED_VERSION="${{ inputs.confirm_version }}" python3 - <<'PY'
+          from pathlib import Path
+          import os
+          version = os.environ['EXPECTED_VERSION']
+          parts = version.split('.')
+          assert len(parts)==3 and all(x.isdigit() for x in parts)
+          code = int(parts[0])*1000 + int(parts[1])*100 + int(parts[2])
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          import re
+          s, n1 = re.subn(r"versionCode\s+\d+", f"versionCode {code}", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", f"versionName '{version}'", s, count=1)
+          assert n1 == 1 and n2 == 1, "Missing Android version fields"
+          p.write_text(s)
+          PY
+      - name: Restore permanent signing credentials
+        env:
+          KEYSTORE_B64: ${{ secrets.DROPS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$STORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD" || exit 1
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/pos-drops.jks"
+          test -s "$RUNNER_TEMP/pos-drops.jks"
+          echo "POS_DROPS_KEYSTORE_PATH=$RUNNER_TEMP/pos-drops.jks" >> "$GITHUB_ENV"
+      - name: Configure existing signing key
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          p.write_text(p.read_text() + """
+          android {
+            signingConfigs {
+              posDrops {
+                storeFile file(System.getenv('POS_DROPS_KEYSTORE_PATH'))
+                storePassword System.getenv('STORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+              }
+            }
+            buildTypes {
+              debug {
+                signingConfig signingConfigs.posDrops
+              }
+              release {
+                signingConfig signingConfigs.posDrops
+              }
+            }
+          }
+          """)
+          PY
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          STORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Inspect generated APK identity and signing certificate
+        working-directory: android
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
+          "$AAPT" dump badging "$APK" | grep '^package:'
+          "$APKSIGNER" verify --print-certs "$APK"
+          CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
+          test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Unexpected signing certificate'; exit 1; }
+          "$AAPT" dump badging "$APK" | grep -q "versionName='${{ inputs.confirm_version }}'"
+          ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
+          test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
+      - name: Publish approved GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.confirm_version }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk "POSDrops-$VERSION.apk"
+          printf 'Android-Package: com.dropsdetergents.pos\nAndroid-Signer-SHA256: 8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63\n' > release-notes.txt
+          gh release create "v$VERSION" "POSDrops-$VERSION.apk" --title "Drops POS v$VERSION" --notes-file release-notes.txt --target "$GITHUB_SHA"
