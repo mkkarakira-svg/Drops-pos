@@ -624,7 +624,7 @@ function production(){
  formulaNames.forEach(n=>{let p=db.products.find(x=>String(x.name).toLowerCase()===n.toLowerCase()&&x.formulaMaster);if(!p)db.products.push({id:id(),name:n,price:0,cost:0,qty:0,size:0,formulaMaster:true})});
  let recipeProducts=db.products.filter(p=>p.formulaMaster).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  let recipeOpts=recipeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
- let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item" onclick="editBatchCost('${b.id}')" style="cursor:pointer"><div><b>${String(b.product).replace(/\\s+(1|4|5)L\\s*$/i,'')}</b><div class="muted">${b.liters} L • Tap to edit cost</div></div><b>${money(b.cost)}</b></div>`).join('');
+ let batches=db.batches.slice(0,8).map(b=>`<div class="prod-batch-item" onclick="editBatchCost('${b.id}')" style="cursor:pointer"><div><b>${String(b.product).replace(/\s+(1|4|5)L\s*$/i,'')}</b><div class="muted">${b.liters} L • Tap to edit cost</div></div><b>${money(b.cost)}</b></div>`).join('');
  $('#app').innerHTML=`
  <div class="production-page">
   <div class="title">Production & Batches</div>
@@ -1795,8 +1795,8 @@ function finishedValueAudit(){
  const rows=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)>0).map(p=>{
   const c=dropsFinishedUnitCost(p),q=+p.qty||0;
   const full=String(p.name||'').trim();
-  const size=+(p.size||0)||+(full.match(/\\s(1|4|5|10|20)L$/i)||[])[1]||0;
-  const name=full.replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim();
+  const size=+(p.size||0)||+(full.match(/\s(1|4|5|10|20)L$/i)||[])[1]||0;
+  const name=full.replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim();
   return {name,size,q,c,v:q*c};
  }).sort((a,b)=>a.name.localeCompare(b.name)||a.size-b.size);
  const total=rows.reduce((a,r)=>a+r.v,0);
