@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.85</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.86</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1042,7 +1042,7 @@ async function updateDropsApp(){
  const previous=button?.textContent;
  if(button){button.disabled=true;button.textContent='Checking for updates…';}
  const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
- const current='4.3.85';
+ const current='4.3.86';
  const parts=v=>String(v||'').replace(/^v[.\s]*/i,'').split('.').map(n=>Number(n)||0);
  const newer=(a,b)=>{const x=parts(a),y=parts(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;};
  try{
@@ -1792,10 +1792,37 @@ function dropsFinishedUnitCost(p){
 function dropsFinishedStockValue(){return (db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*dropsFinishedUnitCost(p),0)}
 
 function finishedValueAudit(){
- const rows=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)>0).map(p=>{const c=dropsFinishedUnitCost(p),q=+p.qty||0;return {name:p.name,q,c,v:q*c}}).sort((a,b)=>a.name.localeCompare(b.name));
+ const rows=(db.products||[]).filter(p=>!p.formulaMaster&&(+p.qty||0)>0).map(p=>{
+  const c=dropsFinishedUnitCost(p),q=+p.qty||0;
+  const full=String(p.name||'').trim();
+  const size=+(p.size||0)||+(full.match(/\\s(1|4|5|10|20)L$/i)||[])[1]||0;
+  const name=full.replace(/\\s+(1|4|5|10|20)L\\s*$/i,'').trim();
+  return {name,size,q,c,v:q*c};
+ }).sort((a,b)=>a.name.localeCompare(b.name)||a.size-b.size);
  const total=rows.reduce((a,r)=>a+r.v,0);
- alert(rows.map(r=>r.name+' | '+r.q+' × '+money(r.c)+' = '+money(r.v)).join('\n')+'\n\nTOTAL = '+money(total));
+ document.getElementById('finished-audit-overlay')?.remove();
+ const overlay=document.createElement('div');
+ overlay.id='finished-audit-overlay';
+ overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(4,15,32,.72);display:flex;align-items:center;justify-content:center;padding:12px';
+ const panel=document.createElement('div');
+ panel.style.cssText='background:#fff;color:#14213a;border-radius:18px;width:min(100%,760px);max-height:88dvh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 14px 45px #0004';
+ panel.innerHTML='<div style="padding:16px 18px 10px"><div style="font-size:19px;font-weight:800">🧾 Finished Value Audit</div><div style="font-size:12px;color:#64748b;margin-top:5px">Read-only · Grouped by product · Sorted by size</div></div><div style="overflow:auto;flex:1;padding:0 10px"><table style="border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap"><thead style="position:sticky;top:0;background:#eaf1ff"><tr><th style="text-align:left;padding:10px 5px">Product / Size</th><th style="text-align:right;padding:10px 5px">Qty</th><th style="text-align:right;padding:10px 5px">Unit cost</th><th style="text-align:right;padding:10px 5px">Total</th></tr></thead><tbody></tbody></table></div><div style="border-top:1px solid #e2e8f0;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px"><strong style="font-size:17px"></strong><button type="button" style="border:0;border-radius:10px;padding:11px 18px;background:#2168ef;color:#fff;font-weight:800">Close</button></div>';
+ const tbody=panel.querySelector('tbody');
+ let prev='';
+ rows.forEach(r=>{
+  const tr=document.createElement('tr');
+  if(r.name!==prev){const group=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=4;cell.textContent=r.name;cell.style.cssText='background:#f1f5f9;font-weight:800;padding:9px 6px';group.appendChild(cell);tbody.appendChild(group);prev=r.name;}
+  [r.size?r.size+'L':'—',String(r.q),money(r.c),money(r.v)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.style.cssText='padding:10px 5px;border-bottom:1px solid #e5eaf2;text-align:'+(i?'right':'left');tr.appendChild(td)});
+  tbody.appendChild(tr);
+ });
+ if(!rows.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=4;td.textContent='No finished goods in stock';td.style.padding='18px';tr.appendChild(td);tbody.appendChild(tr);}
+ panel.querySelector('strong').textContent='TOTAL '+money(total);
+ const close=()=>overlay.remove();
+ panel.querySelector('button').onclick=close;
+ overlay.onclick=e=>{if(e.target===overlay)close()};
+ overlay.appendChild(panel);document.body.appendChild(overlay);
 }
+
 setTimeout(function(){if(typeof currentView!=='undefined'&&currentView==='home'&&typeof home==='function')home()},50);
 </script>
 <script id="drops-price-fix-431">
