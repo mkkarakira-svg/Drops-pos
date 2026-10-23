@@ -10,7 +10,7 @@ window.dropsCustomerPriceList=function(mode){
  const extras=(data()[mode]||[]);
  const price=p=>Number(wholesale?p.wholesalePrice:p.price)||0;
  const row=(name,size,usd)=>'<tr><td>'+esc(name)+'</td><td>'+size+' L</td><td>$'+usd.toFixed(2)+'</td></tr>';
- const cleanName=p=>String(p.name||'').replace(/\s+(4|5)L\s*$/i,'').trim();
+ const cleanName=p=>{const name=String(p.name||'').replace(/\s+(4|5)L\s*$/i,'').trim();return /^pine\s*oil$/i.test(name)?'Disinfectant':name;};
  const grouped=new Map();
  products.forEach(p=>{const name=cleanName(p),key=name.toLocaleLowerCase('en');if(!grouped.has(key))grouped.set(key,{name,items:[]});grouped.get(key).items.push({name,size:Number(p.size),usd:price(p)});});
  const groups=[...grouped.values()].sort((a,b)=>{const both=x=>x.items.some(i=>i.size===4)&&x.items.some(i=>i.size===5);return Number(both(b))-Number(both(a))||a.name.localeCompare(b.name);});
