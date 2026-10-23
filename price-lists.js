@@ -33,7 +33,7 @@ window.dropsCustomerPriceList=function(mode){
    const line=(value,size=10,bold=false)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.text(String(value),margin,y);y+=size*.48+3;};
    const nextPage=()=>{if(y>272){doc.addPage();y=18;}};
    const centered=(value,size=10,bold=false)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.text(String(value),105,y,{align:'center'});y+=size*.48+3;};
-   centered('DROPS DETERGENTS',24,true);centered('Tel: '+phone,11);y+=2;centered(label+' Price List',13,true);
+   if(window.DROPS_PDF_LOGO_DATA){doc.addImage(window.DROPS_PDF_LOGO_DATA,'JPEG',91,8,28,28);y=44;}centered('DROPS DETERGENTS',24,true);centered('Tel: '+phone,11);y+=2;centered(label+' Price List',13,true);
    const issued=new Date();const expires=new Date(issued.getTime());expires.setDate(expires.getDate()+7);
    const dateText=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
    centered('Date: '+dateText(issued)+'    Valid until: '+dateText(expires),10);
