@@ -340,7 +340,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publish signed update v4.3.94
-        if: github.ref == 'refs/heads/feature/pdf-validity-4394'
+        if: github.ref == 'refs/heads/feature/disinfectant-price-list-4394'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
