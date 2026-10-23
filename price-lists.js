@@ -9,13 +9,13 @@ window.dropsCustomerPriceList=function(mode){
  const products=(typeof posSellProducts==='function'?posSellProducts():db.products||[]).filter(p=>!p.formulaMaster&&[4,5].includes(Number(p.size))).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  const extras=(data()[mode]||[]);
  const price=p=>Number(wholesale?p.wholesalePrice:p.price)||0;
- const row=(name,size,usd)=>'<tr><td>'+esc(name)+'</td><td>'+size+' L</td><td>$'+usd.toFixed(2)+'</td><td>'+Math.round(usd*rate).toLocaleString('en-US')+'</td></tr>';
+ const row=(name,size,usd)=>'<tr><td>'+esc(name)+'</td><td>'+size+' L</td><td>$'+usd.toFixed(2)+'</td></tr>';
  const cleanName=p=>String(p.name||'').replace(/\s+(4|5)L\s*$/i,'').trim();
  const grouped=new Map();
  products.forEach(p=>{const name=cleanName(p),key=name.toLocaleLowerCase('en');if(!grouped.has(key))grouped.set(key,{name,items:[]});grouped.get(key).items.push({name,size:Number(p.size),usd:price(p)});});
  const groups=[...grouped.values()].sort((a,b)=>{const both=x=>x.items.some(i=>i.size===4)&&x.items.some(i=>i.size===5);return Number(both(b))-Number(both(a))||a.name.localeCompare(b.name);});
  const entries=groups.map(g=>({name:g.name,p4:g.items.find(i=>i.size===4),p5:g.items.find(i=>i.size===5)}));
- const fmt=usd=>'
+ const fmt=usd=>'$'+usd.toFixed(2);
  const rows=entries.map(e=>'<tr><td>'+esc(e.name)+'</td><td>'+(e.p4?fmt(e.p4.usd):'—')+'</td><td>'+(e.p5?fmt(e.p5.usd):'—')+'</td></tr>').join('');
  const table='<table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;table-layout:fixed"><thead><tr><th style="width:34%">Product</th><th>4 L · USD</th><th>5 L · USD</th></tr></thead><tbody>'+rows+'</tbody></table>';
  const specialTable=extras.length?'<h3>Special orders — 10 L / 20 L</h3><table style="width:100%;border-collapse:collapse"><thead><tr><th>Product</th><th>Size</th><th>USD</th></tr></thead><tbody>'+extras.map(e=>row(e.name,Number(e.size),Number(e.usd)||0)).join('')+'</tbody></table>':'';
