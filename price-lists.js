@@ -33,4 +33,4 @@ window.dropsCustomerPriceList=function(mode){
 };
 window.dropsOpenPriceList=function(mode){if(typeof go==='function')go('settings');dropsCustomerPriceList(mode);};
 document.addEventListener('DOMContentLoaded',function(){const btns=document.querySelectorAll('.bo-card');const card=[...btns].find(b=>b.textContent.includes('Selling Prices'));if(card&&!document.getElementById('dropsWholesalePriceListLink')){const w=document.createElement('button'),r=document.createElement('button');w.className=r.className='bo-card';w.id='dropsWholesalePriceListLink';r.id='dropsRetailPriceListLink';w.innerHTML='<span>📦</span><b>Wholesale Price List</b>';r.innerHTML='<span>🏷️</span><b>Retail Price List</b>';w.onclick=()=>dropsOpenPriceList('wholesale');r.onclick=()=>dropsOpenPriceList('retail');card.after(w,r);}});
-})()
+})();
