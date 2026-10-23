@@ -32,9 +32,11 @@ window.dropsCustomerPriceList=function(mode){
    let y=18;const margin=14;
    const line=(value,size=10,bold=false)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.text(String(value),margin,y);y+=size*.48+3;};
    const nextPage=()=>{if(y>272){doc.addPage();y=18;}};
-   line('DROPS DETERGENTS',17,true);line(label+' Price List',13,true);line('Tel: '+phone,10);
-   if(customer())line('Prepared for: '+customer().replace(/[^\x20-\x7E]/g,' '),10);
-   line('All prices in USD',9);y+=4;
+   const centered=(value,size=10,bold=false)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.text(String(value),105,y,{align:'center'});y+=size*.48+3;};
+   centered('DROPS DETERGENTS',19,true);centered('Tel: '+phone,11);centered(label+' Price List',13,true);
+   const customerName=customer();
+   if(customerName){y+=3;line('Prepared for: '+customerName.replace(/[^\x20-\x7E]/g,' '),11,true);}
+   centered('All prices in USD',9);y+=4;
    doc.setFillColor(235,241,249);doc.rect(margin,y-5,182,9,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);
    doc.text('Product',margin+3,y);doc.text('4 L',140,y,{align:'right'});doc.text('5 L',190,y,{align:'right'});y+=8;
    doc.setFont('helvetica','normal');
