@@ -31,7 +31,7 @@ jobs:
       - name: Prepare bundled offline web app
         run: |
           mkdir -p www
-          cp index.html icon.svg manifest.webmanifest sw.js price-lists.js www/
+          cp index.html icon.svg manifest.webmanifest sw.js price-lists.js drops-original-logo.jpg www/
           npm install --no-audit --no-fund
           cp node_modules/jspdf/dist/jspdf.umd.min.js www/
       - name: Install Capacitor and generate Android project
