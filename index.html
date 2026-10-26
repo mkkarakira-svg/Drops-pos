@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.101</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.102</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -468,7 +468,7 @@ function resaleItemsPage(pid){
  const field=(label,id,value='',type='number')=>'<div style="margin:12px 0;display:block"><label style="display:block;margin-bottom:6px;font-weight:600">'+label+'</label><input style="display:block;width:100%;box-sizing:border-box;max-width:100%;margin:0" id="'+id+'" type="'+type+'" '+(type==='number'?'min="0" step=".01"':'')+' value="'+esc(value)+'"></div>';
  $('#app').innerHTML='<div class="title">Resale Items — By Piece</div><div class="panel"><button onclick="products()">← Finished Goods</button><p>'+(p?'Edit item — review all details before saving':'Add purchased goods sold by piece')+'</p>'+
  field('Item name','resaleName',p?.name||'','text')+field('Purchase cost ($ / piece)','resaleCost',p?.cost??'')+field('Retail selling price ($ / piece)','resalePrice',p?.price??'')+field('Wholesale selling price ($ / piece)','resaleWholesale',p?.wholesalePrice??'')+
- (p?'<p><b>Current stock: '+(+p.qty||0)+' pieces</b></p>'+field('Receive additional pieces (0 = no change)','resaleQty',0):field('Opening quantity (pieces)','resaleQty',0))+
+ (p?'<p><b>Current stock: '+(+p.qty||0)+' pieces</b></p>'+field('Actual stock quantity (pieces)','resaleQty',+p.qty||0):field('Opening quantity (pieces)','resaleQty',0))+
  '<button class="green" onclick="saveResaleItem('+ (p?JSON.stringify(String(p.id)).replace(/"/g,'&quot;'):'') +')">'+(p?'Save Changes':'Save New Item')+'</button> '+(p?'<button onclick="resaleItemsPage()">Cancel Edit</button>':'')+'</div><div class="panel"><b>Resale Stock</b>'+ (items.length?items.map(x=>'<div style="padding:12px 0;border-top:1px solid #ddd"><b>'+esc(x.name)+'</b> — '+(+x.qty||0)+' pcs <small>Cost '+money(x.cost)+' · Retail '+money(x.price)+'</small> <button onclick="editResaleItem('+JSON.stringify(String(x.id)).replace(/"/g,'&quot;')+')">Open / Edit</button></div>').join(''):'<p>No resale items yet.</p>')+'</div>';
 }
 function saveResaleItem(pid){
@@ -479,7 +479,7 @@ function saveResaleItem(pid){
  if(pid&&!p)return alert('Item not found');
  if(p){
    p.name=name;p.cost=cost;p.price=price;p.wholesalePrice=wholesale;
-   if(qty){p.qty=(+p.qty||0)+qty;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_receive',productId:p.id,name:p.name,qty,balance:p.qty});}
+   if(qty!==( +p.qty||0)){const previous=+p.qty||0;p.qty=qty;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_stock_correction',productId:p.id,name:p.name,qty:qty-previous,balance:qty,note:'Manual stock correction'});}
  }else{
    p={id:id(),name,resaleItem:true,unit:'Piece',size:0,cost,price,wholesalePrice:wholesale,qty};db.products.push(p);
    if(qty)db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_opening',productId:p.id,name:p.name,qty,balance:qty});
