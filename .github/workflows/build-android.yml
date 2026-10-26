@@ -327,7 +327,7 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
           test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Signer mismatch'; exit 1; }
-          "$AAPT" dump badging "$APK" | grep -q "versionCode='4398' versionName='4.3.100'"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='4399' versionName='4.3.100'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Verify same-app update identity
