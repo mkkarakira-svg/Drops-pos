@@ -399,13 +399,13 @@ function card(i,t,g){return `<div class="card" onclick="go('${g}')"><span class=
 function allowedPackSizes(base){let n=String(base||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();if(n==='car')return [10,20];if(['laundry gel','laundrey gel','dishwashing','comfort','fabric softner','fabric softener','floor cleaner'].includes(n))return [1,4,5,10,20];return [1,4,10,20]}
 /* Rename legacy Pine Oil finished products in place; retain IDs, stock and history. */
 (function(){
- const re=/^pine oil(\\s+(1|4|5|10|20)l)?$/i;
+ const re=/^pine oil(\s+(1|4|5|10|20)l)?$/i;
  let changed=false;
  (db.products||[]).forEach(p=>{
    if(p.formulaMaster||p.resaleItem)return;
    const name=String(p.name||'').trim();
    if(!re.test(name))return;
-   const suffix=name.match(/\\s+(1|4|5|10|20)l$/i);
+   const suffix=name.match(/\s+(1|4|5|10|20)l$/i);
    p.name='Disinfectant'+(suffix?' '+suffix[1].toUpperCase():(p.size?' '+p.size+'L':''));
    changed=true;
  });
