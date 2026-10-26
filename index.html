@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.100</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.101</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -460,30 +460,33 @@ function openingFinishedStock(){
 }
 
 
-function resaleItemsPage(){
+function resaleItemsPage(pid){
  nav('products');
  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
  const items=(db.products||[]).filter(p=>p.resaleItem);
- $('#app').innerHTML='<div class="title">Resale Items — By Piece</div><div class="panel"><button onclick="products()">← Finished Goods</button><p>Purchased items for resale, counted by piece.</p><label>Item name</label><input id="resaleName" placeholder="Floor Mop"><label>Purchase cost ($/piece)</label><input id="resaleCost" type="number" min="0" step=".01"><label>Retail price ($/piece)</label><input id="resalePrice" type="number" min="0" step=".01"><label>Wholesale price ($/piece, optional)</label><input id="resaleWholesale" type="number" min="0" step=".01"><label>Opening quantity (pieces)</label><input id="resaleQty" type="number" min="0" step="1"><button class="green" onclick="saveResaleItem()">Save Resale Item</button></div><div class="panel"><b>Resale Stock</b>'+ (items.length?items.map(p=>'<div style="padding:12px 0;border-top:1px solid #ddd"><b>'+esc(p.name)+'</b> — '+(+p.qty||0)+' pcs <small>Cost '+money(p.cost)+' · Retail '+money(p.price)+'</small> <button onclick="editResaleItem('+JSON.stringify(String(p.id)).replace(/"/g,'&quot;')+')">Edit / Receive</button></div>').join(''):'<p>No resale items yet.</p>')+'</div>';
+ const p=items.find(x=>String(x.id)===String(pid))||null;
+ const field=(label,id,value='',type='number')=>'<div style="margin:12px 0;display:block"><label style="display:block;margin-bottom:6px;font-weight:600">'+label+'</label><input style="display:block;width:100%;box-sizing:border-box;max-width:100%;margin:0" id="'+id+'" type="'+type+'" '+(type==='number'?'min="0" step=".01"':'')+' value="'+esc(value)+'"></div>';
+ $('#app').innerHTML='<div class="title">Resale Items — By Piece</div><div class="panel"><button onclick="products()">← Finished Goods</button><p>'+(p?'Edit item — review all details before saving':'Add purchased goods sold by piece')+'</p>'+
+ field('Item name','resaleName',p?.name||'','text')+field('Purchase cost ($ / piece)','resaleCost',p?.cost??'')+field('Retail selling price ($ / piece)','resalePrice',p?.price??'')+field('Wholesale selling price ($ / piece)','resaleWholesale',p?.wholesalePrice??'')+
+ (p?'<p><b>Current stock: '+(+p.qty||0)+' pieces</b></p>'+field('Receive additional pieces (0 = no change)','resaleQty',0):field('Opening quantity (pieces)','resaleQty',0))+
+ '<button class="green" onclick="saveResaleItem('+ (p?JSON.stringify(String(p.id)).replace(/"/g,'&quot;'):'') +')">'+(p?'Save Changes':'Save New Item')+'</button> '+(p?'<button onclick="resaleItemsPage()">Cancel Edit</button>':'')+'</div><div class="panel"><b>Resale Stock</b>'+ (items.length?items.map(x=>'<div style="padding:12px 0;border-top:1px solid #ddd"><b>'+esc(x.name)+'</b> — '+(+x.qty||0)+' pcs <small>Cost '+money(x.cost)+' · Retail '+money(x.price)+'</small> <button onclick="editResaleItem('+JSON.stringify(String(x.id)).replace(/"/g,'&quot;')+')">Open / Edit</button></div>').join(''):'<p>No resale items yet.</p>')+'</div>';
 }
-function saveResaleItem(){
- const name=String($('#resaleName')?.value||'').trim(),cost=+$('#resaleCost')?.value,price=+$('#resalePrice')?.value,wholesale=+$('#resaleWholesale')?.value,qty=+$('#resaleQty')?.value;
+function saveResaleItem(pid){
+ const name=String($('#resaleName')?.value||'').trim(),cost=Number($('#resaleCost')?.value),price=Number($('#resalePrice')?.value),wholesale=Number($('#resaleWholesale')?.value),qty=Number($('#resaleQty')?.value);
  if(!name||![cost,price,wholesale,qty].every(Number.isFinite)||[cost,price,wholesale,qty].some(v=>v<0)||!Number.isInteger(qty))return alert('Enter valid prices and whole-piece quantity');
- if(db.products.some(p=>String(p.name).toLowerCase()===name.toLowerCase()))return alert('Item already exists. Use Edit / Receive.');
- const p={id:id(),name,resaleItem:true,unit:'Piece',size:0,cost,price,wholesalePrice:wholesale,qty};db.products.push(p);
- if(qty)db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_opening',productId:p.id,name:p.name,qty,balance:qty});
- save();resaleItemsPage();
+ if(db.products.some(p=>String(p.name).toLowerCase()===name.toLowerCase()&&String(p.id)!==String(pid)))return alert('Item already exists. Open it to edit.');
+ let p=pid?db.products.find(x=>String(x.id)===String(pid)&&x.resaleItem):null;
+ if(pid&&!p)return alert('Item not found');
+ if(p){
+   p.name=name;p.cost=cost;p.price=price;p.wholesalePrice=wholesale;
+   if(qty){p.qty=(+p.qty||0)+qty;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_receive',productId:p.id,name:p.name,qty,balance:p.qty});}
+ }else{
+   p={id:id(),name,resaleItem:true,unit:'Piece',size:0,cost,price,wholesalePrice:wholesale,qty};db.products.push(p);
+   if(qty)db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_opening',productId:p.id,name:p.name,qty,balance:qty});
+ }
+ save();resaleItemsPage(p.id);
 }
-function editResaleItem(pid){
- const p=db.products.find(x=>String(x.id)===String(pid)&&x.resaleItem);if(!p)return;
- const cost=prompt('Purchase cost $ / piece',p.cost),price=prompt('Retail price $ / piece',p.price),wholesale=prompt('Wholesale price $ / piece',p.wholesalePrice||0),received=prompt('Pieces received (0 for no change)','0');
- if([cost,price,wholesale,received].some(v=>v===null))return;
- const values=[cost,price,wholesale,received].map(Number);
- if(values.some(v=>!Number.isFinite(v)||v<0)||!Number.isInteger(values[3]))return alert('Invalid values');
- [p.cost,p.price,p.wholesalePrice]=values.slice(0,3);
- if(values[3]){p.qty=(+p.qty||0)+values[3];db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_receive',productId:p.id,name:p.name,qty:values[3],balance:p.qty})}
- save();resaleItemsPage();
-}
+function editResaleItem(pid){resaleItemsPage(pid);}
 
 function addProduct(){let n=$('#pn')?.value.trim(),p=+$(' #pp'.trim())?.value,s=+$(' #ps'.trim())?.value||1;if(!n)return;db.products.push({id:id(),name:n,price:p,qty:0,cost:0,size:s});save();products()}
 function stockIn(i){let p=db.products.find(x=>x.id===i),q=+$('#q'+i)?.value;if(q>0){p.qty+=q;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'adjustment_in',productId:p.id,name:p.name,qty:q,balance:p.qty});db.adjustments.unshift({id:id(),date:today(),time:new Date().toISOString(),productId:p.id,name:p.name,qty:q,note:'Manual stock in'});save();renderProducts()}}
