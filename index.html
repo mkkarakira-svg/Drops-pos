@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.104</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.105</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -446,15 +446,13 @@ function finishedStockAdjust(base,sz){
  const current=matching.reduce((n,p)=>n+(+p.qty||0),0);
  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
  nav('products');
- $('#app').innerHTML='<div class="title">Finished Goods — Stock</div><div class="panel"><button onclick="products()">← Back</button><h3>'+esc(base)+' '+sz+'L</h3><p><b>Current Stock: '+current+' packs</b></p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="green" onclick="finishedStockMove('+JSON.stringify(base)+','+sz+',1)">+ Stock In</button><button onclick="finishedStockMove('+JSON.stringify(base)+','+sz+',-1)">− Stock Out</button></div><p class="muted">Adjust stock to match your physical count. Raw materials, recipes and invoices are unchanged.</p></div>';
+ $('#app').innerHTML='<div class="title">Finished Goods — Stock</div><div class="panel"><button onclick="products()">← Back</button><h3>'+esc(base)+' '+sz+'L</h3><p><b>Current Stock: '+current+' packs</b></p><label style="display:block;margin:12px 0">Quantity (packs) <input id="finishedAdjustQty" type="number" min="1" step="1" value="1" style="width:100%;padding:12px;font-size:18px"></label><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="green" onclick="finishedStockMove('+JSON.stringify(base)+','+sz+',1)">+ Stock In</button><button onclick="finishedStockMove('+JSON.stringify(base)+','+sz+',-1)">− Stock Out</button></div><p class="muted">Adjust stock to match your physical count. Raw materials, recipes and invoices are unchanged.</p></div>';
 }
 function finishedStockMove(base,sz,direction){
  const norm=n=>String(n||'').replace(/\s+(1|4|5|10|20)L\s*$/i,'').trim().toLowerCase();
  const matches=db.products.filter(p=>!p.formulaMaster&&!p.resaleItem&&+(p.size||0)===+sz&&norm(p.name)===String(base).toLowerCase());
  const current=matches.reduce((n,p)=>n+(+p.qty||0),0);
- const answer=prompt((direction>0?'Stock In (+)':'Stock Out (−)')+' — '+base+' '+sz+'L; Current: '+current,'1');
- if(answer===null)return;
- const amount=Number(answer);if(!Number.isInteger(amount)||amount<=0)return alert('Enter a positive whole number of packs');
+ const amount=Number($('#finishedAdjustQty')?.value);if(!Number.isInteger(amount)||amount<=0)return alert('Enter a positive whole number of packs');
  if(direction<0&&amount>current)return alert('Not enough stock. Current: '+current);
  const p=matches[0]||ensureFinishedProduct(base,+sz);
  if(direction>0)p.qty=(+p.qty||0)+amount;
