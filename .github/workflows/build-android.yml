@@ -263,7 +263,7 @@ jobs:
           PY
       - name: Verify application identity and version
         run: |
-          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.107')process.exit(1)"
+          node -e "const c=require('./capacitor.config.json');const p=require('./package.json');if(c.appId!=='com.dropsdetergents.pos'||p.version!=='4.3.108')process.exit(1)"
       - name: Set Android version metadata
         run: |
           python3 - <<'PY'
@@ -271,8 +271,8 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4406", s, count=1)
-          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.107'", s, count=1)
+          s, n1 = re.subn(r"versionCode\s+\d+", "versionCode 4407", s, count=1)
+          s, n2 = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '4.3.108'", s, count=1)
           assert n1 == 1 and n2 == 1, "Missing Android version fields"
           p.write_text(s)
           PY
@@ -327,7 +327,7 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
           test "$CERT" = '8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63' || { echo 'Signer mismatch'; exit 1; }
-          "$AAPT" dump badging "$APK" | grep -q "versionCode='4406' versionName='4.3.107'"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='4407' versionName='4.3.108'"
           ACTUAL=$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")
           test "$ACTUAL" = "com.dropsdetergents.pos" || { echo "Unexpected APK application ID: $ACTUAL"; exit 1; }
       - name: Verify same-app update identity
@@ -337,25 +337,25 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: POSDrops-4.3.107-PRICE-LIST-APK
+          name: POSDrops-4.3.108-PRICE-LIST-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-      - name: Publish signed update v4.3.107
+      - name: Publish signed update v4.3.108
         if: github.ref == 'refs/heads/fix-price-list-logo-v4396'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test "$(node -p "require('./package.json').version")" = "4.3.107"
-          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.107.apk
+          test "$(node -p "require('./package.json').version")" = "4.3.108"
+          cp android/app/build/outputs/apk/debug/app-debug.apk POSDrops-4.3.108.apk
           cat > release-notes.txt <<'EOF'
           Android-Package: com.dropsdetergents.pos
           Android-Signer-SHA256: 8ae50d6d01c2e2d9ae82d2a1f4b00ba697d199beae3fba2b7c2f222aa34f0b63
 
-          Drops POS 4.3.107 signed Android update. Back up POS data before updating. Android requires install confirmation.
+          Drops POS 4.3.108 signed Android update. Back up POS data before updating. Android requires install confirmation.
           EOF
-          if gh release view v4.3.107 >/dev/null 2>&1; then
+          if gh release view v4.3.108 >/dev/null 2>&1; then
             echo 'Release already exists; refusing to overwrite signed APK'
             exit 1
           fi
-          gh release create v4.3.107 POSDrops-4.3.107.apk --title 'Drops POS v4.3.107' --notes-file release-notes.txt --target "$GITHUB_SHA"
+          gh release create v4.3.108 POSDrops-4.3.108.apk --title 'Drops POS v4.3.108' --notes-file release-notes.txt --target "$GITHUB_SHA"
