@@ -2,6 +2,22 @@
 (function(){
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));}
 function data(){return db.specialPriceLists||{}}
+const logoKey='dropsPriceListBrandLogo';
+function storedLogo(){try{return localStorage.getItem(logoKey)||''}catch(e){return ''}}
+window.dropsSetPriceListLogo=function(input){
+ const file=input?.files?.[0];if(!file)return;
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type))return alert('Choose a PNG or JPG logo');
+ const reader=new FileReader();
+ reader.onload=function(){
+  const img=new Image();img.onload=function(){
+   const canvas=document.createElement('canvas'),max=520,scale=Math.min(1,max/img.width,max/img.height);
+   canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+   try{localStorage.setItem(logoKey,canvas.toDataURL('image/jpeg',0.85));alert('Drops logo saved for price lists');}
+   catch(e){alert('Logo could not be saved: '+e.message)}
+  };img.src=String(reader.result);
+ };reader.readAsDataURL(file);
+};
 function saveData(d){db.specialPriceLists=d;save();}
 window.dropsCustomerPriceList=function(mode){
  const wholesale=mode==='wholesale',label=wholesale?'Wholesale':'Retail';
@@ -20,7 +36,7 @@ window.dropsCustomerPriceList=function(mode){
  const table='<table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;table-layout:fixed"><thead><tr><th style="width:34%">Product</th><th>4 L · USD</th><th>5 L · USD</th></tr></thead><tbody>'+rows+'</tbody></table>';
  const specialTable=extras.length?'<h3>Special orders — 10 L / 20 L</h3><table style="width:100%;border-collapse:collapse"><thead><tr><th>Product</th><th>Size</th><th>USD</th></tr></thead><tbody>'+extras.map(e=>row(e.name,Number(e.size),Number(e.usd)||0)).join('')+'</tbody></table>':'';
  const heading='DROPS DETERGENTS — '+label+' Price List';
- const logoUrl='drops-original-logo.jpg';
+ const logoUrl=storedLogo()||'drops-original-logo.jpg';
  const phone='00961 3 880 271';
  const customer=()=>String(document.getElementById('dropsCustomerName')?.value||'').trim();
  const customerHtml=()=>customer()?'<p><b>Prepared for: '+esc(customer())+'</b></p>':'';
