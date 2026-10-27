@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.114</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.115</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -1872,15 +1872,27 @@ function dropsFinishedUnitCost(p){
 }
 function dropsSaleItemCost(item){
  const saved=Number(item&&item.cost);
- if(Number.isFinite(saved)&&saved>0)return saved; // Historical or sale-time cost snapshot.
+ // Never override a recorded positive sale-time cost.
+ if(Number.isFinite(saved)&&saved>0)return saved;
  const products=(db.products||[]).filter(p=>!p.formulaMaster);
  const norm=v=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
+ const original=String(item&&item.name||'').trim();
+ const aliases={'easy':'glass cleaner','flash':'toilet cleaner','fresher':'freshener','rambo':'degreaser','tab':'carpet & sofa cleaner'};
+ const canonical=v=>norm(v).replace(/^(easy|flash|fresher|rambo|tab)(?=\s|$)/,m=>aliases[m]).replace(/^disinfectant 4(?=\s|$)/,'disinfectant');
  const byId=products.find(p=>String(p.id)===String(item&&item.productId));
- const byName=products.find(p=>norm(p.name)===norm(item&&item.name));
+ const byName=products.find(p=>canonical(p.name)===canonical(original));
  const product=byId||byName;
- if(!product)return Number.isFinite(saved)?saved:0;
- const calculated=dropsFinishedUnitCost(product);
- // Old invoices with missing/zero cost use today's recipe estimate; never rewrite historical invoices.
+ let calculated=product?dropsFinishedUnitCost(product):0;
+ // Legacy invoice products may have been deleted/recreated during stock reconciliation.
+ // Reconstruct only the costing lookup, not an inventory item or invoice.
+ if(!(calculated>0)&&original){
+  const match=original.match(/\s+(1|4|5|10|20)L\s*$/i);
+  if(match){
+   const base=canonical(original.replace(/\s+(1|4|5|10|20)L\s*$/i,''));
+   const master=(db.products||[]).find(p=>p.formulaMaster&&canonical(p.name)===base);
+   if(master)calculated=dropsFinishedUnitCost({name:master.name+' '+match[1]+'L',size:+match[1],formulaMaster:false});
+  }
+ }
  return calculated>0?calculated:(Number.isFinite(saved)?saved:0);
 }
 function dropsFinishedStockValue(){return (db.products||[]).filter(p=>!p.formulaMaster).reduce((a,p)=>a+(+p.qty||0)*dropsFinishedUnitCost(p),0)}
