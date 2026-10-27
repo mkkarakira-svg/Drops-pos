@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.116</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.117</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -882,6 +882,14 @@ function renderDetailedReports(){
  gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-dropsSaleItemCost(i))*(+i.qty||0),0),0),
  net=gross-expensesTotal,items=inv.flatMap(v=>(v.items||[]).map(i=>({...i,date:v.date,invoiceId:v.id}))),
  units=items.reduce((a,i)=>a+(+i.qty||0),0),liters=items.reduce((a,i)=>a+(+i.qty||0)*(+i.size||+(String(i.name||'').match(/(1|4|5|10|20)L/i)?.[1])||0),0);
+ // Read-only invoice cost audit. Legacy zero-cost items must be visible,
+ // so a silent fallback failure can never masquerade as real profit.
+ const auditRows=items.map(i=>({name:i.name||'',qty:+i.qty||0,stored:+i.cost||0,estimated:dropsSaleItemCost(i),revenue:(+i.price||0)*(+i.qty||0)}));
+ const legacyRows=auditRows.filter(x=>x.stored<=0);
+ const legacyUncosted=legacyRows.filter(x=>x.estimated<=0);
+ const auditHtml='<div class="panel"><b>Invoice Cost Audit (read-only)</b><div class="muted">Stored = original invoice unit cost · Used = report unit cost. Zero-cost legacy sales are estimated from current recipes, not historical prices.</div>'+
+ auditRows.map(x=>'<div class="item"><b>'+x.name+' × '+x.qty+'</b><div class="muted">Stored '+money(x.stored)+' / unit · Used '+money(x.estimated)+' / unit · Cost '+money(x.estimated*x.qty)+'</div></div>').join('')+
+ (legacyUncosted.length?'<div class="item" style="color:#b91c1c">Warning: '+legacyUncosted.length+' legacy items still have no valid cost. Profit is overstated.</div>':'')+'</div>';
  const byProduct={};items.forEach(i=>{let k=i.name||'منتج';if(!byProduct[k])byProduct[k]={qty:0,sales:0,profit:0};byProduct[k].qty+=+i.qty||0;byProduct[k].sales+=(+i.price||0)*(+i.qty||0);byProduct[k].profit+=((+i.price||0)-dropsSaleItemCost(i))*(+i.qty||0)});
  const rawValue=(db.raw||[]).filter(r=>rawCategoryOf(r)==='Raw Materials').reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),finishedValue=dropsFinishedStockValue();
  const top=Object.entries(byProduct).sort((a,b)=>b[1].sales-a[1].sales);
@@ -899,7 +907,7 @@ function renderDetailedReports(){
   <div class="card" role="button" onclick="reportDrill('batches')"><span>Batches</span><div class="kpi">${batches.length}</div></div>
  </div>
  <div class="panel"><b>Sales by Product</b>${top.length?top.map(([n,v])=>`<div class="item"><b>${n}</b><div class="muted">Quantity ${v.qty} • Sales ${money(v.sales)} • الربح ${money(v.profit)}</div></div>`).join(''):'<div class="muted">No sales in selected period</div>'}</div>
- <div class="panel"><b>Invoice Details</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
+ ${auditHtml}<div class="panel"><b>Invoice Details</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
  <div class="panel" style="border-right:5px solid #ff7900"><div class="item"><b>💸 Total Expenses in Period</b><span style="float:left"><b>${money(expensesTotal)}</b></span></div></div><div class="panel"><b>Expense Details</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">No expenses</div>'}</div>
  <div class="panel"><b>Production & Packing</b><div class="muted">طبخات: ${batches.length} • عمليات Pack: ${packs.length} • Literات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • Literات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
 }
