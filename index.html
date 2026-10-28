@@ -315,7 +315,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 @media(max-width:370px){.top b{font-size:12px!important}.top .top-info{max-width:38%!important}.wrap{padding-left:7px!important;padding-right:7px!important}}
 </style>
 </head><body>
-<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.122</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
+<header class="top"><button id="headerBack" onclick="goHome()" style="display:none">← رجوع</button><b>DROPS DETERGENTS <span class="app-version">v4.3.123</span></b><div class="top-info"><div>USD/LBP <strong id="headerFx">90,000</strong></div><div id="headerDate" class="top-date"></div></div></header><main class="wrap" id="app"></main>
 <nav class="nav"><button onclick="go('home')" id="n-home">⌂<br>Home</button><button onclick="go('products')" id="n-products">📦<br>Products</button><button onclick="go('sale')" id="n-sale">🛒<br>Sales</button><button onclick="go('reports')" id="n-reports">▤<br>Reports</button><button onclick="go('settings')" id="n-settings">☰<br>More</button></nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){var e=document.getElementById('headerDate'),d=new Date();if(e)e.textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()});
@@ -619,12 +619,12 @@ function saveMasterPrice(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),v
 function showPriceHistory(rid){let r=db.raw.find(x=>String(x.id)===String(rid)),h=(db.priceHistory||[]).filter(x=>String(x.rawId)===String(rid)).slice(0,10),el=document.getElementById('priceHistoryBox');if(!el||!r)return;el.innerHTML=`<div class="panel"><h3>${r.name} — Price History</h3>${h.length?h.map(x=>`<div class="item"><b>${money(x.oldPrice)} → ${money(x.newPrice)}</b><div class="muted">${x.date} • ${x.source||''}</div></div>`).join(''):'<div class="muted">No price changes yet</div>'}</div>`;el.scrollIntoView({behavior:'smooth'})}
 let purchaseEditId=null;
 function purchases(){
- const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
+ const cats=['Raw Materials','Plastic & Packaging','Bags & Cartons','Purchased Goods','Spare Parts & Maintenance','Equipment & Tools','Factory Supplies','Transport','Other Purchases'];
  const suppliers=(db.people||[]).filter(p=>p.type==='Supplier');
  $('#app').innerHTML=`<div class="title">Purchases</div>
  <div class="panel">
   <div class="row"><input id="puDate" type="date" value="${today()}"><select id="puSupplier"><option value="">Supplier / Not Specified</option>${suppliers.map(p=>`<option>${p.name}</option>`).join('')}</select></div>
-  <div class="row"><select id="puCat" onchange="purchaseCatChange()"><option value="">Select Category</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select><input type="search" placeholder="🔎 Search stock materials..." oninput="prioritizeSelectOptions('puRaw',this.value)" autocomplete="off" style="width:100%;min-height:40px;margin-bottom:6px"><select id="puRaw" style="display:none"><option value="">Select Stock Material</option>${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select><input id="puDesc" placeholder="Description / What was purchased?"></div>
+  <div class="row"><select id="puCat" onchange="purchaseCatChange()"><option value="">Select Category</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select><input type="search" placeholder="🔎 Search stock materials..." oninput="prioritizeSelectOptions('puRaw',this.value)" autocomplete="off" style="width:100%;min-height:40px;margin-bottom:6px"><select id="puResale" style="display:none"><option value="">Select Resale Item</option>${db.products.filter(p=>p.resaleItem).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select><select id="puRaw" style="display:none"><option value="">Select Stock Material</option>${db.raw.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select><input id="puDesc" placeholder="Description / What was purchased?"></div>
   <div class="row"><input id="puQty" type="number" step=".001" min="0" placeholder="Quantity"><select id="puUnit"><option>kg</option><option>Piece</option><option>Carton</option><option>Bag</option><option>Liter</option><option>Ton</option><option>Service</option></select><input id="puPrice" type="number" step=".001" min="0" placeholder="Unit Price $"></div>
   <div class="row"><select id="puPay"><option>Cash</option><option>Credit</option><option>Transfer</option><option>Cheque</option></select><input id="puInvoice" placeholder="Invoice No."><input id="puNote" placeholder="Notes"></div>
   <button id="puSaveBtn" class="orange" style="width:100%;margin-top:8px" onclick="addPurchase()">Record Purchase</button>
@@ -636,6 +636,7 @@ function purchases(){
 function purchaseCatChange(skipPrice){
  const c=$('#puCat')?.value||'',stock=['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(c);
  if($('#puRaw')){$('#puRaw').style.display=stock?'':'none';$('#puRaw').onchange=purchaseItemPrice}
+ if($('#puResale')){$('#puResale').style.display=c==='Purchased Goods'?'':'none';$('#puResale').onchange=()=>{const p=db.products.find(x=>String(x.id)===String($('#puResale').value)&&x.resaleItem);if(p){$('#puDesc').value=p.name;$('#puPrice').value=p.cost||0;$('#puUnit').value='Piece'}}}
  if($('#puPrice')){$('#puPrice').readOnly=false;if(stock&&!skipPrice)purchaseItemPrice()}
 }
 function purchaseItemPrice(){
@@ -644,14 +645,22 @@ function purchaseItemPrice(){
 }
 function addPurchase(){
  const cat=$('#puCat').value,rawId=$('#puRaw').value,desc=$('#puDesc').value.trim(),q=+$('#puQty').value,price=+$('#puPrice').value;
+ const resale=cat==='Purchased Goods'?db.products.find(p=>p.resaleItem&&String(p.id)===String($('#puResale')?.value)):null;
+ if(cat==='Purchased Goods'&&!resale)return alert('Create/select a resale item first in Finished Goods Stock → Resale Items');
+ if(cat==='Purchased Goods'&&(!Number.isInteger(q)||q<=0))return alert('Enter whole-piece quantity');
  if(!cat)return alert('Select Category');if(q<=0)return alert('Enter quantity');if(price<0)return alert('Invalid price');
  let raw=null,name=desc;
  if(['Raw Materials','Plastic & Packaging','Bags & Cartons'].includes(cat)&&rawId){raw=db.raw.find(r=>String(r.id)===String(rawId));if(raw)name=raw.name}
+ if(resale)name=resale.name;
  if(!name)return alert('Enter description or select material');
- const vals={date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total:q*price,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null};
+ const vals={date:$('#puDate').value||today(),supplier:$('#puSupplier').value,category:cat,name,qty:q,unit:$('#puUnit').value,cost:price,total:q*price,payment:$('#puPay').value,invoiceNo:$('#puInvoice').value.trim(),note:$('#puNote').value.trim(),rawId:raw?.id||null,resaleId:resale?.id||null};
  if(purchaseEditId){
    const p=db.purchases.find(x=>String(x.id)===String(purchaseEditId));if(!p)return alert('Purchase not found');
    const oldRaw=p.rawId?db.raw.find(r=>String(r.id)===String(p.rawId)):null,oldQty=+p.qty||0;
+   const oldResale=p.resaleId?db.products.find(x=>x.resaleItem&&String(x.id)===String(p.resaleId)):null;
+   if(oldResale&&(+oldResale.qty||0)<oldQty)return alert('Cannot edit: stock already sold or used. Adjust stock before editing purchase.');
+   if(oldResale)oldResale.qty=(+oldResale.qty||0)-oldQty;
+   if(resale){resale.qty=(+resale.qty||0)+q;resale.cost=price;db.stockMoves.unshift({id:id(),date:today(),time:new Date().toISOString(),type:'resale_purchase_edit',productId:resale.id,name:resale.name,qty:q,balance:resale.qty,purchaseId:p.id})}
    if(oldRaw)oldRaw.qty=Math.max(0,(+oldRaw.qty||0)-oldQty);
    if(raw)raw.qty=(+raw.qty||0)+q;
    const affected=[oldRaw,raw].filter(Boolean);
@@ -665,6 +674,7 @@ function addPurchase(){
    purchaseEditId=null;save();purchases();return;
  }
  const p={id:id(),...vals};db.purchases.unshift(p);
+ if(resale){resale.qty=(+resale.qty||0)+q;resale.cost=price;db.stockMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'resale_purchase',productId:resale.id,name:resale.name,qty:q,balance:resale.qty,cost:price,purchaseId:p.id})}
  if(raw){let old=+raw.cost||0;if(price!==old){db.priceHistory.unshift({id:id(),rawId:raw.id,name:raw.name,date:p.date,time:new Date().toLocaleTimeString(),oldPrice:old,newPrice:price,source:'Purchase',supplier:p.supplier||''});raw.cost=price}raw.qty=(+raw.qty||0)+q;db.rawMoves.unshift({id:id(),date:p.date,time:new Date().toISOString(),type:'purchase',rawId:raw.id,name:raw.name,qty:q,balance:raw.qty,cost:price,purchaseId:p.id})}
  save();purchases();
 }
@@ -672,7 +682,7 @@ function editPurchase(pid){
  const p=(db.purchases||[]).find(x=>String(x.id)===String(pid));if(!p)return;
  purchaseEditId=p.id;
  $('#puDate').value=p.date||today();$('#puSupplier').value=p.supplier||'';$('#puCat').value=p.category||'';purchaseCatChange(true);
- if($('#puRaw'))$('#puRaw').value=p.rawId||'';$('#puDesc').value=p.name||'';$('#puQty').value=p.qty||'';$('#puUnit').value=p.unit||'kg';$('#puPrice').value=p.cost??'';$('#puPay').value=p.payment||'Cash';$('#puInvoice').value=p.invoiceNo||'';$('#puNote').value=p.note||'';
+ if($('#puRaw'))$('#puRaw').value=p.rawId||'';if($('#puResale'))$('#puResale').value=p.resaleId||'';$('#puDesc').value=p.name||'';$('#puQty').value=p.qty||'';$('#puUnit').value=p.unit||'kg';$('#puPrice').value=p.cost??'';$('#puPay').value=p.payment||'Cash';$('#puInvoice').value=p.invoiceNo||'';$('#puNote').value=p.note||'';
  $('#puSaveBtn').textContent='Save Changes';$('#puCancelBtn').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
 }
 function cancelPurchaseEdit(){purchaseEditId=null;purchases()}
@@ -1162,7 +1172,7 @@ async function updateDropsApp(){
  const previous=button?.textContent;
  if(button){button.disabled=true;button.textContent='Checking for updates…';}
  const releases='https://github.com/mkkarakira-svg/Drops-pos/releases';
- const current='4.3.122';
+ const current='4.3.123';
  const parts=v=>String(v||'').replace(/^v[.\s]*/i,'').split('.').map(n=>Number(n)||0);
  const newer=(a,b)=>{const x=parts(a),y=parts(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;};
  try{
