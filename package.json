@@ -1,6 +1,6 @@
 {
   "name": "drops-pos-android",
-  "version": "4.3.123",
+  "version": "4.3.124",
   "private": true,
   "scripts": {
     "android:sync": "npx cap sync android"
