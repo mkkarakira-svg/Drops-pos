@@ -909,8 +909,9 @@ function reports(){
  nav('reports');
  const inv=(db.invoices||[]).filter(x=>!x.voided), ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
- const defaultFrom=window._reportFrom||dates[0]||todayStr, defaultTo=window._reportTo||todayStr;
- $('#app').innerHTML=`<div class="title">Detailed Reports</div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 Expenses</button><button onclick="employees()">🧑‍💼 Distributors & Commissions</button></div></div>
+ const launchDate='2026-11-01';
+ const defaultFrom=window._reportFrom||launchDate, defaultTo=window._reportTo||(todayStr<launchDate?launchDate:todayStr);
+ $('#app').innerHTML=`<div class="title">Detailed Reports</div><div class="panel"><div class="muted">New operating period starts 01/11/2026. Historical transactions are preserved; choose earlier dates to view them. Current stock is never reset.</div></div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 Expenses</button><button onclick="employees()">🧑‍💼 Distributors & Commissions</button></div></div>
  <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${defaultTo}"><button onclick="renderDetailedReports()">View Period</button></div></div>
  <div id="detailedReports"></div>`;
  renderDetailedReports();
