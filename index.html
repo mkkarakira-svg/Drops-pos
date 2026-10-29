@@ -909,7 +909,7 @@ function reports(){
  nav('reports');
  const inv=(db.invoices||[]).filter(x=>!x.voided), ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
- const defaultFrom=dates[0]||todayStr, defaultTo=dates[dates.length-1]||todayStr;
+ const defaultFrom=window._reportFrom||dates[0]||todayStr, defaultTo=window._reportTo||todayStr;
  $('#app').innerHTML=`<div class="title">Detailed Reports</div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 Expenses</button><button onclick="employees()">🧑‍💼 Distributors & Commissions</button></div></div>
  <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${defaultTo}"><button onclick="renderDetailedReports()">View Period</button></div></div>
  <div id="detailedReports"></div>`;
@@ -921,6 +921,8 @@ function renderDetailedReports(){
  ex=(db.expenses||[]).filter(x=>x.date>=from&&x.date<=to),
  batches=(db.batches||[]).filter(x=>x.date>=from&&x.date<=to),
  packs=(db.packings||[]).filter(x=>x.date>=from&&x.date<=to);
+ window._reportFrom=from;window._reportTo=to;
+ if(from>to){$('#detailedReports').innerHTML='<div class="panel" style="color:#b91c1c">Start date must be before end date.</div>';return;}
  const sales=inv.reduce((a,x)=>a+(+x.total||0),0),expensesTotal=ex.reduce((a,x)=>a+(+x.amount||0),0),
  gross=inv.reduce((a,v)=>a+(v.items||[]).reduce((q,i)=>q+((+i.price||0)-dropsSaleItemCost(i))*(+i.qty||0),0),0),
  net=gross-expensesTotal,items=inv.flatMap(v=>(v.items||[]).map(i=>({...i,date:v.date,invoiceId:v.id}))),
@@ -937,21 +939,22 @@ function renderDetailedReports(){
  const rawValue=(db.raw||[]).filter(r=>rawCategoryOf(r)==='Raw Materials').reduce((a,r)=>a+(+r.qty||0)*(+r.cost||0),0),finishedValue=dropsFinishedStockValue();
  const top=Object.entries(byProduct).sort((a,b)=>b[1].sales-a[1].sales);
  $('#detailedReports').innerHTML=`
+ <div class="panel"><b>Period: ${from} → ${to}</b><div class="muted">Sales, profit and expenses follow the selected period. Inventory values show current stock, not historical stock.</div></div>
  <div class="grid">
   <div class="card" role="button" onclick="reportDrill('sales')"><span>Total Sales</span><div class="kpi">${money(sales)}</div></div>
   <div class="card" role="button" onclick="reportDrill('invoices')"><span>Invoice Count</span><div class="kpi">${inv.length}</div></div>
   <div class="card" role="button" onclick="reportDrill('units')"><span>Total Packs Sold</span><div class="kpi">${units}</div></div>
-  <div class="card" role="button" onclick="reportDrill('liters')"><span>Bottle & Gallon Breakdown</span><div class="kpi">${units}</div></div>
+  <div class="card" role="button" onclick="reportDrill('liters')"><span>Litres Sold</span><div class="kpi">${liters.toFixed(1)} L</div></div>
   <div class="card" role="button" onclick="reportDrill('gross')"><span>Gross Profit</span><div class="kpi">${money(gross)}</div></div>
   <div class="card" role="button" onclick="reportDrill('expenses')"><span>Expenses</span><div class="kpi">${money(expensesTotal)}</div></div>
   <div class="card" role="button" onclick="reportDrill('net')"><span>Net Profit</span><div class="kpi">${money(net)}</div></div>
-  <div class="card" role="button" onclick="reportDrill('raw')"><span>Raw Materials Value</span><div class="kpi">${money(rawValue)}</div></div>
-  <div class="card" role="button" onclick="reportDrill('finished')"><span>Finished Goods Value</span><div class="kpi">${money(finishedValue)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('raw')"><span>Raw Materials Value (Now)</span><div class="kpi">${money(rawValue)}</div></div>
+  <div class="card" role="button" onclick="reportDrill('finished')"><span>Finished Goods Value (Now)</span><div class="kpi">${money(finishedValue)}</div></div>
   <div class="card" role="button" onclick="reportDrill('batches')"><span>Batches</span><div class="kpi">${batches.length}</div></div>
  </div>
  <div class="panel"><b>Sales by Product</b>${top.length?top.map(([n,v])=>`<div class="item"><b>${n}</b><div class="muted">Quantity ${v.qty} • Sales ${money(v.sales)} • الربح ${money(v.profit)}</div></div>`).join(''):'<div class="muted">No sales in selected period</div>'}</div>
- ${auditHtml}<div class="panel"><b>Invoice Details</b>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</div>
- <div class="panel" style="border-right:5px solid #ff7900"><div class="item"><b>💸 Total Expenses in Period</b><span style="float:left"><b>${money(expensesTotal)}</b></span></div></div><div class="panel"><b>Expense Details</b>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">No expenses</div>'}</div>
+ <details class="panel"><summary style="cursor:pointer;font-weight:700">Invoice Cost Audit (advanced)</summary>${auditHtml}</details><details class="panel"><summary style="cursor:pointer;font-weight:700">Invoice Details</summary>${inv.length?inv.slice().reverse().map(v=>`<div class="item"><b>${v.date} — ${money(v.total)}</b><div class="muted">${(v.items||[]).map(i=>(i.name||'منتج')+' × '+(+i.qty||0)).join(' • ')}</div></div>`).join(''):'<div class="muted">لا توجد فواتير</div>'}</details>
+ <div class="panel" style="border-right:5px solid #ff7900"><div class="item"><b>💸 Total Expenses in Period</b><span style="float:left"><b>${money(expensesTotal)}</b></span></div></div><details class="panel"><summary style="cursor:pointer;font-weight:700">Expense Details</summary>${ex.length?ex.map(e=>`<div class="item"><b>${e.name}</b><span style="float:left">${money(e.amount)}</span><div class="muted">${e.date}</div></div>`).join(''):'<div class="muted">No expenses</div>'}</details>
  <div class="panel"><b>Production & Packing</b><div class="muted">طبخات: ${batches.length} • عمليات Pack: ${packs.length} • Literات منتجة: ${batches.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L • Literات معبأة: ${packs.reduce((a,x)=>a+(+x.liters||0),0).toFixed(0)} L</div></div>`;
 }
 function reportDrill(type){
