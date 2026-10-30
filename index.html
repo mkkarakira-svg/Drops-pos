@@ -909,7 +909,7 @@ function reports(){
  nav('reports');
  const inv=(db.invoices||[]).filter(x=>!x.voided), ex=db.expenses||[], todayStr=today();
  const dates=inv.map(x=>x.date).concat(ex.map(x=>x.date)).filter(Boolean).sort();
- const defaultFrom=window._reportFrom||dates[0]||todayStr, defaultTo=window._reportTo||todayStr;
+ const defaultFrom=todayStr, defaultTo=todayStr;
  $('#app').innerHTML=`<div class="title">Detailed Reports</div><div class="panel"></div><div class="panel"><div class="row"><button class="orange" onclick="profitLossReport()">📊 Profit & Loss</button><button onclick="expenses()">💸 Expenses</button><button onclick="employees()">🧑‍💼 Distributors & Commissions</button></div></div>
  <div class="panel"><div class="row"><input id="repFrom" type="date" value="${defaultFrom}"><input id="repTo" type="date" value="${defaultTo}"><button onclick="renderDetailedReports()">View Period</button></div></div>
  <div id="detailedReports"></div>`;
