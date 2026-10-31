@@ -1020,7 +1020,12 @@ async function updateDropsApp(){
  const oldText=btn?.textContent||'🔄 Update Drops POS';
  if(btn){btn.disabled=true;btn.textContent='⏳ Checking latest version...'}
  try{
-  const target='4.3.41';
+  // A packaged Android APK cannot update its bundled HTML by reloading index.html.
+  // Never claim an APK update succeeded when only the local asset was checked.
+  if(window.Capacitor?.isNativePlatform?.() || window.location.hostname==='localhost'){
+   alert('Android app update requires a new APK installation. This button cannot replace the installed APK. Back up your POS data before installing a verified update.');
+   return;
+  }
   const url=new URL('index.html',window.location.href);
   url.searchParams.set('updateCheck',String(Date.now()));
   const response=await fetch(url.toString(),{cache:'no-store',redirect:'follow'});
