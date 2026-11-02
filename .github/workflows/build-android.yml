@@ -36,6 +36,53 @@ jobs:
           npm install --no-audit --no-fund
           npx cap add android
           npx cap sync android
+      - name: Restore existing release signing key
+        env:
+          DROPS_KEYSTORE_BASE64: ${{ secrets.DROPS_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$DROPS_KEYSTORE_BASE64"
+          printf '%s' "$DROPS_KEYSTORE_BASE64" | tr -d '\\r\\n ' | base64 --decode > android/app/drops-release.jks
+          test -s android/app/drops-release.jks
+      - name: Configure signed release
+        env:
+          DROPS_KEYSTORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          DROPS_KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          DROPS_KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: |
+          test -n "$DROPS_KEYSTORE_PASSWORD"
+          test -n "$DROPS_KEY_ALIAS"
+          test -n "$DROPS_KEY_PASSWORD"
+          cat >> android/app/build.gradle <<'GRADLE'
+
+          android {
+              signingConfigs {
+                  dropsRelease {
+                      storeFile file('drops-release.jks')
+                      storePassword System.getenv('DROPS_KEYSTORE_PASSWORD')
+                      keyAlias System.getenv('DROPS_KEY_ALIAS')
+                      keyPassword System.getenv('DROPS_KEY_PASSWORD')
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.dropsRelease
+                  }
+              }
+          }
+          GRADLE
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          DROPS_KEYSTORE_PASSWORD: ${{ secrets.DROPS_KEYSTORE_PASSWORD }}
+          DROPS_KEY_ALIAS: ${{ secrets.DROPS_KEY_ALIAS }}
+          DROPS_KEY_PASSWORD: ${{ secrets.DROPS_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DropsPOS-SIGNED-release-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
