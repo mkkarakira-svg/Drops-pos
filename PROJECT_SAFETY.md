@@ -28,3 +28,11 @@
 - Compare installed APK identity/signature to signed release candidate before update.
 - Obtain a user-approved verified backup and test restoration separately.
 - Only then prepare and test an update; preserve v4.3.136 on device until success.
+
+## Source audit — 2026-11-03
+- Inspected index.html at c4d8f86a: UI badge **v4.3.58**, 221739 characters, blob a82312ca6e0e28af5368958bcd0e4b9fb6ba51ec.
+- Inspected index.html at 55c6ca8d: UI badge **v4.3.58**, 221569 characters, blob eb4bdaff090412accf0f1297cb655bda7945614d.
+- Inspected main index.html: UI badge **v4.3.137**, 221570 characters, blob 3265046bde2365fc24b46c670f206514a5ebc467.
+- Critical: source UI badge changed from v4.3.58 to v4.3.137; the user's installed v4.3.136 cannot be reconstructed from these three inspected source snapshots. A UI badge is not Android versionCode/versionName and does not prove a compatible release.
+- Existing workflow generates an Android project and a debug build; a separate release-signing step was recently added but its build and key compatibility are unverified.
+- Do not ship or install anything until the actual installed APK's signing identity and versionCode are confirmed, and user data backup is validated.
